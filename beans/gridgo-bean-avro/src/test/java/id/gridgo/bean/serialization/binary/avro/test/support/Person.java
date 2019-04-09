@@ -273,7 +273,6 @@ public class Person extends org.apache.avro.specific.SpecificRecordBase implemen
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Person build() {
       try {
         Person record = new Person();
