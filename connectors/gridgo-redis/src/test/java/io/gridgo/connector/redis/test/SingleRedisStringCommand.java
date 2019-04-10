@@ -484,4 +484,47 @@ public class SingleRedisStringCommand extends RedisStringCommandBase {
     public void testLPUSH() throws InterruptedException {
         super.testLPUSH();
     }
+
+    @Test
+    @Override
+    public void testLPUSHX() throws InterruptedException {
+        super.testLPUSHX();
+    }
+
+    @Test
+    @Override
+    public void testLINDEX() throws InterruptedException {
+        super.testLINDEX();
+    }
+
+    @Test
+    @Override
+    public void testLINSERT() throws InterruptedException {
+        super.testLINSERT();
+    }
+
+    @Test
+    @Override
+    public void testLLEN() throws InterruptedException {
+        super.testLLEN();
+    }
+
+
+    @Test
+    @Override
+    public void testBLPOP() throws InterruptedException {
+        super.testBLPOP();
+    }
+
+    @Test
+    @Override
+    public void testBRPOP() throws InterruptedException {
+        super.testBRPOP();
+    }
+
+    @Test
+    @Override
+    public void testBRPOPLPUSH() throws InterruptedException {
+        super.testBRPOPLPUSH();
+    }
 }

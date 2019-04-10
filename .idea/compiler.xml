@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="gridgo-bean-avro" />
+        <module name="gridgo-bean-gson" />
+        <module name="gridgo-bean-protobuf" />
+        <module name="gridgo-extras-flink" />
+        <module name="gridgo-extras-prometheus" />
+        <module name="gridgo-extras-spring" />
+        <module name="gridgo-extras-typesafe" />
+        <module name="gridgo-extras-yaml" />
+        <module name="gridgo-file" />
+        <module name="gridgo-http" />
+        <module name="gridgo-http-common" />
+        <module name="gridgo-http-jdk" />
+        <module name="gridgo-jdbc" />
+        <module name="gridgo-jetty-http" />
+        <module name="gridgo-kafka" />
+        <module name="gridgo-keyvalue-common" />
+        <module name="gridgo-mongodb" />
+        <module name="gridgo-rabbitmq" />
+        <module name="gridgo-redis" />
+        <module name="gridgo-rocksdb" />
+        <module name="gridgo-scheduler" />
+        <module name="gridgo-socket" />
+        <module name="gridgo-socket-nanomsg" />
+        <module name="gridgo-socket-netty4" />
+        <module name="gridgo-socket-zmq" />
+        <module name="gridgo-vertx-http" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="gridgo-bean-avro" target="1.5" />
+      <module name="gridgo-bean-gson" target="1.5" />
+      <module name="gridgo-bean-protobuf" target="1.5" />
+      <module name="gridgo-community" target="1.5" />
+      <module name="gridgo-community-beans" target="1.5" />
+      <module name="gridgo-community-extras" target="1.5" />
+      <module name="gridgo-connector-base" target="1.5" />
+      <module name="gridgo-extras-flink" target="1.5" />
+      <module name="gridgo-extras-prometheus" target="1.5" />
+      <module name="gridgo-extras-spring" target="1.5" />
+      <module name="gridgo-extras-typesafe" target="1.5" />
+      <module name="gridgo-extras-yaml" target="1.5" />
+      <module name="gridgo-file" target="1.5" />
+      <module name="gridgo-http" target="1.5" />
+      <module name="gridgo-http-common" target="1.5" />
+      <module name="gridgo-http-jdk" target="1.5" />
+      <module name="gridgo-jdbc" target="1.5" />
+      <module name="gridgo-jetty-http" target="1.5" />
+      <module name="gridgo-kafka" target="1.5" />
+      <module name="gridgo-keyvalue-common" target="1.5" />
+      <module name="gridgo-mongodb" target="1.5" />
+      <module name="gridgo-rabbitmq" target="1.5" />
+      <module name="gridgo-redis" target="1.5" />
+      <module name="gridgo-rocksdb" target="1.5" />
+      <module name="gridgo-scheduler" target="1.5" />
+      <module name="gridgo-socket" target="1.5" />
+      <module name="gridgo-socket-nanomsg" target="1.5" />
+      <module name="gridgo-socket-netty4" target="1.5" />
+      <module name="gridgo-socket-zmq" target="1.5" />
+      <module name="gridgo-vertx-http" target="1.5" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

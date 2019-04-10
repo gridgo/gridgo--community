@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-file" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-http" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-http-common" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-http-jdk" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-jdbc" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-jetty-http" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-kafka" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-keyvalue-common" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-mongodb" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-netty4" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-rabbitmq" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-redis" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-rocksdb" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-scheduler" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-socket" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-socket-nanomsg" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-socket-zmq" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/connectors/gridgo-vertx-http" charset="UTF-8" />
+  </component>
+</project>
