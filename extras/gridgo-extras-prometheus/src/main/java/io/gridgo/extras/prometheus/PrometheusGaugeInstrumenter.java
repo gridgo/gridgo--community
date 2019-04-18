@@ -1,6 +1,9 @@
 package io.gridgo.extras.prometheus;
 
+import org.joo.promise4j.Deferred;
+
 import io.gridgo.framework.execution.ExecutionStrategyInstrumenter;
+import io.gridgo.framework.support.Message;
 import io.prometheus.client.Gauge;
 import lombok.Getter;
 
@@ -18,11 +21,12 @@ public class PrometheusGaugeInstrumenter implements ExecutionStrategyInstrumente
     }
 
     @Override
-    public Runnable instrument(Runnable runnable) {
+    public Runnable instrument(Message msg, Deferred<Message, Exception> deferred, Runnable runnable) {
         return () -> {
             gauge.inc();
             runnable.run();
-            gauge.dec();
+            deferred.promise() //
+                    .always((s, r, e) -> gauge.dec());
         };
     }
 }

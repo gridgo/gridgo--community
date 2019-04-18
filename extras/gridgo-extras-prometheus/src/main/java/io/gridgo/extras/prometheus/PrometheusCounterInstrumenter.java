@@ -1,6 +1,9 @@
 package io.gridgo.extras.prometheus;
 
+import org.joo.promise4j.Deferred;
+
 import io.gridgo.framework.execution.ExecutionStrategyInstrumenter;
+import io.gridgo.framework.support.Message;
 import io.prometheus.client.Counter;
 import lombok.Getter;
 
@@ -18,7 +21,7 @@ public class PrometheusCounterInstrumenter implements ExecutionStrategyInstrumen
     }
 
     @Override
-    public Runnable instrument(Runnable runnable) {
+    public Runnable instrument(Message msg, Deferred<Message, Exception> deferred, Runnable runnable) {
         return () -> {
             counter.inc();
             runnable.run();
