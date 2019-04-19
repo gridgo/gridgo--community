@@ -123,9 +123,6 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
             populateCommonHeaders(headers, record);
 
             headers.putAny(KafkaConstants.OFFSET, record.offset());
-            if (record.key() != null) {
-                headers.putAny(KafkaConstants.KEY, record.key());
-            }
 
             var isValue = false;
             for (Header header : record.headers()) {
@@ -134,12 +131,16 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
                     isValue = true;
             }
 
-            var body = isValue ? BElement.ofAny(record.value()) : deserializeWithFormat(record);
+            if (record.key() != null) {
+                headers.putAny(KafkaConstants.KEY, record.key());
+            }
+
+            var value = record.value();
+            var body = (value == null || isValue) ? BElement.ofAny(value) : deserializeWithFormat(value);
             return createMessage(headers, body);
         }
 
-        private BElement deserializeWithFormat(ConsumerRecord<Object, Object> record) {
-            var value = record.value();
+        private BElement deserializeWithFormat(Object value) {
             return deserialize(value instanceof byte[] ? (byte[]) value : value.toString().getBytes());
         }
 

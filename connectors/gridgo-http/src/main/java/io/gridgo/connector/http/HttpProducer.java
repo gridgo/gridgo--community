@@ -1,5 +1,6 @@
 package io.gridgo.connector.http;
 
+import static io.gridgo.connector.http.HttpConstants.*;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
@@ -43,13 +44,20 @@ public class HttpProducer extends AbstractHttpProducer {
 
     private String defaultMethod;
 
-    public HttpProducer(ConnectorContext context, String endpointUri, Builder config, String format, NameResolver<InetAddress> nameResolver,
-            String defaultMethod) {
+    public HttpProducer(ConnectorContext context, String endpointUri, Builder config, String format,
+            NameResolver<InetAddress> nameResolver, String defaultMethod) {
         super(context, format);
         this.endpointUri = endpointUri;
         this.config = config;
         this.nameResolver = nameResolver;
         this.defaultMethod = defaultMethod != null ? defaultMethod : DEFAULT_METHOD;
+    }
+
+    private Message buildMessage(Response response) {
+        var headers = buildHeaders(response.getHeaders()).setAny(HEADER_STATUS, response.getStatusText())
+                                                         .setAny(HEADER_STATUS_CODE, response.getStatusCode());
+        var body = deserialize(response.getResponseBodyAsBytes());
+        return createMessage(headers, body);
     }
 
     private BObject buildHeaders(HttpHeaders headers) {
@@ -61,14 +69,6 @@ public class HttpProducer extends AbstractHttpProducer {
             return obj;
         entries.forEach(e -> obj.putAny(e.getKey(), e.getValue()));
         return obj;
-    }
-
-    private Message buildMessage(Response response) {
-        var headers = buildHeaders(response.getHeaders()) //
-                                                         .setAny(HttpConstants.HEADER_STATUS, response.getStatusText())
-                                                         .setAny(HttpConstants.HEADER_STATUS_CODE, response.getStatusCode());
-        var body = deserialize(response.getResponseBodyAsBytes());
-        return createMessage(headers, body);
     }
 
     private List<Param> buildParams(BObject object) {

@@ -1,6 +1,9 @@
 package io.gridgo.extras.prometheus;
 
+import org.joo.promise4j.Deferred;
+
 import io.gridgo.framework.execution.ExecutionStrategyInstrumenter;
+import io.gridgo.framework.support.Message;
 import io.prometheus.client.Summary;
 import lombok.Getter;
 
@@ -18,7 +21,12 @@ public class PrometheusSummaryTimeInstrumenter implements ExecutionStrategyInstr
     }
 
     @Override
-    public Runnable instrument(Runnable runnable) {
-        return () -> summary.time(runnable);
+    public Runnable instrument(Message msg, Deferred<Message, Exception> deferred, Runnable runnable) {
+        return () -> {
+            var timer = summary.startTimer();
+            deferred.promise() //
+                    .always((s, r, e) -> timer.close());
+            runnable.run();
+        };
     }
 }

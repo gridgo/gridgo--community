@@ -1,6 +1,5 @@
 package io.gridgo.connector.httpjdk;
 
-import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_HTTP_HEADERS;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_PATH;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS_CODE;
 
@@ -81,8 +80,7 @@ public class HttpJdkProducer extends AbstractHttpProducer {
     }
 
     private Message buildMessage(HttpResponse<byte[]> response) {
-        var headers = buildHeaders(response.headers()) //
-                                                      .setAny(HEADER_STATUS_CODE, response.statusCode());
+        var headers = buildHeaders(response.headers()).setAny(HEADER_STATUS_CODE, response.statusCode());
         var body = deserialize(response.body());
         return createMessage(headers, body);
     }
@@ -104,21 +102,18 @@ public class HttpJdkProducer extends AbstractHttpProducer {
 
         if (message != null && message.getPayload() != null) {
             headers = message.headers();
+            var path = headers.getString(HEADER_PATH, "");
             var body = message.body();
             bodyPublisher = body != null ? BodyPublishers.ofByteArray(serialize(body)) : BodyPublishers.noBody();
-            endpoint = endpointUri + getPath(message) + parseParams(getQueryParams(message));
+            endpoint = endpointUri + path + parseParams(getQueryParams(message));
             method = getMethod(message, defaultMethod);
         }
 
         var request = HttpRequest.newBuilder() //
                                  .uri(URI.create(endpoint)) //
                                  .method(method, bodyPublisher);
-        populateHeaders(headers.getObjectOrEmpty(HEADER_HTTP_HEADERS), request);
+        populateHeaders(headers, request);
         return request.build();
-    }
-
-    private String getPath(Message message) {
-        return message.headers().getString(HEADER_PATH, "");
     }
 
     private void populateHeaders(BObject headers, java.net.http.HttpRequest.Builder request) {

@@ -116,7 +116,5 @@ public class HttpCommonConstants {
 
     public static final String HEADER_STATUS_CODE = "Http-Status-Code";
     
-    public static final String HEADER_HTTP_HEADERS = "Http-Headers";
-
     public static final String HEADER_PATH = "Http-Path";
 }
