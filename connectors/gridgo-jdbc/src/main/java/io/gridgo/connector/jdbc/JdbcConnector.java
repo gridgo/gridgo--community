@@ -12,7 +12,7 @@ import java.util.HashSet;
 import java.util.Optional;
 
 @Slf4j
-@ConnectorEndpoint(scheme = "jdbc", syntax = "jdbcUri", raw = true)
+@ConnectorEndpoint(scheme = "jdbc", syntax = "jdbcUri", raw = true, category = "jdbc")
 public class JdbcConnector extends AbstractConnector {
     // Params of gridgo, exclude user and password
     private static HashSet<String> reserveParams = new HashSet<>(Arrays.asList("pool"));
