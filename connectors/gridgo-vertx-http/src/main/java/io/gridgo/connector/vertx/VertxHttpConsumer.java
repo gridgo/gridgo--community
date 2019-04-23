@@ -170,8 +170,7 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
         return connRef;
     }
 
-    private void defaultHandleException(RoutingContext ctx) {
-        var statusCode = ctx.statusCode() != -1 ? ctx.statusCode() : DEFAULT_EXCEPTION_STATUS_CODE;
+    private void defaultHandleException(RoutingContext ctx, int statusCode) {
         ctx.response().setStatusCode(statusCode);
 
         if (ctx.failure() != null && ctx.failure().getMessage() != null)
@@ -202,12 +201,15 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
             log.info("HTTP error {} when handling request {}", ((HttpException) ex).getCode(), ctx.request().path());
         else
             log.error("Exception caught when handling request", ex);
+
+        int statusCode = ex instanceof HttpException ? ((HttpException) ex).getCode() //
+                : ctx.statusCode() != -1 ? ctx.statusCode() : DEFAULT_EXCEPTION_STATUS_CODE;
+
         var msg = buildFailureMessage(ex);
         if (msg == null) {
-            defaultHandleException(ctx);
+            defaultHandleException(ctx, statusCode);
             return;
         }
-        var statusCode = ctx.statusCode() != -1 ? ctx.statusCode() : DEFAULT_EXCEPTION_STATUS_CODE;
         msg.headers().putIfAbsent(HEADER_STATUS_CODE, BValue.of(statusCode));
         sendResponse(ctx, msg, true);
     }
