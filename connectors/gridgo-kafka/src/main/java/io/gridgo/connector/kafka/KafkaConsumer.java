@@ -33,21 +33,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class KafkaConsumer extends AbstractConsumer implements FormattedMarshallable {
 
-    private static final int DEFAULT_THREADS = 8;
-
-    private static final ExecutionStrategy DEFAULT_EXECUTION_STRATEGY = new ExecutorExecutionStrategy(DEFAULT_THREADS);
-
-    static {
-        DEFAULT_EXECUTION_STRATEGY.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(DEFAULT_EXECUTION_STRATEGY::stop));
-    }
-
     private final KafkaConfiguration configuration;
 
     private List<KafkaFetchRecords> tasks;
 
     @Getter
     private String format;
+
+    private ExecutionStrategy consumerExecutionStrategy;
 
     public KafkaConsumer(ConnectorContext context, final @NonNull KafkaConfiguration configuration, String format) {
         super(context);
@@ -66,7 +59,8 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
 
     @Override
     protected void onStart() {
-        var consumerExecutionStrategy = getContext().getConsumerExecutionStrategy().orElse(DEFAULT_EXECUTION_STRATEGY);
+        this.consumerExecutionStrategy = getContext().getConsumerExecutionStrategy().orElseGet(
+                () -> new ExecutorExecutionStrategy(configuration.getConsumersCount()));
         consumerExecutionStrategy.start();
 
         tasks = new ArrayList<>();
@@ -91,9 +85,7 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
         for (KafkaFetchRecords task : tasks) {
             task.shutdown();
         }
-        var consumerExecutionStrategy = getContext().getConsumerExecutionStrategy().orElse(null);
-        if (consumerExecutionStrategy != null)
-            consumerExecutionStrategy.stop();
+        consumerExecutionStrategy.stop();
     }
 
     class KafkaFetchRecords implements Runnable {
