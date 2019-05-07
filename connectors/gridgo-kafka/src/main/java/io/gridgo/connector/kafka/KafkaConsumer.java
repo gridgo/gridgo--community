@@ -192,6 +192,7 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
 
             var pollDuration = Duration.ofMillis(100);
             var batchProcessing = configuration.isBatchEnabled();
+            var batchCommit = configuration.isBatchCommit();
 
             Thread.currentThread().setName("KAFKA-CONSUMER-" + topicName + "-" + id);
 
@@ -202,7 +203,7 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
 
                 while (!stopped && !reConnect && !Thread.currentThread().isInterrupted()) {
 
-                    reConnect = fetchAndProcess(reConnect, pollDuration, batchProcessing);
+                    reConnect = fetchAndProcess(reConnect, pollDuration, batchProcessing, batchCommit);
                 }
 
                 if (!reConnect) {
@@ -233,7 +234,8 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
             }
         }
 
-        private boolean fetchAndProcess(boolean reConnect, Duration pollDuration, boolean batchProcessing) {
+        private boolean fetchAndProcess(boolean reConnect, Duration pollDuration, boolean batchProcessing,
+                boolean batchCommit) {
             var allRecords = consumer.poll(pollDuration);
 
             for (var partition : allRecords.partitions()) {
@@ -248,7 +250,7 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
                 if (batchProcessing) {
                     promise = processBatchRecords(records);
                 } else {
-                    promise = processSingleRecord(partition, records);
+                    promise = processSingleRecord(partition, records, batchCommit);
                 }
 
                 long offset = -1;
@@ -280,7 +282,7 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
         }
 
         private Promise<Long, Exception> processSingleRecord(TopicPartition partition,
-                List<ConsumerRecord<Object, Object>> records) {
+                List<ConsumerRecord<Object, Object>> records, boolean batchCommit) {
             boolean breakOnFirstError = configuration.isBreakOnFirstError();
 
             long lastRecord = -1;
@@ -291,6 +293,9 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
                 try {
                     deferred.promise().get();
                     lastRecord = record.offset();
+                    if (!batchCommit) {
+                        commitOffset(lastRecord, partition, false);
+                    }
                 } catch (Exception ex) {
                     log.error("Exception caught while processing ConsumerRecord", ex);
                     if (breakOnFirstError) {

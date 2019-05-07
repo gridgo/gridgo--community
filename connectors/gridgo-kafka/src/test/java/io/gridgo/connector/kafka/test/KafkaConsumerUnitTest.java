@@ -104,6 +104,14 @@ public class KafkaConsumerUnitTest {
         long elapsed = System.nanoTime() - started;
         printPace("KafkaEmbeddedProducer", numMessages, elapsed);
     }
+    
+    @Test
+    public void testNonBatchCommitConsumer() {
+
+        String extraQuery = "&consumersCount=1&autoCommitEnable=false&groupId=test&autoOffsetReset=earliest&batchCommit=false";
+
+        doTestConsumer(extraQuery);
+    }
 
     @Test
     public void testAutoCommitAsyncConsumer() {

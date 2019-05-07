@@ -68,6 +68,8 @@ public class KafkaConfiguration {
 
     private boolean batchEnabled = false;
 
+    private boolean batchCommit = true;
+
     private boolean breakOnFirstError = true;
 
     // consumer
