@@ -51,6 +51,10 @@ public class KafkaConsumerUnitTest {
     }
 
     private void doTestConsumer(String extraQuery) {
+        doTestConsumer(extraQuery, 0);
+    }
+
+    private void doTestConsumer(String extraQuery, long delay) {
         String topicName = createTopic();
 
         String brokers = sharedKafkaTestResource.getKafkaConnectString();
@@ -65,6 +69,11 @@ public class KafkaConsumerUnitTest {
 
         consumer.clearSubscribers();
         consumer.subscribe((msg, deferred) -> {
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
             latch.countDown();
             deferred.resolve(null);
         });
@@ -104,7 +113,7 @@ public class KafkaConsumerUnitTest {
         long elapsed = System.nanoTime() - started;
         printPace("KafkaEmbeddedProducer", numMessages, elapsed);
     }
-    
+
     @Test
     public void testNonBatchCommitConsumer() {
 

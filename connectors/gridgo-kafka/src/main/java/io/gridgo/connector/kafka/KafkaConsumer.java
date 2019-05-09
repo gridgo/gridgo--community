@@ -15,7 +15,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.header.Header;
 import org.joo.promise4j.Promise;
-import org.joo.promise4j.impl.AsyncDeferredObject;
+import org.joo.promise4j.impl.CompletableDeferredObject;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
@@ -98,9 +98,9 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
 
         private String id;
 
-        private volatile boolean stopped = false;
-
         private Pattern pattern;
+
+        private volatile boolean stopped = false;
 
         public KafkaFetchRecords(String topicName, Pattern pattern, String id, Properties kafkaProps) {
             this.topicName = topicName;
@@ -275,7 +275,7 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
         private Promise<Long, Exception> processBatchRecords(List<ConsumerRecord<Object, Object>> records) {
 
             long partitionLastOffset = records.get(records.size() - 1).offset();
-            var deferred = new AsyncDeferredObject<Message, Exception>();
+            var deferred = new CompletableDeferredObject<Message, Exception>();
             var msg = buildMessageForBatch(records);
             publish(msg, deferred);
             return deferred.promise().filterDone(result -> partitionLastOffset);
@@ -288,12 +288,13 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
             long lastRecord = -1;
             for (var record : records) {
                 var msg = buildMessage(record);
-                var deferred = new AsyncDeferredObject<Message, Exception>();
+                var deferred = new CompletableDeferredObject<Message, Exception>();
                 publish(msg, deferred);
                 try {
                     deferred.promise().get();
                     lastRecord = record.offset();
                     if (!batchCommit) {
+                        log.info("Trying to commit in non-batch mode or because the maximum commit delay exceeded");
                         commitOffset(lastRecord, partition, false);
                     }
                 } catch (Exception ex) {
