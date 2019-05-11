@@ -27,18 +27,22 @@ public class MetricsProcessor implements Processor {
     @Override
     public void process(RoutingContext rc, GridgoContext gc) {
         try (var writer = new StringWriter()) {
-            write004(writer, collectorRegistry.filteredMetricFamilySamples(new HashSet<>()));
+            write(writer);
             rc.getDeferred().resolve(Message.ofAny(writer.getBuffer().toString()));
         } catch (IOException e) {
             rc.getDeferred().reject(e);
         }
     }
 
+    protected void write(StringWriter writer) throws IOException {
+        write004(writer, collectorRegistry.filteredMetricFamilySamples(new HashSet<>()));
+    }
+
     /**
      * Write out the text version 0.0.4 of the given MetricFamilySamples. Add custom
      * prefix for pegasus app.
      */
-    private void write004(Writer writer, Enumeration<Collector.MetricFamilySamples> mfs) throws IOException {
+    protected void write004(Writer writer, Enumeration<Collector.MetricFamilySamples> mfs) throws IOException {
         /*
          * See http://prometheus.io/docs/instrumenting/exposition_formats/ for the
          * output format specification.
