@@ -68,6 +68,6 @@ public class PrometheusInstrumenterUnitTest {
     }
 
     private void discard(RoutingContext rc, GridgoContext gc) {
-        // Nothing to do here
+        rc.getDeferred().resolve(null);
     }
 }
