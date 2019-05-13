@@ -39,8 +39,7 @@ public class MetricsProcessor implements Processor {
     }
 
     /**
-     * Write out the text version 0.0.4 of the given MetricFamilySamples. Add custom
-     * prefix for pegasus app.
+     * Write out the text version 0.0.4 of the given MetricFamilySamples.
      */
     protected void write004(Writer writer, Enumeration<Collector.MetricFamilySamples> mfs) throws IOException {
         /*
@@ -64,7 +63,7 @@ public class MetricsProcessor implements Processor {
             writer.write('\n');
 
             for (Collector.MetricFamilySamples.Sample sample : metricFamilySamples.samples) {
-                writer.write("pegasus_");
+                writer.write(prefix + "_");
                 writer.write(sample.name);
                 if (sample.labelNames.size() > 0) {
                     writer.write('{');

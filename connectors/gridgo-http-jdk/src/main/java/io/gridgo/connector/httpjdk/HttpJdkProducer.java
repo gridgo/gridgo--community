@@ -103,8 +103,8 @@ public class HttpJdkProducer extends AbstractHttpProducer {
         if (message != null && message.getPayload() != null) {
             headers = message.headers();
             var path = headers.getString(HEADER_PATH, "");
-            var body = message.body();
-            bodyPublisher = body != null ? BodyPublishers.ofByteArray(serialize(body)) : BodyPublishers.noBody();
+            var body = serialize(message.body());
+            bodyPublisher = body != null ? BodyPublishers.ofByteArray(body) : BodyPublishers.noBody();
             endpoint = endpointUri + path + parseParams(getQueryParams(message));
             method = getMethod(message, defaultMethod);
         }
