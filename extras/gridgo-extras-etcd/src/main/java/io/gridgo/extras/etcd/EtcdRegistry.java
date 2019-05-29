@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutionException;
 
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
+import io.gridgo.bean.BElement;
 import io.gridgo.extras.etcd.support.exceptions.EtcdException;
 import io.gridgo.framework.support.Registry;
 import lombok.NonNull;
@@ -24,6 +25,14 @@ public class EtcdRegistry implements Registry {
 
     public EtcdRegistry(Client client) {
         this.client = client;
+    }
+
+    @Override
+    public <T> T convertAnswer(Class<T> type, Object answer) {
+        if (BElement.class.isAssignableFrom(type)) {
+            return BElement.ofBytes((byte[]) answer);
+        }
+        return Registry.super.convertAnswer(type, answer);
     }
 
     @Override
@@ -55,6 +64,8 @@ public class EtcdRegistry implements Registry {
     private ByteSequence convertValue(Object answer) {
         if (answer instanceof byte[])
             return ByteSequence.from((byte[]) answer);
+        if (answer instanceof BElement)
+            return ByteSequence.from(((BElement) answer).toBytes());
         return ByteSequence.from(answer.toString().getBytes());
     }
 
