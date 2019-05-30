@@ -27,7 +27,7 @@ public class PrefixedConsulRegistry implements Registry {
     }
 
     public PrefixedConsulRegistry(String prefix, String url) {
-        this(DEFAULT_PREFIX, Consul.builder().withUrl(url).build());
+        this(prefix, Consul.builder().withUrl(url).build());
     }
 
     public PrefixedConsulRegistry(String prefix, Consul client) {
