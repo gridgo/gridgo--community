@@ -8,9 +8,7 @@ import io.gridgo.core.GridgoContext;
 import io.gridgo.core.support.ContextAwareComponent;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class ConsulCheckinComponent implements ContextAwareComponent {
 
     @Getter
@@ -65,8 +63,7 @@ public class ConsulCheckinComponent implements ContextAwareComponent {
             try {
                 agentClient.pass(registration.getId());
             } catch (NotRegisteredException e) {
-                log.error("Exception caught while running heartbeat", e);
-                return;
+                agentClient.register(registration);
             }
 
             try {
