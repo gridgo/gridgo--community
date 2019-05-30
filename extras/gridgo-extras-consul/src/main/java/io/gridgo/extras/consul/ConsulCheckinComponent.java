@@ -81,12 +81,13 @@ public class ConsulCheckinComponent implements ContextAwareComponent {
     @Override
     public void stop() {
         this.heartbeatThread.interrupt();
+        client.agentClient().deregister(registration.getId());
         if (ownedClient)
             this.client.destroy();
     }
 
     @Override
     public String getName() {
-        return "component.consul." + client;
+        return "component.consul." + registration.getName() + "#" + registration.getId();
     }
 }
