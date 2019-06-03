@@ -3,10 +3,12 @@ package io.gridgo.extras.consul;
 import com.orbitz.consul.Consul;
 
 import io.gridgo.framework.support.Registry;
+import lombok.Getter;
 import lombok.NonNull;
 
-public class ReadOnlyConsulRegistry implements Registry {
+public class ReadOnlyConsulRegistry extends ConsulRegistry {
 
+    @Getter
     private Consul client;
 
     public ReadOnlyConsulRegistry() {

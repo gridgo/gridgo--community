@@ -1,21 +1,28 @@
 package io.gridgo.extras.consul;
 
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.orbitz.consul.Consul;
+import com.orbitz.consul.model.kv.Value;
 
 import io.gridgo.bean.BObject;
 import io.gridgo.framework.support.Registry;
+import io.gridgo.framework.support.watch.Disposable;
+import io.gridgo.framework.support.watch.WatchEvent;
+import io.gridgo.framework.support.watch.impl.DefaultWatchEvent;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class PrefixedConsulRegistry implements Registry {
+public class PrefixedConsulRegistry extends ConsulRegistry {
 
     private static final String DEFAULT_PREFIX = "";
 
     private String prefix;
 
+    @Getter
     private Consul client;
 
     public PrefixedConsulRegistry() {
@@ -38,12 +45,26 @@ public class PrefixedConsulRegistry implements Registry {
     }
 
     @Override
+    public Disposable watchForChange(String key, Consumer<WatchEvent> handler) {
+        return super.watchForChange(normalize(key), handler);
+    }
+
+    @Override
+    protected DefaultWatchEvent mapEvent(Value v) {
+        return new DefaultWatchEvent(v.getKey().substring(prefix.length()), v.getValueAsString().orElse(null));
+    }
+
+    @Override
     public Object lookup(String name) {
-        name = prefix + "/" + name;
+        name = normalize(name);
         if (name.endsWith("/")) {
             return convertList(name);
         }
         return client.keyValueClient().getValueAsString(name).orElse(null);
+    }
+
+    protected String normalize(String name) {
+        return prefix + "/" + name;
     }
 
     protected Object convertList(String name) {
@@ -55,7 +76,7 @@ public class PrefixedConsulRegistry implements Registry {
 
     @Override
     public Registry register(String name, @NonNull Object answer) {
-        name = prefix + "/" + name;
+        name = normalize(name);
         var convertedAnswer = convertValue(answer);
         if (convertValue(answer) != null) {
             client.keyValueClient().putValue(name, convertedAnswer);
