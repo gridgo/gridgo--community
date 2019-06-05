@@ -90,6 +90,8 @@ public class KafkaConfiguration {
     private String serializerClass = KafkaConstants.KAFKA_DEFAULT_SERIALIZER;
 
     private String keySerializerClass = KafkaConstants.KAFKA_DEFAULT_SERIALIZER;
+    
+    private String isolationLevel;
 
     private String acks = "1";
 
@@ -165,6 +167,7 @@ public class KafkaConfiguration {
         addPropertyIfNotNull(props, ConsumerConfig.RECONNECT_BACKOFF_MS_CONFIG, getReconnectBackoffMs());
         addPropertyIfNotNull(props, ConsumerConfig.RETRY_BACKOFF_MS_CONFIG, getRetryBackoffMs());
         addPropertyIfNotNull(props, ConsumerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG, getReconnectBackoffMaxMs());
+        addPropertyIfNotNull(props, ConsumerConfig.ISOLATION_LEVEL_CONFIG, getIsolationLevel());
 
         return props;
     }
@@ -173,7 +176,6 @@ public class KafkaConfiguration {
         var props = new Properties();
 
         addPropertyIfNotNull(props, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getBrokers());
-        addPropertyIfNotNull(props, ConsumerConfig.GROUP_ID_CONFIG, getGroupId());
         addPropertyIfNotNull(props, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, getKeySerializerClass());
         addPropertyIfNotNull(props, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, getSerializerClass());
         addPropertyIfNotNull(props, ProducerConfig.ACKS_CONFIG, getAcks());
