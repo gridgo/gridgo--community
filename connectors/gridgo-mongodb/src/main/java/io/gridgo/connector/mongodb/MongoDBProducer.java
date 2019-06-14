@@ -108,14 +108,16 @@ public class MongoDBProducer extends AbstractProducer {
 
     public void deleteDocument(Message msg, Deferred<Message, Exception> deferred, boolean isRPC) {
         var filter = getHeaderAs(msg, MongoDBConstants.FILTER, Bson.class);
-        collection.deleteOne(filter,
-                (result, throwable) -> ack(deferred, isRPC ? result.getDeletedCount() : null, throwable));
+        collection.deleteOne(filter, (result, throwable) -> {
+            ack(deferred, result != null && isRPC ? result.getDeletedCount() : null, throwable);
+        });
     }
 
     public void deleteManyDocuments(Message msg, Deferred<Message, Exception> deferred, boolean isRPC) {
         var filter = getHeaderAs(msg, MongoDBConstants.FILTER, Bson.class);
-        collection.deleteMany(filter,
-                (result, throwable) -> ack(deferred, isRPC ? result.getDeletedCount() : null, throwable));
+        collection.deleteMany(filter, (result, throwable) -> {
+            ack(deferred, result != null && isRPC ? result.getDeletedCount() : null, throwable);
+        });
     }
 
     public void findAllDocuments(Message msg, Deferred<Message, Exception> deferred, boolean isRPC) {
