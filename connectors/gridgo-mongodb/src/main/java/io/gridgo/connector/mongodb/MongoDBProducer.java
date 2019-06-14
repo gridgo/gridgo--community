@@ -21,6 +21,7 @@ import com.mongodb.client.model.CountOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.InsertManyOptions;
 import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.UpdateOptions;
 
 import io.gridgo.bean.BArray;
 import io.gridgo.bean.BElement;
@@ -64,6 +65,7 @@ public class MongoDBProducer extends AbstractProducer {
         bind(MongoDBConstants.OPERATION_FIND_ALL, this::findAllDocuments);
         bind(MongoDBConstants.OPERATION_FIND_BY_ID, this::findById);
         bind(MongoDBConstants.OPERATION_UPDATE_ONE, this::updateDocument);
+        bind(MongoDBConstants.OPERATION_UPSERT, this::upsertDocument);
         bind(MongoDBConstants.OPERATION_UPDATE_MANY, this::updateManyDocuments);
         bind(MongoDBConstants.OPERATION_DELETE_ONE, this::deleteDocument);
         bind(MongoDBConstants.OPERATION_DELETE_MANY, this::deleteManyDocuments);
@@ -203,6 +205,14 @@ public class MongoDBProducer extends AbstractProducer {
 
         var doc = convertToDocument(msg.body());
         collection.updateOne(filter, doc,
+                (result, throwable) -> ack(deferred, isRPC ? result.getModifiedCount() : null, throwable));
+    }
+
+    public void upsertDocument(Message msg, Deferred<Message, Exception> deferred, boolean isRPC) {
+        var filter = getHeaderAs(msg, MongoDBConstants.FILTER, Bson.class);
+
+        var doc = convertToDocument(msg.body());
+        collection.updateOne(filter, doc, new UpdateOptions().upsert(true), //
                 (result, throwable) -> ack(deferred, isRPC ? result.getModifiedCount() : null, throwable));
     }
 

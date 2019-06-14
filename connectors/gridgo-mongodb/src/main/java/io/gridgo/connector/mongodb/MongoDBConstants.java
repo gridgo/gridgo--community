@@ -14,6 +14,8 @@ public class MongoDBConstants {
 
     public static final String OPERATION_UPDATE_ONE = "Mongo_OperationUpdateOne";
 
+    public static final String OPERATION_UPSERT = "Mongo_OperationUpsert";
+
     public static final String OPERATION_UPDATE_MANY = "Mongo_OperationUpdateMany";
 
     public static final String OPERATION_DELETE_ONE = "Mongo_OperationDeleteOne";
