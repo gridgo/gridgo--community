@@ -204,8 +204,8 @@ public class MongoDBProducer extends AbstractProducer {
         var filter = getHeaderAs(msg, MongoDBConstants.FILTER, Bson.class);
 
         var doc = convertToDocument(msg.body());
-        collection.updateOne(filter, doc,
-                (result, throwable) -> ack(deferred, isRPC ? result.getModifiedCount() : null, throwable));
+        collection.updateOne(filter, doc, (result, throwable) -> ack(deferred,
+                result != null && isRPC ? result.getModifiedCount() : null, throwable));
     }
 
     public void upsertDocument(Message msg, Deferred<Message, Exception> deferred, boolean isRPC) {
@@ -213,15 +213,18 @@ public class MongoDBProducer extends AbstractProducer {
 
         var doc = convertToDocument(msg.body());
         collection.updateOne(filter, doc, new UpdateOptions().upsert(true), //
-                (result, throwable) -> ack(deferred, isRPC ? result.getModifiedCount() : null, throwable));
+                (result, throwable) -> {
+                    ack(deferred, result != null && isRPC ? result.getModifiedCount() : null, throwable);
+                });
     }
 
     public void updateManyDocuments(Message msg, Deferred<Message, Exception> deferred, boolean isRPC) {
         var filter = getHeaderAs(msg, MongoDBConstants.FILTER, Bson.class);
 
         var doc = convertToDocument(msg.body());
-        collection.updateMany(filter, doc,
-                (result, throwable) -> ack(deferred, isRPC ? result.getModifiedCount() : null, throwable));
+        collection.updateMany(filter, doc, (result, throwable) -> {
+            ack(deferred, result != null && isRPC ? result.getModifiedCount() : null, throwable);
+        });
     }
 
     private <T> T getHeaderAs(Message msg, String name, Class<T> clazz) {
