@@ -79,7 +79,7 @@ public class RocksDBProducer extends AbstractKeyValueProducer {
         var key = body.getRaw();
         var bytes = db.get(key);
         if (bytes == null)
-            ack(deferred);
+            ack(deferred, Message.ofEmpty());
         else
             ack(deferred, Message.ofAny(BElement.ofBytes(bytes)));
     }
