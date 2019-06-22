@@ -7,7 +7,7 @@ import org.rocksdb.RocksDB;
 import io.gridgo.connector.impl.AbstractConnector;
 import io.gridgo.connector.support.annotations.ConnectorEndpoint;
 
-@ConnectorEndpoint(scheme = "rocksdb", syntax = "//{path}")
+@ConnectorEndpoint(scheme = "rocksdb", syntax = "//{path}", category = "keyvalue")
 public class RocksDBConnector extends AbstractConnector {
 
     static {
