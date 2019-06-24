@@ -44,11 +44,16 @@ public class JettyHttpServer extends NonameComponentLifecycle {
         this.http2Enabled = http2Enabled;
     }
 
-    public JettyHttpServer addPathHandler(@NonNull String path, @NonNull BiConsumer<HttpServletRequest, HttpServletResponse> handler) {
-        ServletHolder servletHolder = new ServletHolder(new DelegateServlet(handler));
+    public JettyHttpServer addPathHandler(@NonNull String path, @NonNull BiConsumer<HttpServletRequest, HttpServletResponse> handler,
+            BiConsumer<Throwable, HttpServletResponse> failureFallback) {
+        ServletHolder servletHolder = new ServletHolder(new DelegateServlet(handler, failureFallback));
         servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(path));
         this.handler.addServlet(servletHolder, path);
         return this;
+    }
+
+    public JettyHttpServer addPathHandler(@NonNull String path, @NonNull BiConsumer<HttpServletRequest, HttpServletResponse> handler) {
+        return this.addPathHandler(path, handler, null);
     }
 
     private ServletContextHandler createServletContextHandler() {
