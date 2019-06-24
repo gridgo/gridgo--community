@@ -18,8 +18,11 @@ class DelegateServlet extends GenericServlet {
 
     private final transient BiConsumer<HttpServletRequest, HttpServletResponse> handler;
 
-    DelegateServlet(@NonNull BiConsumer<HttpServletRequest, HttpServletResponse> handler) {
+    private final BiConsumer<Throwable, HttpServletResponse> failureFallback;
+
+    DelegateServlet(@NonNull BiConsumer<HttpServletRequest, HttpServletResponse> handler, BiConsumer<Throwable, HttpServletResponse> failureFallback) {
         this.handler = handler;
+        this.failureFallback = failureFallback;
     }
 
     @Override
@@ -34,7 +37,15 @@ class DelegateServlet extends GenericServlet {
         request = (HttpServletRequest) req;
         response = (HttpServletResponse) res;
 
-        this.handler.accept(request, response);
+        try {
+            this.handler.accept(request, response);
+        } catch (Exception ex) {
+            if (this.failureFallback == null) {
+                throw ex;
+            } else {
+                this.failureFallback.accept(ex, response);
+            }
+        }
     }
 
 }

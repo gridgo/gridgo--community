@@ -32,6 +32,7 @@ import io.gridgo.connector.jetty.JettyConsumer;
 import io.gridgo.connector.jetty.JettyResponder;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.connector.support.config.impl.DefaultConnectorContextBuilder;
+import io.gridgo.connector.support.exceptions.FailureHandlerAware;
 import io.gridgo.framework.execution.impl.ExecutorExecutionStrategy;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
@@ -132,6 +133,38 @@ public class TestJettyConnector {
 
             assertTrue(respObj.asObject().containsKey("body"));
             assertEquals(TEST_TEXT, respObj.asObject().getString("body"));
+        } finally {
+            connector.stop();
+        }
+    }
+
+    @Test
+    public void testFailureHandler() throws Exception {
+        String path = "test-path";
+        String endpoint = baseServerEndpoint + "/" + path;
+        Connector connector = createConnector(endpoint);
+        connector.start();
+
+        try {
+            Consumer consumer = connector.getConsumer().get();
+            // Producer producer = connector.getProducer().get();
+
+            final String errorMsg = "just a test exception";
+            final String responseErrorMsgHeader = "Internal server error: ";
+            consumer.subscribe((msg) -> {
+                throw new RuntimeException(errorMsg);
+            });
+
+            ((FailureHandlerAware<?>) consumer).setFailureHandler(exception -> {
+                return Message.ofAny(responseErrorMsgHeader + exception.getMessage());
+            });
+
+            URI uri = new URI(HTTP_LOCALHOST_8888 + "/" + path);
+            HttpRequest request = HttpRequest.newBuilder().POST(BodyPublishers.ofString(TEST_TEXT)).uri(uri).build();
+            HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+
+            BElement respObj = BElement.ofJson(response.body());
+            assertEquals(responseErrorMsgHeader + errorMsg, respObj.asValue().getString());
         } finally {
             connector.stop();
         }

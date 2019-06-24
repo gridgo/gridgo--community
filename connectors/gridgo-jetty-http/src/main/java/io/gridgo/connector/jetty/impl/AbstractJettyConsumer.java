@@ -79,22 +79,23 @@ public class AbstractJettyConsumer extends AbstractHasResponderConsumer implemen
         try {
             // parse http servlet request to message object
             requestMessage = this.requestParser.parse(request, this.options);
-        } catch (Exception e) {
-            getLogger().error("error while parsing http request", e);
-            Message responseMessage = this.failureHandler != null ? this.failureHandler.apply(e) : this.getJettyResponder().generateFailureMessage(e);
-            ((JettyResponder) this.getResponder()).writeResponse(response, responseMessage);
-        }
-
-        if (requestMessage != null) {
             var deferredAndRoutingId = getJettyResponder().registerRequest(request);
             this.publish(requestMessage.setRoutingIdFromAny(deferredAndRoutingId.getRoutingId()), deferredAndRoutingId.getDeferred());
+        } catch (Exception e) {
+            getLogger().error("error while handling http request", e);
+            onUncaughtException(e, response);
         }
+    }
+
+    private void onUncaughtException(Throwable e, HttpServletResponse response) {
+        Message responseMessage = this.failureHandler != null ? this.failureHandler.apply(e) : this.getJettyResponder().generateFailureMessage(e);
+        ((JettyResponder) this.getResponder()).writeResponse(response, responseMessage);
     }
 
     @Override
     protected void onStart() {
         this.httpServer.start();
-        this.httpServer.addPathHandler(this.path, this::onHttpRequest);
+        this.httpServer.addPathHandler(this.path, this::onHttpRequest, this::onUncaughtException);
     }
 
     @Override
