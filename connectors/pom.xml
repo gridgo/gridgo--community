@@ -1,0 +1,42 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>io.gridgo</groupId>
+		<artifactId>gridgo-community</artifactId>
+		<version>0.6.1</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>gridgo-connector-base</artifactId>
+
+	<modules>
+		<module>gridgo-jdbc</module>
+		<module>gridgo-socket</module>
+		<module>gridgo-socket-nanomsg</module>
+		<module>gridgo-socket-zmq</module>
+		<module>gridgo-netty4</module>
+		<module>gridgo-kafka</module>
+		<module>gridgo-rabbitmq</module>
+		<module>gridgo-vertx-http</module>
+		<module>gridgo-keyvalue-common</module>
+		<module>gridgo-rocksdb</module>
+		<module>gridgo-mongodb</module>
+		<module>gridgo-http-common</module>
+		<module>gridgo-jetty-http</module>
+		<module>gridgo-http</module>
+		<module>gridgo-http-jdk</module>
+		<module>gridgo-file</module>
+		<module>gridgo-redis</module>
+		<module>gridgo-scheduler</module>
+	</modules>
+
+	<dependencies>
+		<dependency>
+			<groupId>io.gridgo</groupId>
+			<artifactId>gridgo-connector-core</artifactId>
+			<version>${gridgo.version}</version>
+		</dependency>
+	</dependencies>
+</project>
