@@ -3,7 +3,6 @@
 
 	<packaging>pom</packaging>
 	<artifactId>gridgo-community</artifactId>
-	<version>0.6.2-SNAPSHOT</version>
 
 	<parent>
 		<groupId>io.gridgo</groupId>
