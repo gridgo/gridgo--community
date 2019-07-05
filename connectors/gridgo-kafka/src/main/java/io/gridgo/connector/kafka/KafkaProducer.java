@@ -154,8 +154,13 @@ public class KafkaProducer extends AbstractProducer
     }
 
     private ArrayList<Promise<Message, Exception>> sendAllTopics(Message message, boolean ack) {
+        var theTopics = topics;
         var promises = new ArrayList<Promise<Message, Exception>>();
-        for (var topic : topics) {
+        var customTopic = message.headers().getString(KafkaConstants.CUSTOM_TOPIC, null);
+        if (customTopic != null) {
+            theTopics = new String[] { customTopic };
+        }
+        for (var topic : theTopics) {
             if (!ack) {
                 sendSingle(message, topic, null);
             } else {
