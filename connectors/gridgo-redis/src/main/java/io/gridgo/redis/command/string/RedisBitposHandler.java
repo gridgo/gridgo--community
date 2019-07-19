@@ -18,6 +18,9 @@ public class RedisBitposHandler extends AbstractRedisCommandHandler {
 
     @Override
     protected Promise<BElement, Exception> process(RedisClient redis, BObject options, BElement[] params) {
+        if (params.length < 4) {
+            return redis.bitpos(params[0].asValue().getRaw(), params[1].asValue().getBoolean());
+        }
         return redis.bitpos(params[0].asValue().getRaw(), params[1].asValue().getBoolean(), params[2].asValue().getLong(), params[3].asValue().getLong());
     }
 }
