@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 import io.gridgo.socket.helper.Endpoint;
 import io.gridgo.utils.helper.Assert;
 
-public interface Socket extends Configurable {
+public interface Socket extends Configurable, Bindable {
 
     default void applyConfig(Map<String, Object> options) {
         Assert.notNull(options, "Options");
@@ -17,8 +17,6 @@ public interface Socket extends Configurable {
     }
 
     void applyConfig(String name, Object value);
-
-    void bind(String address);
 
     void close();
 
