@@ -15,12 +15,13 @@
 		<module>gridgo-bean-avro</module>
 		<module>gridgo-bean-protobuf</module>
 		<module>gridgo-bean-gson</module>
+		<module>gridgo-bean-dsl-json</module>
 	</modules>
 
 	<dependencies>
 		<dependency>
 			<groupId>io.gridgo</groupId>
-			<artifactId>gridgo-core</artifactId>
+			<artifactId>gridgo-utils</artifactId>
 			<version>${gridgo.version}</version>
 		</dependency>
 	</dependencies>
