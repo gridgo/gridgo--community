@@ -46,7 +46,7 @@ public class JdbcConnector extends AbstractConnector {
         if (password == null) {
             var passwordKey = getParam("passwordKey");
             if (passwordKey != null)
-                password = getContext().getRegistry().lookup(passwordKey, null);
+                password = getContext().getRegistry().lookup(passwordKey, String.class);
         }
         return password;
     }
