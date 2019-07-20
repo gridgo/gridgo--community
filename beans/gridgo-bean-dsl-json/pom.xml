@@ -4,28 +4,26 @@
 
 	<parent>
 		<groupId>io.gridgo</groupId>
-		<artifactId>gridgo-connector-base</artifactId>
+		<artifactId>gridgo-community-beans</artifactId>
 		<version>0.7.0-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>gridgo-redis</artifactId>
+	<artifactId>gridgo-bean-dsl-json</artifactId>
 
 	<properties>
-		<common.text.version>1.7</common.text.version>
+		<dsl.json.version>1.9.3</dsl.json.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
-			<groupId>io.lettuce</groupId>
-			<artifactId>lettuce-core</artifactId>
-			<version>5.1.3.RELEASE</version>
+			<groupId>io.gridgo</groupId>
+			<artifactId>gridgo-bean</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-text</artifactId>
-			<version>${common.text.version}</version>
-			<scope>test</scope>
+			<groupId>com.dslplatform</groupId>
+			<artifactId>dsl-json-java8</artifactId>
+			<version>${dsl.json.version}</version>
 		</dependency>
 	</dependencies>
 </project>

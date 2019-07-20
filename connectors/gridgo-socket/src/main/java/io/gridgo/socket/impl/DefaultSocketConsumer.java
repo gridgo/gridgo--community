@@ -37,7 +37,11 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
     private boolean autoSkipTopicHeader = false;
 
-    public DefaultSocketConsumer(ConnectorContext context, SocketFactory factory, SocketOptions options, String address, int bufferSize) {
+    @Getter
+    private Integer bindingPort;
+
+    public DefaultSocketConsumer(ConnectorContext context, SocketFactory factory, SocketOptions options, String address,
+            int bufferSize) {
         super(context);
         this.factory = factory;
         this.options = options;
@@ -52,12 +56,12 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
     private String getUniqueIdentifier() {
         return new StringBuilder() //
-                                  .append(this.factory.getType()) //
-                                  .append(".") //
-                                  .append(this.options.getType()) //
-                                  .append(".") //
-                                  .append(this.address) //
-                                  .toString();
+                .append(this.factory.getType()) //
+                .append(".") //
+                .append(this.options.getType()) //
+                .append(".") //
+                .append(this.address) //
+                .toString();
     }
 
     private Socket initSocket() {
@@ -69,6 +73,7 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
         switch (options.getType().toLowerCase()) {
         case "pull":
             socket.bind(address);
+            this.bindingPort = socket.getBindingPort();
             break;
         case "sub":
             socket.connect(address);
@@ -78,12 +83,15 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
             break;
         case "pair":
             socket.bind(address);
+            this.bindingPort = socket.getBindingPort();
             int maxBatchSize = 0;
             boolean batchingEnabled = Boolean.parseBoolean((String) this.options.getConfig().get("batchingEnabled"));
             if (batchingEnabled) {
-                maxBatchSize = Integer.valueOf((String) this.options.getConfig().getOrDefault("maxBatchingSize", SocketConnector.DEFAULT_MAX_BATCH_SIZE));
+                maxBatchSize = Integer.valueOf((String) this.options.getConfig().getOrDefault("maxBatchingSize",
+                        SocketConnector.DEFAULT_MAX_BATCH_SIZE));
             }
-            this.setResponder(new DefaultSocketResponder(getContext(), socket, bufferSize, 1024, batchingEnabled, maxBatchSize, this.getUniqueIdentifier()));
+            this.setResponder(new DefaultSocketResponder(getContext(), socket, bufferSize, 1024, batchingEnabled,
+                    maxBatchSize, this.getUniqueIdentifier()));
             break;
         default:
         }
@@ -129,6 +137,7 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
                 throw new RuntimeException("error while waiting for stopped", e);
             }
         }
+        this.bindingPort = null;
     }
 
     private void poll(Socket socket, Consumer<CountDownLatch> stopDoneTriggerOutput) {
