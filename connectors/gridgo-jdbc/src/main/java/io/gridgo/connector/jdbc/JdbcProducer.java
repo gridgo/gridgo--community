@@ -13,9 +13,11 @@ import io.gridgo.connector.jdbc.support.Helper;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.framework.execution.impl.ExecutorExecutionStrategy;
 import io.gridgo.framework.support.Message;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Getter
 class JdbcProducer extends JdbcClient {
 
     private static final ExecutorExecutionStrategy DEFAULT_STRATEGY = new ExecutorExecutionStrategy(8);

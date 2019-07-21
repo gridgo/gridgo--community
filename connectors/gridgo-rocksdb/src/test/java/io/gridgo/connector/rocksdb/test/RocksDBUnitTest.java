@@ -22,7 +22,8 @@ public class RocksDBUnitTest {
     public void testReads() throws InterruptedException {
         var connector = new DefaultConnectorFactory().createConnector("rocksdb://testreads.bin");
         var producer = connector.getProducer().get();
-        connector.start();
+        connector.start(
+                );
 
         var writeLatch = new CountDownLatch(NUM_MESSAGES);
         for (var i = 0; i < NUM_MESSAGES; i++) {

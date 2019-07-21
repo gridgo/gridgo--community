@@ -5,9 +5,11 @@ import java.util.HashSet;
 import java.util.Optional;
 
 import org.jdbi.v3.core.ConnectionFactory;
+import org.jdbi.v3.core.Jdbi;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+import io.gridgo.connector.DataSourceProvider;
 import io.gridgo.connector.impl.AbstractConnector;
 import io.gridgo.connector.support.annotations.ConnectorEndpoint;
 import io.gridgo.framework.support.exceptions.BeanNotFoundException;
@@ -15,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ConnectorEndpoint(scheme = "jdbc", syntax = "jdbcUri", raw = true, category = "jdbc")
-public class JdbcConnector extends AbstractConnector {
+public class JdbcConnector extends AbstractConnector implements DataSourceProvider<Jdbi> {
 
     private HikariDataSource connectionPool;
 
@@ -74,5 +76,10 @@ public class JdbcConnector extends AbstractConnector {
         super.onStop();
         if (this.connectionPool != null)
             this.connectionPool.close();
+    }
+
+    @Override
+    public Optional<Jdbi> getDataSource() {
+        return this.producer.map(p -> ((JdbcProducer) p).getJdbiClient());
     }
 }
