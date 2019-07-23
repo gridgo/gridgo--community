@@ -9,7 +9,7 @@ import com.dslplatform.json.DslJson;
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.serialization.BSerializationPlugin;
 import io.gridgo.bean.serialization.BSerializer;
-import io.gridgo.bean.serialization.text.JsonSerializer;
+import io.gridgo.bean.serialization.builtin.JsonSerializer;
 import io.gridgo.utils.exception.RuntimeIOException;
 
 @BSerializationPlugin("dsljson")
