@@ -14,7 +14,8 @@ import io.gridgo.bean.serialization.BSerializationPlugin;
 import lombok.NonNull;
 
 @BSerializationPlugin(AvroMultiSchemaSerializer.NAME)
-public class AvroMultiSchemaSerializer extends AbstractMultiSchemaSerializer<SpecificRecord> implements AvroSchemaSerializer {
+public class AvroMultiSchemaSerializer extends AbstractMultiSchemaSerializer<SpecificRecord>
+        implements AvroSchemaSerializer {
 
     public static final String NAME = "avroMultiSchema";
 
