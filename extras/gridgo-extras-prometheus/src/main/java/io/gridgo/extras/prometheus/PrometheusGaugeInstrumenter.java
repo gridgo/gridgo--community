@@ -1,6 +1,9 @@
 package io.gridgo.extras.prometheus;
 
+import java.util.function.Function;
+
 import org.joo.promise4j.Deferred;
+import org.joo.promise4j.Promise;
 
 import io.gridgo.framework.execution.ExecutionStrategyInstrumenter;
 import io.gridgo.framework.support.Message;
@@ -29,4 +32,13 @@ public class PrometheusGaugeInstrumenter implements ExecutionStrategyInstrumente
                     .always((s, r, e) -> gauge.dec());
         };
     }
+
+    @Override
+    public Promise<Message, Exception> instrument(Message msg,
+            Function<Message, Promise<Message, Exception>> supplier) {
+        gauge.inc();
+        return supplier.apply(msg) //
+                       .always((s, r, e) -> gauge.dec());
+    }
+
 }
