@@ -1,9 +1,6 @@
 package io.gridgo.extras.prometheus;
 
-import java.util.function.Function;
-
 import org.joo.promise4j.Deferred;
-import org.joo.promise4j.Promise;
 
 import io.gridgo.framework.execution.ExecutionStrategyInstrumenter;
 import io.gridgo.framework.support.Message;
@@ -29,12 +26,5 @@ public class PrometheusCounterInstrumenter implements ExecutionStrategyInstrumen
             counter.inc();
             runnable.run();
         };
-    }
-
-    @Override
-    public Promise<Message, Exception> instrument(Message msg, Function<Message, Promise<Message, Exception>> supplier,
-            String source) {
-        counter.inc();
-        return supplier.apply(msg);
     }
 }
