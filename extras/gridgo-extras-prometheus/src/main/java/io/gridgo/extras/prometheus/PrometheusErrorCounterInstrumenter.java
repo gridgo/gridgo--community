@@ -33,8 +33,8 @@ public class PrometheusErrorCounterInstrumenter implements ExecutionStrategyInst
     }
 
     @Override
-    public Promise<Message, Exception> instrument(Message msg,
-            Function<Message, Promise<Message, Exception>> supplier) {
+    public Promise<Message, Exception> instrument(Message msg, Function<Message, Promise<Message, Exception>> supplier,
+            String source) {
         return supplier.apply(msg).fail(e -> counter.inc());
     }
 }

@@ -34,8 +34,8 @@ public class PrometheusSummaryTimeInstrumenter implements ExecutionStrategyInstr
     }
 
     @Override
-    public Promise<Message, Exception> instrument(Message msg,
-            Function<Message, Promise<Message, Exception>> supplier) {
+    public Promise<Message, Exception> instrument(Message msg, Function<Message, Promise<Message, Exception>> supplier,
+            String source) {
         var timer = summary.startTimer();
         return supplier.apply(msg) //
                        .always((s, r, e) -> timer.close());

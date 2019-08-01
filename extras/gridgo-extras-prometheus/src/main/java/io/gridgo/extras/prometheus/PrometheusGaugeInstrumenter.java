@@ -35,7 +35,7 @@ public class PrometheusGaugeInstrumenter implements ExecutionStrategyInstrumente
 
     @Override
     public Promise<Message, Exception> instrument(Message msg,
-            Function<Message, Promise<Message, Exception>> supplier) {
+            Function<Message, Promise<Message, Exception>> supplier, String source) {
         gauge.inc();
         return supplier.apply(msg) //
                        .always((s, r, e) -> gauge.dec());
