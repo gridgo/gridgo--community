@@ -33,20 +33,14 @@ scheduler:name[?options]
 |===
 
 | Name | Description  | Default | Type
-| *format* (common) | Format of the messages to be used | raw | Enum (raw, json, xml, string)
-| *lengthPrepend* (common) | If set to true, the length of the messages will be prepended before the message is journalled | true | Boolean
-| *producerOnly* (common) | If set to true, only producer will be created | false | Boolean
-| *bufferSize* (common) | Buffer size to be used when serializing/deserializing messages | 1024 * 1024 | Integer
-| *mode* (producer) | The open mode to be used when writing files | rw | Enum (rw, rwd, rws)
-| *override* (producer) | If set to true, the files will be overwritten, otherwise it will be appended | false | Boolean
-| *deleteOnStartup* (producer) | If set to true, the files will be deleted when connector starts | false | Boolean
-| *deleteOnShutdown* (producer) | If set to true, the files will be deleted when connector stops | false | Boolean
-| *limitSize* (producer) | The size limit of the files before limit strategy takes effect | -1 | Integer
-| *rotationCount* (producer) | The maximum number of rolling files | 10 | Integer
-| *limitStrategy* (common) | The limit strategy | null (no limit) | Enum (rotate, autoincrement)
-| *batchingEnabled* (common) | Whether or not batching is enabled. Only works with Disruptor engine | false | Boolean
-| *ringBufferSize* (common) | The size of the ring buffer to be used. Only works with Disruptor engine | false | Boolean
-| *maxBatchSize* (common) | The maximum size of the batch. Only works with Disruptor engine | false | Boolean
+| *threads* | Number of threads to schedule | 1 | Integer
+| *delay* | The initial delay in milliseconds | 1000 | Long
+| *period* | The interval in milliseconds | 1000 | Long
+| *mode* | The mode to run. If set to null then it will only execute once | null | Enum ("fixedRate", "fixedDelay", null)
+| *generator* | The bean name of the message generator to be used | null | MessageGenerator
+| *errorThreshold* | The maximum consecutive errors before backoff is triggered. A value of -1 means no limit | -1 | Integer
+| *idleThreshold* | The maximum consecutive idle (i.e no consumer) before backoff is triggered. A value of -1 means no limit | -1 | Integer
+| *backoffMultiplier* | The number of intervals to backoff before recover. Must be greater than zero if either of errorThreshold or idleThreshold is set | -1 | Integer
 
 |===
 // connector options: END
@@ -55,6 +49,6 @@ scheduler:name[?options]
 
 // headers: START
 
-There is no supported headers for File connector.
+There is no supported headers for Scheduler connector.
 
 // headers: END
