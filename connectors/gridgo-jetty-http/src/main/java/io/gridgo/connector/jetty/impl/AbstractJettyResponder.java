@@ -59,7 +59,8 @@ public class AbstractJettyResponder extends AbstractTraceableResponder implement
     private final boolean mmapEnabled;
     private final String format;
 
-    protected AbstractJettyResponder(ConnectorContext context, boolean mmapEnabled, String format, @NonNull String uniqueIdentifier) {
+    protected AbstractJettyResponder(ConnectorContext context, boolean mmapEnabled, String format,
+            @NonNull String uniqueIdentifier) {
         super(context);
         this.format = format;
         this.uniqueIdentifier = uniqueIdentifier;
@@ -156,7 +157,8 @@ public class AbstractJettyResponder extends AbstractTraceableResponder implement
         super.resolveTraceable(message, deferredAck);
     }
 
-    private void sendResponse(HttpServletResponse response, BObject headers, BElement body, HttpContentType contentType) {
+    private void sendResponse(HttpServletResponse response, BObject headers, BElement body,
+            HttpContentType contentType) {
         if (contentType != HttpContentType.MULTIPART_FORM_DATA || body == null) {
             this.writeHeaders(headers, response);
         }
@@ -285,7 +287,8 @@ public class AbstractJettyResponder extends AbstractTraceableResponder implement
         }
     }
 
-    protected void writeBodyMultipart(@NonNull BElement body, @NonNull HttpServletResponse response, @NonNull Consumer<String> contentTypeConsumer) {
+    protected void writeBodyMultipart(@NonNull BElement body, @NonNull HttpServletResponse response,
+            @NonNull Consumer<String> contentTypeConsumer) {
         var builder = MultipartEntityBuilder.create();
         if (body instanceof BObject) {
             for (var entry : body.asObject().entrySet()) {
@@ -342,7 +345,8 @@ public class AbstractJettyResponder extends AbstractTraceableResponder implement
     protected void writeBodyTextPlain(BElement body, HttpServletResponse response) {
         if (body instanceof BReference) {
             writeBodyBinary(body, response, //
-                    contentLength -> response.addHeader(HttpCommonConstants.CONTENT_LENGTH, String.valueOf(contentLength)));
+                    contentLength -> response.addHeader(HttpCommonConstants.CONTENT_LENGTH,
+                            String.valueOf(contentLength)));
         } else {
             if (body.isValue()) {
                 if (body.getType() == BType.RAW) {
@@ -364,11 +368,10 @@ public class AbstractJettyResponder extends AbstractTraceableResponder implement
 
     protected void writeHeaders(@NonNull BObject headers, @NonNull HttpServletResponse response) {
         for (var entry : headers.entrySet()) {
-            if (entry.getValue().isValue() && !entry.getValue().asValue().isNull()) {
-                var stdHeaderName = lookUpResponseHeader(entry.getKey());
-                if (stdHeaderName != null) {
-                    response.addHeader(stdHeaderName, entry.getValue().asValue().getString());
-                }
+            BValue value;
+            var entryValue = entry.getValue();
+            if (entryValue.isValue() && !(value = entryValue.asValue()).isNull()) {
+                response.addHeader(entry.getKey(), value.getString());
             }
         }
     }
