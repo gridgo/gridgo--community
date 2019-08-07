@@ -16,7 +16,8 @@ import io.gridgo.utils.ThreadUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-public class DefaultSocketReceiver extends AbstractConsumer implements Receiver, FailureHandlerAware<DefaultSocketReceiver> {
+public class DefaultSocketReceiver extends AbstractConsumer
+        implements Receiver, FailureHandlerAware<DefaultSocketReceiver> {
 
     @Getter
     private long totalRecvBytes;
@@ -67,9 +68,7 @@ public class DefaultSocketReceiver extends AbstractConsumer implements Receiver,
 
         ThreadUtils.sleep(100);
 
-        ThreadUtils.busySpin(10, () -> {
-            return doneSignalRef.get() == null;
-        });
+        ThreadUtils.busySpin(() -> doneSignalRef.get() == null);
 
         this.stopDoneTrigger = doneSignalRef.get();
     }
