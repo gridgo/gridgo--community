@@ -20,6 +20,7 @@ import io.gridgo.bean.BObject;
 import io.gridgo.bean.BValue;
 import io.gridgo.bean.exceptions.BeanSerializationException;
 import io.gridgo.bean.serialization.AbstractBSerializer;
+import io.gridgo.bean.serialization.BDeserializationConfig;
 import io.gridgo.bean.serialization.BSerializationPlugin;
 import io.gridgo.utils.ByteArrayUtils;
 import io.gridgo.utils.exception.RuntimeIOException;
@@ -131,7 +132,7 @@ public class GsonSerialzier extends AbstractBSerializer {
     }
 
     @Override
-    public BElement deserialize(InputStream in) {
+    public BElement deserialize(InputStream in, BDeserializationConfig config) {
         JsonElement element = new JsonParser().parse(new InputStreamReader(in));
         return readAny(element);
     }
