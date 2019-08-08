@@ -7,11 +7,11 @@ import java.io.OutputStream;
 import com.dslplatform.json.DslJson;
 
 import io.gridgo.bean.BElement;
-import io.gridgo.bean.serialization.BDeserializationConfig;
 import io.gridgo.bean.serialization.BSerializationPlugin;
 import io.gridgo.bean.serialization.BSerializer;
 import io.gridgo.bean.serialization.text.JsonSerializer;
 import io.gridgo.utils.exception.RuntimeIOException;
+import lombok.NonNull;
 
 @BSerializationPlugin("dsljson")
 public class DslJsonSerializer implements BSerializer {
@@ -34,7 +34,7 @@ public class DslJsonSerializer implements BSerializer {
     }
 
     @Override
-    public BElement deserialize(InputStream in, BDeserializationConfig config) {
+    public BElement deserialize(@NonNull InputStream in) {
         return fallback.deserialize(in);
     }
 }
