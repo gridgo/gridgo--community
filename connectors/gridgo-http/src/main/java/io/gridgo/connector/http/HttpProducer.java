@@ -5,7 +5,10 @@ import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS_C
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.asynchttpclient.AsyncCompletionHandler;
@@ -22,6 +25,7 @@ import org.asynchttpclient.Response;
 import org.joo.promise4j.Promise;
 import org.joo.promise4j.impl.CompletableDeferredObject;
 
+import io.gridgo.bean.BArray;
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.connector.httpcommon.AbstractHttpProducer;
@@ -30,7 +34,6 @@ import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.framework.support.Message;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.resolver.NameResolver;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -59,7 +62,7 @@ public class HttpProducer extends AbstractHttpProducer {
 
     private Message buildMessage(Response response) {
         var headers = buildHeaders(response.getHeaders()).setAny(HEADER_STATUS, response.getStatusText())
-                .setAny(HEADER_STATUS_CODE, response.getStatusCode());
+                                                         .setAny(HEADER_STATUS_CODE, response.getStatusCode());
         var body = deserialize(response.getResponseBodyAsBytes());
         return createMessage(headers, body);
     }
@@ -77,9 +80,9 @@ public class HttpProducer extends AbstractHttpProducer {
 
     private List<Param> buildParams(BObject object) {
         return object.entrySet().stream() //
-                .filter(e -> e.getValue().isValue()) //
-                .map(e -> new Param(e.getKey(), e.getValue().asValue().getString())) //
-                .collect(Collectors.toList());
+                     .filter(e -> e.getValue().isValue()) //
+                     .map(e -> new Param(e.getKey(), e.getValue().asValue().getString())) //
+                     .collect(Collectors.toList());
     }
 
     private Request buildRequest(Message message) {
@@ -110,50 +113,43 @@ public class HttpProducer extends AbstractHttpProducer {
         return deferred.promise();
     }
 
-    private void populateHeaders(@NonNull RequestBuilder builder, BObject headers, String parentKey) {
-        if (headers == null)
-            return;
-        
-        headers.forEach((key, value) -> {
-            if (value == null)
-                return;
-
-            key = parentKey == null ? key : (parentKey + "." + key);
-
-            if (value.isArray()) {
-                builder.addHeader(key, value.asArray().toList());
-            }
-            if (value.isValue()) {
-                builder.addHeader(key, value.asValue().getData());
-            }
-            if (value.isObject()) {
-                populateHeaders(builder, headers, key);
-            }
-        });
-    }
-
     private RequestBuilder createBuilder(Message message) {
         if (message == null)
             return new RequestBuilder().setUrl(endpointUri);
         var method = getMethod(message, defaultMethod);
+        var headers = getHeaders(message);
         var params = buildParams(getQueryParams(message));
+        var body = serialize(message.body());
+        return new RequestBuilder(method).setUrl(endpointUri) //
+                                         .setBody(body) //
+                                         .setHeaders(headers) //
+                                         .setQueryParams(params);
 
-        BElement body = message.getPayload().getBody();
-        RequestBuilder builder = new RequestBuilder(method) //
-                .setUrl(endpointUri) //
-                .setQueryParams(params);
+    }
 
-        if (body != null) {
-            if (body.isValue()) {
-                builder.setBody(body.asValue().getString());
+    private Map<CharSequence, List<String>> getHeaders(Message message) {
+        var headers = message.headers();
+        var map = new HashMap<CharSequence, List<String>>();
+        for (var entry : headers.entrySet()) {
+            var list = map.computeIfAbsent(entry.getKey(), key -> new ArrayList<>());
+            if (entry.getValue().isArray()) {
+                putMultiHeaders(list, entry.getValue().asArray());
             } else {
-                builder.setBody(serialize(body));
+                putHeader(list, entry.getValue());
             }
         }
+        return map;
+    }
 
-        populateHeaders(builder, message.getPayload().getHeaders(), null);
-        return builder;
+    private void putMultiHeaders(List<String> list, BArray arr) {
+        for (var e : arr) {
+            putHeader(list, e);
+        }
+    }
 
+    private void putHeader(List<String> list, BElement e) {
+        if (e.isValue())
+            list.add(e.asValue().getString());
     }
 
     @Override
