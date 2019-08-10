@@ -1,4 +1,4 @@
-package io.gridgo.rpc.fixed;
+package io.gridgo.rpc.dynamic;
 
 import static org.junit.Assert.assertEquals;
 

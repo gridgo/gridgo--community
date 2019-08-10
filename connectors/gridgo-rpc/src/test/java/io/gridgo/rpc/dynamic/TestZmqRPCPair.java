@@ -1,4 +1,4 @@
-package io.gridgo.rpc.fixed;
+package io.gridgo.rpc.dynamic;
 
 import static org.junit.Assert.assertEquals;
 
@@ -12,7 +12,7 @@ import io.gridgo.rpc.AbstractRPCTest;
 import io.gridgo.rpc.RpcReceiver;
 import io.gridgo.rpc.RpcSender;
 
-public class TestZmqRPCPushPull extends AbstractRPCTest {
+public class TestZmqRPCPair extends AbstractRPCTest {
 
     private RpcSender sender;
     private RpcReceiver receiver;
@@ -20,15 +20,12 @@ public class TestZmqRPCPushPull extends AbstractRPCTest {
     @Before
     public void setup() {
         String address = "localhost:8989";
-        String replyAddress = "localhost:8888";
-        sender = getRpcBuilder().dynamicSender() //
-                .endpoint("zmq:push:tcp://" + address) //
-                .replyTo("zmq:push:tcp://" + replyAddress) //
-                .replyEndpoint("zmq:pull:tcp://" + replyAddress) //
+        sender = getRpcBuilder().dynamicSender()//
+                .endpoint("zmq:pair:tcp:connect://" + address) //
                 .build();
 
-        receiver = getRpcBuilder().dynamicReceiver()//
-                .endpoint("zmq:pull:tcp://" + address) //
+        receiver = getRpcBuilder().dynamicReceiver() //
+                .endpoint("zmq:pair:tcp:bind://" + address) //
                 .build();
 
         sender.start();
@@ -43,7 +40,9 @@ public class TestZmqRPCPushPull extends AbstractRPCTest {
 
     @Test
     public void testEcho() throws PromiseException, InterruptedException {
-        this.receiver.subscribe((requestBody, deferred) -> deferred.resolve(requestBody));
+        this.receiver.subscribe((requestBody, deferred) -> {
+            deferred.resolve(requestBody);
+        });
 
         var origin = BValue.of("this is test text");
         var response = this.sender.send(origin).get();
