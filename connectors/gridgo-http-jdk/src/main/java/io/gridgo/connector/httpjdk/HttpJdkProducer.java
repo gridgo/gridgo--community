@@ -56,12 +56,12 @@ public class HttpJdkProducer extends AbstractHttpProducer {
         var deferred = new CompletableDeferredObject<Message, Exception>();
         var request = buildRequest(message);
         this.httpClient.sendAsync(request, BodyHandlers.discarding()) //
-                       .whenComplete((response, ex) -> {
-                           if (ex != null)
-                               ack(deferred, new ConnectionException(ex));
-                           else
-                               ack(deferred);
-                       });
+                .whenComplete((response, ex) -> {
+                    if (ex != null)
+                        ack(deferred, new ConnectionException(ex));
+                    else
+                        ack(deferred);
+                });
         return deferred.promise();
     }
 
@@ -70,12 +70,12 @@ public class HttpJdkProducer extends AbstractHttpProducer {
         var deferred = new CompletableDeferredObject<Message, Exception>();
         var request = buildRequest(message);
         this.httpClient.sendAsync(request, BodyHandlers.ofByteArray()) //
-                       .whenComplete((response, ex) -> {
-                           if (ex != null)
-                               ack(deferred, new ConnectionException(ex));
-                           else
-                               ack(deferred, buildMessage(response));
-                       });
+                .whenComplete((response, ex) -> {
+                    if (ex != null)
+                        ack(deferred, new ConnectionException(ex));
+                    else
+                        ack(deferred, buildMessage(response));
+                });
         return deferred.promise();
     }
 
@@ -103,15 +103,16 @@ public class HttpJdkProducer extends AbstractHttpProducer {
         if (message != null && message.getPayload() != null) {
             headers = message.headers();
             var path = headers.getString(HEADER_PATH, "");
-            var body = serialize(message.body());
+            BElement msgBody = message.body();
+            var body = msgBody.isValue() ? msgBody.asValue().getString().getBytes() : serialize(msgBody);
             bodyPublisher = body != null ? BodyPublishers.ofByteArray(body) : BodyPublishers.noBody();
             endpoint = endpointUri + path + parseParams(getQueryParams(message));
             method = getMethod(message, defaultMethod);
         }
 
         var request = HttpRequest.newBuilder() //
-                                 .uri(URI.create(endpoint)) //
-                                 .method(method, bodyPublisher);
+                .uri(URI.create(endpoint)) //
+                .method(method, bodyPublisher);
         populateHeaders(headers, request);
         return request.build();
     }
