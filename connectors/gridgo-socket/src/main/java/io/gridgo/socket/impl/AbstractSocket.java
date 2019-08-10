@@ -85,9 +85,7 @@ public abstract class AbstractSocket implements Socket, Loggable {
 
     @Override
     public final boolean isAlive() {
-        ThreadUtils.busySpin(10, () -> {
-            return this.startFlag.get() ^ this.started;
-        });
+        ThreadUtils.busySpin(() -> startFlag.get() ^ started);
         return this.started;
     }
 

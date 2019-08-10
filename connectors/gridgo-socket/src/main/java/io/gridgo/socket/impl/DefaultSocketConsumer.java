@@ -117,9 +117,7 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
         ThreadUtils.sleep(100);
 
-        ThreadUtils.busySpin(10, () -> {
-            return doneSignalRef.get() == null;
-        });
+        ThreadUtils.busySpin(() -> doneSignalRef.get() == null);
 
         this.stopDoneTrigger = doneSignalRef.get();
     }
