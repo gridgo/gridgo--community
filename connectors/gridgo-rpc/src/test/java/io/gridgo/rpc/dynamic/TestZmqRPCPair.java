@@ -40,9 +40,7 @@ public class TestZmqRPCPair extends AbstractRPCTest {
 
     @Test
     public void testEcho() throws PromiseException, InterruptedException {
-        this.receiver.subscribe((requestBody, deferred) -> {
-            deferred.resolve(requestBody);
-        });
+        this.receiver.subscribe((requestBody, deferred) -> deferred.resolve(requestBody));
 
         var origin = BValue.of("this is test text");
         var response = this.sender.send(origin).get();

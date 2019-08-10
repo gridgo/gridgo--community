@@ -7,6 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import io.gridgo.bean.BElement;
 import io.gridgo.bean.BValue;
 import io.gridgo.rpc.AbstractRPCTest;
 import io.gridgo.rpc.RpcReceiver;
@@ -22,7 +23,7 @@ public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
         String address = "localhost:8989";
         String replyAddress = "localhost:8888";
         sender = getRpcBuilder().dynamicSender() //
-                .endpoint("http2://" + address + "?method=POST") //
+                .endpoint("http2://" + address + "?method=POST&format=json") //
                 .replyTo("zmq:push:tcp://" + replyAddress) //
                 .replyEndpoint("zmq:pull:tcp://" + replyAddress) //
                 .build();
@@ -43,7 +44,9 @@ public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
 
     @Test
     public void testEcho() throws PromiseException, InterruptedException {
-        this.receiver.subscribe((requestBody, deferred) -> deferred.resolve(requestBody));
+        this.receiver.subscribe((requestBody, deferred) -> {
+            deferred.resolve(BElement.ofJson(requestBody.asValue().getString()));
+        });
 
         var origin = BValue.of("this is test text");
         var response = this.sender.send(origin).get();
