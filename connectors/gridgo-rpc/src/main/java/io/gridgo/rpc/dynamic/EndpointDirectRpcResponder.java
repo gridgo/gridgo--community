@@ -1,6 +1,7 @@
 package io.gridgo.rpc.dynamic;
 
 import io.gridgo.bean.BElement;
+import io.gridgo.connector.Producer;
 import io.gridgo.framework.support.Message;
 
 public abstract class EndpointDirectRpcResponder extends AbstractDynamicRpcResponder<String> {
@@ -12,7 +13,11 @@ public abstract class EndpointDirectRpcResponder extends AbstractDynamicRpcRespo
 
     @Override
     public void sendResponse(String replyTo, Message response) {
-        lookupResponder(replyTo).send(response);
+        Producer responder = lookupResponder(replyTo);
+        if (responder == null) {
+            responder = this.buildResponder(replyTo);
+        }
+        responder.send(response);
     }
 
     @Override

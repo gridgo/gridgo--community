@@ -9,6 +9,7 @@ import org.joo.promise4j.Deferred;
 import io.gridgo.bean.BElement;
 import io.gridgo.connector.Connector;
 import io.gridgo.connector.Consumer;
+import io.gridgo.connector.Producer;
 import io.gridgo.rpc.RpcReceiver;
 import io.gridgo.rpc.support.SubscriberDisposable;
 import lombok.NonNull;
@@ -33,7 +34,12 @@ public abstract class AbstractRpcReceiver extends HasEndpointConnectorResolvable
             throw new RuntimeException("Consumer isn't available for endpoint: " + this.getEndpoint());
 
         onConsumerReady(connector.getConsumer().get());
+        connector.getProducer().ifPresent(this::onProducerReady);
     }
 
     protected abstract void onConsumerReady(Consumer consumer);
+
+    protected void onProducerReady(Producer producer) {
+        // do nothing
+    }
 }

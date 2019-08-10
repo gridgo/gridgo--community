@@ -7,9 +7,10 @@ import lombok.NonNull;
 public class DynamicRpcReceiverBuilder {
 
     private final @NonNull ConnectorResolver connectorResolver;
-    private String endpoint;
-    private DynamicRpcResponder<?> responder;
-    private DynamicRpcAckResponder ackResponder;
+
+    private @NonNull String endpoint;
+    private @NonNull DynamicRpcResponder<?> responder = new CorrIdRpcResponder();
+    private @NonNull DynamicRpcAckResponder ackResponder = DynamicRpcAckResponder.DEFAULT;
 
     public DynamicRpcReceiverBuilder(ConnectorResolver connectorResolver) {
         this.connectorResolver = connectorResolver;

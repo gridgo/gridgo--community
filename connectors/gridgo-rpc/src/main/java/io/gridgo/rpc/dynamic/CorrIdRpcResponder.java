@@ -23,9 +23,7 @@ public class CorrIdRpcResponder extends EndpointDirectRpcResponder {
             throw new IllegalArgumentException("Request contains invalid corrId, expected long value which >= 0");
 
         final var replyTo = headers.getString("replyTo", null);
-        if (replyTo == null)
-            throw new IllegalArgumentException("Request contains invalid `replyTo` header, expected and endpoint");
-
+        
         deferred.promise().always((stt, responseBody, ex) -> {
             Message response;
             if (stt == RESOLVED) {

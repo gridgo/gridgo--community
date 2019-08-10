@@ -12,6 +12,7 @@ import io.gridgo.connector.Connector;
 import io.gridgo.connector.Producer;
 import io.gridgo.framework.support.Message;
 import io.gridgo.rpc.impl.ConnectorResolvableMessageRegistry;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -21,6 +22,9 @@ public abstract class AbstractDynamicRpcResponder<KeyType> extends ConnectorReso
     private final List<Connector> connectors = new LinkedList<>();
 
     private final Map<KeyType, Producer> responders = new NonBlockingHashMap<>();
+
+    @Setter
+    private Producer fixedResponder;
 
     @Override
     protected void onStop() {
@@ -37,6 +41,10 @@ public abstract class AbstractDynamicRpcResponder<KeyType> extends ConnectorReso
 
     protected final Producer buildResponder(String replyTo) {
         KeyType key = genKey(replyTo);
+        if (key == null) {
+            return fixedResponder;
+        }
+
         Producer responder = lookupResponder(key);
         if (responder != null)
             return responder;
@@ -77,6 +85,8 @@ public abstract class AbstractDynamicRpcResponder<KeyType> extends ConnectorReso
     protected abstract KeyType genKey(String replyTo);
 
     protected final Producer lookupResponder(KeyType key) {
+        if (key == null)
+            return null;
         return responders.get(key);
     }
 }

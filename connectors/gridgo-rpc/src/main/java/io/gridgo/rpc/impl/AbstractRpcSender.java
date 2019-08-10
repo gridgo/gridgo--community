@@ -3,6 +3,7 @@ package io.gridgo.rpc.impl;
 import static lombok.AccessLevel.PROTECTED;
 
 import io.gridgo.connector.Connector;
+import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
 import io.gridgo.rpc.RpcSender;
 import lombok.Getter;
@@ -21,5 +22,10 @@ public abstract class AbstractRpcSender extends HasEndpointConnectorResolvable i
             throw new RuntimeException("Producer is not available for endpoint: " + getEndpoint());
 
         this.onProducerReady(connector.getProducer().get());
+        connector.getConsumer().ifPresent(this::onConsumerReady);
+    }
+
+    protected void onConsumerReady(Consumer consumer) {
+        // do nothing
     }
 }

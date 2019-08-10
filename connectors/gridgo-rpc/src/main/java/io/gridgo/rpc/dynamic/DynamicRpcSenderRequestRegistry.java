@@ -7,5 +7,7 @@ import io.gridgo.rpc.RpcMessageRegistry;
 
 public interface DynamicRpcSenderRequestRegistry extends ComponentLifecycle, RpcMessageRegistry<BElement, Message> {
 
+    void setReplyTo(String replyTo);
+
     void handleResponse(Message response);
 }

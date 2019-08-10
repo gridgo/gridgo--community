@@ -8,6 +8,7 @@ import org.joo.promise4j.Deferred;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.framework.support.Message;
+import io.gridgo.framework.support.Payload;
 
 public class CorrIdSenderRequestRegistry extends AbstractSenderRequestRegistry {
 
@@ -27,7 +28,11 @@ public class CorrIdSenderRequestRegistry extends AbstractSenderRequestRegistry {
 
     @Override
     public void handleResponse(Message response) {
-        final long corrId = response.getPayload().getHeaders().getLong("corrId", -1l);
-        deferreds.get(corrId);
+        Payload payload = response.getPayload();
+        final long corrId = payload.getHeaders().getLong("corrId", -1l);
+        var deferred = deferreds.get(corrId);
+        if (deferred != null) {
+            deferred.resolve(payload.getBody());
+        }
     }
 }
