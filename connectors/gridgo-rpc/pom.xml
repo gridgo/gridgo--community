@@ -18,6 +18,12 @@
 		</dependency>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
+			<artifactId>gridgo-http</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>gridgo-jetty-http</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
