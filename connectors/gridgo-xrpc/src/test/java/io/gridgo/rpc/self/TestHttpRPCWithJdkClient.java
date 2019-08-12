@@ -43,7 +43,7 @@ public class TestHttpRPCWithJdkClient extends AbstractRPCTest {
         this.receiver.subscribe((requestBody, deferred) -> deferred.resolve(requestBody));
 
         var origin = BValue.of("this is test text");
-        var response = sender.send(origin).get();
+        var response = sender.call(origin).get();
 
         assertEquals(origin, response);
     }
