@@ -33,7 +33,7 @@ public class XrpcSenderProducer extends AbstractProducer {
 
     @Override
     public Promise<Message, Exception> call(Message message) {
-        return sender.send(message);
+        return sender.call(message);
     }
 
     @Override
