@@ -38,7 +38,8 @@ class DynamicXrpcSender extends AbstractXrpcSender {
 
     @Override
     protected void onConsumerReady(Consumer consumer) {
-        consumer.subscribe(this::onResponse);
+        if (consumer != null)
+            consumer.subscribe(this::onResponse);
     }
 
     @Override

@@ -21,6 +21,8 @@ public class CorrIdSenderRequestRegistry extends AbstractSenderRequestRegistry {
         var deferred = new CompletableDeferredObject<Message, Exception>();
         final long corrId = CORR_ID_SEED.getAndIncrement();
         request.getPayload().addHeader("corrId", corrId);
+        if (this.getReplyTo() != null)
+            request.getPayload().addHeader("replyTo", getReplyTo());
         deferreds.put(corrId, deferred);
         deferred.promise().always((stt, res, ex) -> {
             deferreds.remove(corrId);
