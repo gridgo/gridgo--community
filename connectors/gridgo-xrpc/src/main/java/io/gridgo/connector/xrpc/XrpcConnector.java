@@ -40,7 +40,10 @@ public class XrpcConnector extends AbstractConnector {
     }
 
     private String getParamOrRegistry(String paramName, String regKey) {
-        return getParam(paramName, getContext().getRegistry().lookup(regKey, String.class));
+        var result = getParam(paramName);
+        if (result != null)
+            return result;
+        return getContext().getRegistry().lookup(getParam(regKey), String.class);
     }
 
     private XrpcReceiver createReceiver(String type, String endpoint, XrpcBuilder builder) {
