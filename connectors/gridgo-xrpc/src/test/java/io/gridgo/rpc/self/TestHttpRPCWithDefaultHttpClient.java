@@ -9,13 +9,13 @@ import org.junit.Test;
 
 import io.gridgo.bean.BValue;
 import io.gridgo.rpc.AbstractRPCTest;
-import io.gridgo.rpc.RpcReceiver;
-import io.gridgo.rpc.RpcSender;
+import io.gridgo.xrpc.XrpcReceiver;
+import io.gridgo.xrpc.XrpcSender;
 
 public class TestHttpRPCWithDefaultHttpClient extends AbstractRPCTest {
 
-    private RpcSender sender;
-    private RpcReceiver receiver;
+    private XrpcSender sender;
+    private XrpcReceiver receiver;
 
     @Before
     public void setup() {
