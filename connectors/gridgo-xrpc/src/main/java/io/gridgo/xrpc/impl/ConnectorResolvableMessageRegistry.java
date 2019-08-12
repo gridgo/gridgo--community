@@ -6,8 +6,8 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
-public abstract class ConnectorResolvableMessageRegistry<TYPE_IN, TYPE_OUT>
-        extends AbstractMessageRegistry<TYPE_IN, TYPE_OUT> implements XrpcConnectorResolvable {
+public abstract class ConnectorResolvableMessageRegistry extends AbstractMessageRegistry
+        implements XrpcConnectorResolvable {
 
     @Setter
     @Getter

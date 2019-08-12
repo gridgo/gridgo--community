@@ -5,8 +5,8 @@ import static org.joo.promise4j.DeferredStatus.RESOLVED;
 import java.util.UUID;
 
 import org.joo.promise4j.Deferred;
+import org.joo.promise4j.impl.CompletableDeferredObject;
 
-import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
@@ -14,7 +14,8 @@ import io.gridgo.framework.support.Payload;
 public class CorrIdXrpcResponder extends EndpointDirectXrpcResponder {
 
     @Override
-    protected void prepareDeferred(Message request, BElement body, Deferred<BElement, Exception> deferred) {
+    public Deferred<Message, Exception> registerMessage(Message request) {
+        var deferred = new CompletableDeferredObject<Message, Exception>();
         Payload payload = request.getPayload();
         BObject headers = payload.getHeaders();
 
@@ -23,7 +24,7 @@ public class CorrIdXrpcResponder extends EndpointDirectXrpcResponder {
             throw new IllegalArgumentException("Request contains invalid corrId, expected long value which >= 0");
 
         final var replyTo = headers.getString("replyTo", null);
-        
+
         deferred.promise().always((stt, responseBody, ex) -> {
             Message response;
             if (stt == RESOLVED) {
@@ -38,5 +39,6 @@ public class CorrIdXrpcResponder extends EndpointDirectXrpcResponder {
             response.getPayload().addHeader("corrId", corrId);
             sendResponse(replyTo, response);
         });
+        return deferred;
     }
 }

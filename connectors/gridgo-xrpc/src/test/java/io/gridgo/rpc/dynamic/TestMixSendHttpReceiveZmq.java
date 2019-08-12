@@ -44,13 +44,13 @@ public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
 
     @Test
     public void testEcho() throws PromiseException, InterruptedException {
-        this.receiver.subscribe((requestBody, deferred) -> {
-            deferred.resolve(BElement.ofJson(requestBody.asValue().getString()));
+        this.receiver.subscribe((request, deferred) -> {
+            deferred.resolve(BElement.ofJson(request.body().asValue().getString()));
         });
 
         var origin = BValue.of("this is test text");
         var response = this.sender.send(origin).get();
 
-        assertEquals(origin, response);
+        assertEquals(origin, response.body());
     }
 }

@@ -2,7 +2,6 @@ package io.gridgo.xrpc.impl.dynamic;
 
 import org.joo.promise4j.Deferred;
 
-import io.gridgo.bean.BElement;
 import io.gridgo.bean.BValue;
 import io.gridgo.framework.support.Message;
 
@@ -15,12 +14,8 @@ public class RoutingIdXrpcResponder extends AbstractDynamicXrpcResponder<BValue>
     }
 
     @Override
-    protected BElement translateMessage(Message message) {
-        return message.getPayload().toBArray();
+    public Deferred<Message, Exception> registerMessage(Message message) {
+        return null;
     }
 
-    @Override
-    protected void prepareDeferred(Message input, BElement output, Deferred<BElement, Exception> deferred) {
-        
-    }
 }

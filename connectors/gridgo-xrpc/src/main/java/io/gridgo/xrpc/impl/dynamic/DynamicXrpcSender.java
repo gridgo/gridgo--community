@@ -2,7 +2,6 @@ package io.gridgo.xrpc.impl.dynamic;
 
 import org.joo.promise4j.Promise;
 
-import io.gridgo.bean.BElement;
 import io.gridgo.connector.Connector;
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
@@ -27,10 +26,10 @@ class DynamicXrpcSender extends AbstractXrpcSender {
     private Connector replyConnector;
 
     @Override
-    public Promise<BElement, Exception> send(BElement body) {
-        var dataAndDeferred = this.requestRegistry.registerMessage(body);
-        producer.send(dataAndDeferred.getData());
-        return dataAndDeferred.getDeferred().promise();
+    public Promise<Message, Exception> send(Message request) {
+        var deferred = requestRegistry.registerMessage(request);
+        producer.send(request);
+        return deferred.promise();
     }
 
     private void onResponse(Message response) {

@@ -1,8 +1,10 @@
 package io.gridgo.xrpc;
 
-import io.gridgo.xrpc.support.DataAndDeferred;
+import org.joo.promise4j.Deferred;
 
-public interface XrpcMessageRegistry<TYPE_IN, TYPE_OUT> {
+import io.gridgo.framework.support.Message;
 
-    DataAndDeferred<TYPE_OUT> registerMessage(TYPE_IN message);
+public interface XrpcMessageRegistry {
+
+    Deferred<Message, Exception> registerMessage(Message message);
 }

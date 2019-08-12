@@ -43,7 +43,7 @@ public class DynamicXrpcReceiver extends AbstractXrpcReceiver {
         if (deferred != null) {
             ackResponder.ack(request, deferred);
         }
-        var unpacked = responder.registerMessage(request);
-        this.publish(unpacked.getData(), unpacked.getDeferred());
+        var internalDeferred = responder.registerMessage(request);
+        publish(request, internalDeferred);
     }
 }
