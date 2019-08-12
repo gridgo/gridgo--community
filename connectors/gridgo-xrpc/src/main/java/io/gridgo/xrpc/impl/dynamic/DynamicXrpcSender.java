@@ -26,7 +26,7 @@ class DynamicXrpcSender extends AbstractXrpcSender {
     private Connector replyConnector;
 
     @Override
-    public Promise<Message, Exception> send(Message request) {
+    public Promise<Message, Exception> call(Message request) {
         var deferred = requestRegistry.registerMessage(request);
         producer.send(request);
         return deferred.promise();

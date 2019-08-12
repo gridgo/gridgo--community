@@ -8,9 +8,9 @@ import io.gridgo.framework.support.Message;
 
 public interface XrpcSender extends ComponentLifecycle {
 
-    Promise<Message, Exception> send(Message message);
+    Promise<Message, Exception> call(Message message);
 
-    default Promise<Message, Exception> send(BElement body) {
-        return send(Message.ofAny(body));
+    default Promise<Message, Exception> call(BElement body) {
+        return call(Message.ofAny(body));
     }
 }

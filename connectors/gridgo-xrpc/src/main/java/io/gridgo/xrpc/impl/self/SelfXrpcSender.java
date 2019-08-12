@@ -23,7 +23,7 @@ public class SelfXrpcSender extends AbstractXrpcSender {
     }
 
     @Override
-    public Promise<Message, Exception> send(Message body) {
+    public Promise<Message, Exception> call(Message body) {
         return producer.call(body);
     }
 }
