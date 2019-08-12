@@ -5,7 +5,7 @@ import org.joo.promise4j.Deferred;
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
 import io.gridgo.framework.support.Message;
-import io.gridgo.xrpc.ConnectorResolvable;
+import io.gridgo.xrpc.XrpcConnectorResolvable;
 import io.gridgo.xrpc.impl.AbstractXrpcReceiver;
 import lombok.NonNull;
 import lombok.Setter;
@@ -20,8 +20,8 @@ public class DynamicXrpcReceiver extends AbstractXrpcReceiver {
 
     @Override
     protected void onConsumerReady(Consumer consumer) {
-        if (responder instanceof ConnectorResolvable) {
-            ((ConnectorResolvable) responder).setConnectorResolver(getConnectorResolver());
+        if (responder instanceof XrpcConnectorResolvable) {
+            ((XrpcConnectorResolvable) responder).setConnectorResolver(getConnectorResolver());
         }
         responder.start();
 

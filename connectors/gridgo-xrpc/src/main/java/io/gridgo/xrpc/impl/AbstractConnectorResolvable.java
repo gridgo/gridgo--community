@@ -2,12 +2,12 @@ package io.gridgo.xrpc.impl;
 
 import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.framework.impl.NonameComponentLifecycle;
-import io.gridgo.xrpc.ConnectorResolvable;
+import io.gridgo.xrpc.XrpcConnectorResolvable;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
-public abstract class AbstractConnectorResolvable extends NonameComponentLifecycle implements ConnectorResolvable {
+public abstract class AbstractConnectorResolvable extends NonameComponentLifecycle implements XrpcConnectorResolvable {
 
     @Setter
     @Getter
