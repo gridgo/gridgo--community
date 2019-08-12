@@ -32,18 +32,15 @@ public class XrpcConnector extends AbstractConnector {
             var sender = createSender(type, endpoint, replyTo, replyEndpoint, builder);
             this.producer = Optional.of(new XrpcSenderProducer(getContext(), sender));
         } else if (XrpcConstants.PROTOCOL_RECEIVER.equals(protocol)) {
-            var receiver = createReceiver(type, endpoint, replyTo, replyEndpoint, builder);
+            var receiver = createReceiver(type, endpoint, builder);
             this.consumer = Optional.of(new XrpcReceiverConsumer(getContext(), receiver));
         } else {
             throw new IllegalArgumentException("Unsupported protocol: " + type);
         }
     }
 
-    private XrpcReceiver createReceiver(String type, String endpoint, String replyTo, String replyEndpoint,
-            XrpcBuilder builder) {
+    private XrpcReceiver createReceiver(String type, String endpoint, XrpcBuilder builder) {
         if (XrpcConstants.TYPE_DYNAMIC.equals(type)) {
-            if (replyEndpoint == null || replyTo == null)
-                throw new IllegalArgumentException("Both replyEndpoint and replyTo must be non-null");
             return builder.dynamicReceiver() //
                           .endpoint(endpoint.toString()) //
                           .build();

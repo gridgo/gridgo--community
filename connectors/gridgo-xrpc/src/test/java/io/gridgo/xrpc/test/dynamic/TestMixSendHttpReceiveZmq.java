@@ -1,4 +1,4 @@
-package io.gridgo.rpc.self;
+package io.gridgo.xrpc.test.dynamic;
 
 import static org.junit.Assert.assertEquals;
 
@@ -7,12 +7,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import io.gridgo.bean.BElement;
 import io.gridgo.bean.BValue;
-import io.gridgo.rpc.AbstractRPCTest;
 import io.gridgo.xrpc.XrpcReceiver;
 import io.gridgo.xrpc.XrpcSender;
+import io.gridgo.xrpc.test.AbstractRPCTest;
 
-public class TestHttpRPCWithJdkClient extends AbstractRPCTest {
+public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
 
     private XrpcSender sender;
     private XrpcReceiver receiver;
@@ -20,11 +21,14 @@ public class TestHttpRPCWithJdkClient extends AbstractRPCTest {
     @Before
     public void setup() {
         String address = "localhost:8989";
-        sender = getRpcBuilder().selfSender() //
-                .endpoint("http2://" + address + "?method=POST") //
+        String replyAddress = "localhost:8888";
+        sender = getRpcBuilder().dynamicSender() //
+                .endpoint("http2://" + address + "?method=POST&format=json") //
+                .replyTo("zmq:push:tcp://" + replyAddress) //
+                .replyEndpoint("zmq:pull:tcp://" + replyAddress) //
                 .build();
 
-        receiver = getRpcBuilder().selfReceiver() //
+        receiver = getRpcBuilder().dynamicReceiver()//
                 .endpoint("jetty:http://" + address) //
                 .build();
 
@@ -40,11 +44,13 @@ public class TestHttpRPCWithJdkClient extends AbstractRPCTest {
 
     @Test
     public void testEcho() throws PromiseException, InterruptedException {
-        this.receiver.subscribe((requestBody, deferred) -> deferred.resolve(requestBody));
+        this.receiver.subscribe((request, deferred) -> {
+            deferred.resolve(BElement.ofJson(request.body().asValue().getString()));
+        });
 
         var origin = BValue.of("this is test text");
-        var response = sender.call(origin).get();
+        var response = this.sender.call(origin).get();
 
-        assertEquals(origin, response);
+        assertEquals(origin, response.body());
     }
 }

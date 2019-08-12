@@ -1,4 +1,4 @@
-package io.gridgo.rpc.dynamic;
+package io.gridgo.xrpc.test.dynamic;
 
 import static org.junit.Assert.assertEquals;
 
@@ -8,9 +8,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import io.gridgo.bean.BValue;
-import io.gridgo.rpc.AbstractRPCTest;
 import io.gridgo.xrpc.XrpcReceiver;
 import io.gridgo.xrpc.XrpcSender;
+import io.gridgo.xrpc.test.AbstractRPCTest;
 
 public class TestZmqRPCPushPull extends AbstractRPCTest {
 

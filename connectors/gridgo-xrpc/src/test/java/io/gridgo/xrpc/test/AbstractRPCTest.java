@@ -1,4 +1,4 @@
-package io.gridgo.rpc;
+package io.gridgo.xrpc.test;
 
 import io.gridgo.connector.impl.resolvers.ClasspathConnectorResolver;
 import io.gridgo.xrpc.XrpcBuilder;

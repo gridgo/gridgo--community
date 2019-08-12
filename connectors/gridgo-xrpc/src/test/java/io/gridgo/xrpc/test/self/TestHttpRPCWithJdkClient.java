@@ -1,4 +1,4 @@
-package io.gridgo.rpc.self;
+package io.gridgo.xrpc.test.self;
 
 import static org.junit.Assert.assertEquals;
 
@@ -8,12 +8,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import io.gridgo.bean.BValue;
-import io.gridgo.framework.support.Message;
-import io.gridgo.rpc.AbstractRPCTest;
 import io.gridgo.xrpc.XrpcReceiver;
 import io.gridgo.xrpc.XrpcSender;
+import io.gridgo.xrpc.test.AbstractRPCTest;
 
-public class TestHttpRPCWithDefaultHttpClient extends AbstractRPCTest {
+public class TestHttpRPCWithJdkClient extends AbstractRPCTest {
 
     private XrpcSender sender;
     private XrpcReceiver receiver;
@@ -22,7 +21,7 @@ public class TestHttpRPCWithDefaultHttpClient extends AbstractRPCTest {
     public void setup() {
         String address = "localhost:8989";
         sender = getRpcBuilder().selfSender() //
-                .endpoint("http://" + address + "?method=POST") //
+                .endpoint("http2://" + address + "?method=POST") //
                 .build();
 
         receiver = getRpcBuilder().selfReceiver() //
@@ -44,8 +43,8 @@ public class TestHttpRPCWithDefaultHttpClient extends AbstractRPCTest {
         this.receiver.subscribe((requestBody, deferred) -> deferred.resolve(requestBody));
 
         var origin = BValue.of("this is test text");
-        var response = sender.call(Message.ofAny(origin)).get();
+        var response = sender.call(origin).get();
 
-        assertEquals(origin, response.body());
+        assertEquals(origin, response);
     }
 }

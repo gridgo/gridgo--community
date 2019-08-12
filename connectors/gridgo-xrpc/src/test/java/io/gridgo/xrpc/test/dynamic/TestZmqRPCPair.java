@@ -1,4 +1,4 @@
-package io.gridgo.rpc.dynamic;
+package io.gridgo.xrpc.test.dynamic;
 
 import static org.junit.Assert.assertEquals;
 
@@ -7,13 +7,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import io.gridgo.bean.BElement;
 import io.gridgo.bean.BValue;
-import io.gridgo.rpc.AbstractRPCTest;
 import io.gridgo.xrpc.XrpcReceiver;
 import io.gridgo.xrpc.XrpcSender;
+import io.gridgo.xrpc.test.AbstractRPCTest;
 
-public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
+public class TestZmqRPCPair extends AbstractRPCTest {
 
     private XrpcSender sender;
     private XrpcReceiver receiver;
@@ -21,15 +20,12 @@ public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
     @Before
     public void setup() {
         String address = "localhost:8989";
-        String replyAddress = "localhost:8888";
-        sender = getRpcBuilder().dynamicSender() //
-                .endpoint("http2://" + address + "?method=POST&format=json") //
-                .replyTo("zmq:push:tcp://" + replyAddress) //
-                .replyEndpoint("zmq:pull:tcp://" + replyAddress) //
+        sender = getRpcBuilder().dynamicSender()//
+                .endpoint("zmq:pair:tcp:connect://" + address) //
                 .build();
 
-        receiver = getRpcBuilder().dynamicReceiver()//
-                .endpoint("jetty:http://" + address) //
+        receiver = getRpcBuilder().dynamicReceiver() //
+                .endpoint("zmq:pair:tcp:bind://" + address) //
                 .build();
 
         sender.start();
@@ -44,13 +40,11 @@ public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
 
     @Test
     public void testEcho() throws PromiseException, InterruptedException {
-        this.receiver.subscribe((request, deferred) -> {
-            deferred.resolve(BElement.ofJson(request.body().asValue().getString()));
-        });
+        this.receiver.subscribe((requestBody, deferred) -> deferred.resolve(requestBody));
 
         var origin = BValue.of("this is test text");
         var response = this.sender.call(origin).get();
 
-        assertEquals(origin, response.body());
+        assertEquals(origin, response);
     }
 }
