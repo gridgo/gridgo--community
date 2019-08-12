@@ -1,4 +1,4 @@
-package io.gridgo.rpc.dynamic;
+package io.gridgo.rpc.impl.dynamic;
 
 import static lombok.AccessLevel.PROTECTED;
 

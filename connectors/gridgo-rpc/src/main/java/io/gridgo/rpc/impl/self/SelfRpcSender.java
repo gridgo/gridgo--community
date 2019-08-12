@@ -1,4 +1,4 @@
-package io.gridgo.rpc.fixed;
+package io.gridgo.rpc.impl.self;
 
 import static lombok.AccessLevel.PROTECTED;
 
@@ -12,18 +12,18 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
-public class FixedRpcSender extends AbstractRpcSender {
+public class SelfRpcSender extends AbstractRpcSender {
 
     @Getter(PROTECTED)
     private Producer producer;
 
     @Setter
     @Getter(PROTECTED)
-    private @NonNull FixedRpcResponseUnpacker responseUnpacker = FixedRpcResponseUnpacker.DEFAULT;
+    private @NonNull SelfRpcResponseUnpacker responseUnpacker = SelfRpcResponseUnpacker.BODY;
 
     @Setter
     @Getter(PROTECTED)
-    private @NonNull FixedRpcRequestPacker requestPacker = FixedRpcRequestPacker.DEFAULT;
+    private @NonNull SelfRpcRequestPacker requestPacker = SelfRpcRequestPacker.BODY;
 
     @Override
     protected void onProducerReady(Producer producer) {

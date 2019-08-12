@@ -1,4 +1,4 @@
-package io.gridgo.rpc.dynamic;
+package io.gridgo.rpc.impl.dynamic;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.framework.ComponentLifecycle;

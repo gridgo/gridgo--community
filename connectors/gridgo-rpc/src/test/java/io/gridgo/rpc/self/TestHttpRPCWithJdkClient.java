@@ -1,4 +1,4 @@
-package io.gridgo.rpc.fixed;
+package io.gridgo.rpc.self;
 
 import static org.junit.Assert.assertEquals;
 
@@ -20,11 +20,11 @@ public class TestHttpRPCWithJdkClient extends AbstractRPCTest {
     @Before
     public void setup() {
         String address = "localhost:8989";
-        sender = getRpcBuilder().fixedSender() //
+        sender = getRpcBuilder().selfSender() //
                 .endpoint("http2://" + address + "?method=POST") //
                 .build();
 
-        receiver = getRpcBuilder().fixedReceiver() //
+        receiver = getRpcBuilder().selfReceiver() //
                 .endpoint("jetty:http://" + address) //
                 .build();
 

@@ -1,4 +1,4 @@
-package io.gridgo.rpc.dynamic;
+package io.gridgo.rpc.impl.dynamic;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;

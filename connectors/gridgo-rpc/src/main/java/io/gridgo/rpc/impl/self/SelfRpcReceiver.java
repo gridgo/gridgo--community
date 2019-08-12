@@ -1,4 +1,4 @@
-package io.gridgo.rpc.fixed;
+package io.gridgo.rpc.impl.self;
 
 import org.joo.promise4j.Deferred;
 import org.joo.promise4j.DeferredStatus;
@@ -11,13 +11,13 @@ import io.gridgo.rpc.impl.AbstractRpcReceiver;
 import lombok.NonNull;
 import lombok.Setter;
 
-public class FixedRpcReceiver extends AbstractRpcReceiver {
+public class SelfRpcReceiver extends AbstractRpcReceiver {
 
     @Setter
-    private @NonNull FixedRpcRequestUnpacker requestUnpacker = FixedRpcRequestUnpacker.DEFAULT;
+    private @NonNull SelfRpcRequestUnpacker requestUnpacker = SelfRpcRequestUnpacker.BODY;
 
     @Setter
-    private @NonNull FixedRpcResponsePacker responsePacker = FixedRpcResponsePacker.DEFAULT;
+    private @NonNull SelfRpcResponsePacker responsePacker = SelfRpcResponsePacker.BODY;
 
     @Override
     protected void onConsumerReady(Consumer consumer) {

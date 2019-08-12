@@ -1,4 +1,4 @@
-package io.gridgo.rpc.dynamic;
+package io.gridgo.rpc.impl.dynamic;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -7,24 +7,16 @@ import java.util.Optional;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
-import io.gridgo.bean.BElement;
 import io.gridgo.connector.Connector;
 import io.gridgo.connector.Producer;
-import io.gridgo.framework.support.Message;
-import io.gridgo.rpc.impl.ConnectorResolvableMessageRegistry;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class AbstractDynamicRpcResponder<KeyType> extends ConnectorResolvableMessageRegistry<Message, BElement>
-        implements DynamicRpcResponder<KeyType> {
+public abstract class MultiConnectorDynamicRpcResponder<KeyType> extends AbstractDynamicRpcResponder<KeyType> {
 
     private final List<Connector> connectors = new LinkedList<>();
 
     private final Map<KeyType, Producer> responders = new NonBlockingHashMap<>();
-
-    @Setter
-    private Producer fixedResponder;
 
     @Override
     protected void onStop() {
@@ -42,7 +34,7 @@ public abstract class AbstractDynamicRpcResponder<KeyType> extends ConnectorReso
     protected final Producer buildResponder(String replyTo) {
         KeyType key = genKey(replyTo);
         if (key == null) {
-            return fixedResponder;
+            return getFixedResponder();
         }
 
         Producer responder = lookupResponder(key);

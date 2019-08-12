@@ -1,10 +1,11 @@
-package io.gridgo.rpc.dynamic;
+package io.gridgo.rpc.impl.dynamic;
 
 import org.joo.promise4j.Deferred;
 
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
 import io.gridgo.framework.support.Message;
+import io.gridgo.rpc.ConnectorResolvable;
 import io.gridgo.rpc.impl.AbstractRpcReceiver;
 import lombok.NonNull;
 import lombok.Setter;
@@ -19,7 +20,9 @@ public class DynamicRpcReceiver extends AbstractRpcReceiver {
 
     @Override
     protected void onConsumerReady(Consumer consumer) {
-        responder.setConnectorResolver(getConnectorResolver());
+        if (responder instanceof ConnectorResolvable) {
+            ((ConnectorResolvable) responder).setConnectorResolver(getConnectorResolver());
+        }
         responder.start();
 
         consumer.subscribe(this::onRequest);

@@ -1,10 +1,10 @@
 package io.gridgo.rpc;
 
 import io.gridgo.connector.ConnectorResolver;
-import io.gridgo.rpc.dynamic.DynamicRpcReceiverBuilder;
-import io.gridgo.rpc.dynamic.DynamicRpcSenderBuilder;
-import io.gridgo.rpc.fixed.FixedRpcReceiverBuilder;
-import io.gridgo.rpc.fixed.FixedRpcSenderBuilder;
+import io.gridgo.rpc.impl.dynamic.DynamicRpcReceiverBuilder;
+import io.gridgo.rpc.impl.dynamic.DynamicRpcSenderBuilder;
+import io.gridgo.rpc.impl.self.SelfRpcReceiverBuilder;
+import io.gridgo.rpc.impl.self.SelfRpcSenderBuilder;
 import lombok.NonNull;
 
 public class RpcBuilder {
@@ -27,11 +27,11 @@ public class RpcBuilder {
         return new DynamicRpcReceiverBuilder(connectorResolver);
     }
 
-    public FixedRpcReceiverBuilder fixedReceiver() {
-        return new FixedRpcReceiverBuilder(connectorResolver);
+    public SelfRpcReceiverBuilder selfReceiver() {
+        return new SelfRpcReceiverBuilder(connectorResolver);
     }
 
-    public FixedRpcSenderBuilder fixedSender() {
-        return new FixedRpcSenderBuilder(connectorResolver);
+    public SelfRpcSenderBuilder selfSender() {
+        return new SelfRpcSenderBuilder(connectorResolver);
     }
 }

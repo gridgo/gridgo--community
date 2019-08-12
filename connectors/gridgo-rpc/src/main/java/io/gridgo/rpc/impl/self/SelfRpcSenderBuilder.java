@@ -1,38 +1,38 @@
-package io.gridgo.rpc.fixed;
+package io.gridgo.rpc.impl.self;
 
 import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.rpc.RpcSender;
 import lombok.NonNull;
 
-public class FixedRpcSenderBuilder {
+public class SelfRpcSenderBuilder {
 
     private final @NonNull ConnectorResolver connectorResolver;
 
     private @NonNull String endpoint;
-    private @NonNull FixedRpcRequestPacker requestPacker = FixedRpcRequestPacker.DEFAULT;
-    private @NonNull FixedRpcResponseUnpacker responseUnpacker = FixedRpcResponseUnpacker.DEFAULT;
+    private @NonNull SelfRpcRequestPacker requestPacker = SelfRpcRequestPacker.BODY;
+    private @NonNull SelfRpcResponseUnpacker responseUnpacker = SelfRpcResponseUnpacker.BODY;
 
-    public FixedRpcSenderBuilder(ConnectorResolver connectorResolver) {
+    public SelfRpcSenderBuilder(ConnectorResolver connectorResolver) {
         this.connectorResolver = connectorResolver;
     }
 
-    public FixedRpcSenderBuilder endpoint(String endpoint) {
+    public SelfRpcSenderBuilder endpoint(String endpoint) {
         this.endpoint = endpoint;
         return this;
     }
 
-    public FixedRpcSenderBuilder requestPacker(FixedRpcRequestPacker requestPacker) {
+    public SelfRpcSenderBuilder requestPacker(SelfRpcRequestPacker requestPacker) {
         this.requestPacker = requestPacker;
         return this;
     }
 
-    public FixedRpcSenderBuilder responseUnpacker(FixedRpcResponseUnpacker responseUnpacker) {
+    public SelfRpcSenderBuilder responseUnpacker(SelfRpcResponseUnpacker responseUnpacker) {
         this.responseUnpacker = responseUnpacker;
         return this;
     }
 
     public RpcSender build() {
-        var result = new FixedRpcSender();
+        var result = new SelfRpcSender();
         result.setConnectorResolver(connectorResolver);
         result.setEndpoint(endpoint);
         result.setRequestPacker(requestPacker);

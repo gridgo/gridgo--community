@@ -1,10 +1,10 @@
-package io.gridgo.rpc.dynamic;
+package io.gridgo.rpc.impl.dynamic;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.connector.Producer;
 import io.gridgo.framework.support.Message;
 
-public abstract class EndpointDirectRpcResponder extends AbstractDynamicRpcResponder<String> {
+public abstract class EndpointDirectRpcResponder extends MultiConnectorDynamicRpcResponder<String> {
 
     @Override
     protected String genKey(String replyTo) {

@@ -4,7 +4,7 @@ import io.gridgo.connector.Connector;
 import io.gridgo.connector.ConnectorResolver;
 import lombok.NonNull;
 
-public interface ConectorResolvable {
+public interface ConnectorResolvable {
 
     void setConnectorResolver(ConnectorResolver connectorResolver);
 
