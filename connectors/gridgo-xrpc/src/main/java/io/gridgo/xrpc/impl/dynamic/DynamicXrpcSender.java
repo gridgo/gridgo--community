@@ -1,71 +1,57 @@
 package io.gridgo.xrpc.impl.dynamic;
 
+import static lombok.AccessLevel.PROTECTED;
+
 import org.joo.promise4j.Promise;
 
-import io.gridgo.connector.Connector;
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
 import io.gridgo.framework.support.Message;
+import io.gridgo.xrpc.XrpcRequestContext;
+import io.gridgo.xrpc.exception.XrpcException;
 import io.gridgo.xrpc.impl.AbstractXrpcSender;
+import io.gridgo.xrpc.registry.XrpcSenderRegistry;
 import lombok.NonNull;
 import lombok.Setter;
 
-class DynamicXrpcSender extends AbstractXrpcSender {
+public class DynamicXrpcSender extends AbstractXrpcSender {
 
-    private @NonNull DynamicXrpcSenderRequestRegistry requestRegistry = new CorrIdSenderRequestRegistry();
-
-    @NonNull
     private Producer producer;
 
-    @Setter
-    private String replyEndpoint;
+    @Setter(PROTECTED)
+    private @NonNull String replyEndpoint;
 
-    @Setter
-    private String replyTo;
-
-    private Connector replyConnector;
+    @Setter(PROTECTED)
+    private XrpcSenderRegistry messageRegistry;
 
     @Override
-    public Promise<Message, Exception> call(Message request) {
-        var deferred = requestRegistry.registerMessage(request);
-        producer.send(request);
+    public Promise<Message, Exception> call(Message message) {
+        var deferred = messageRegistry.registerRequest(message, new XrpcRequestContext());
+        this.producer.send(message);
         return deferred.promise();
     }
 
-    private void onResponse(Message response) {
-        requestRegistry.handleResponse(response);
+    private void onReplyConsumer(Consumer replyConsumer) {
+        replyConsumer.subscribe(messageRegistry::resolveResponse);
+    }
+
+    private void onReplyConsumerUnavailable() {
+        throw new XrpcException("Consumer isn't available for endpoint: " + replyEndpoint);
     }
 
     @Override
-    protected void onConsumerReady(Consumer consumer) {
-        if (consumer != null)
-            consumer.subscribe(this::onResponse);
+    protected void onConsumer(Consumer consumer) {
+        var replyConnector = resolveConnector(replyEndpoint);
+        if (replyConnector == null)
+            throw new XrpcException("Reply connector cannot be resolved from endpoint: " + replyEndpoint);
+
+        replyConnector.start();
+
+        replyConnector.getConsumer().ifPresentOrElse(this::onReplyConsumer, this::onReplyConsumerUnavailable);
     }
 
     @Override
-    protected void onProducerReady(Producer producer) {
+    protected void onProducer(@NonNull Producer producer) {
         this.producer = producer;
-
-        this.requestRegistry.setReplyTo(replyTo);
-
-        if (replyEndpoint != null) {
-            replyConnector = resolveConnector(replyEndpoint);
-            if (replyConnector == null)
-                throw new RuntimeException("Connector is not available for endpoint: " + replyEndpoint);
-
-            replyConnector.start();
-
-            if (replyConnector.getConsumer().isEmpty())
-                throw new RuntimeException("Consumer is not available for endpoint: " + replyEndpoint);
-
-            replyConnector.getConsumer().get().subscribe(this::onResponse);
-        }
-    }
-
-    @Override
-    protected void onConnectorStopped() {
-        super.onConnectorStopped();
-        if (replyConnector != null)
-            replyConnector.stop();
     }
 }

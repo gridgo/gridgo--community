@@ -1,49 +1,33 @@
 package io.gridgo.xrpc.impl.dynamic;
 
-import org.joo.promise4j.Deferred;
-
 import io.gridgo.connector.Consumer;
-import io.gridgo.connector.Producer;
 import io.gridgo.framework.support.Message;
-import io.gridgo.xrpc.XrpcConnectorResolvable;
+import io.gridgo.xrpc.XrpcRequestContext;
+import io.gridgo.xrpc.decorator.XrpcAckResponder;
 import io.gridgo.xrpc.impl.AbstractXrpcReceiver;
+import io.gridgo.xrpc.registry.XrpcReceiverRegistry;
 import lombok.NonNull;
-import lombok.Setter;
 
 public class DynamicXrpcReceiver extends AbstractXrpcReceiver {
 
-    @Setter
-    private @NonNull DynamicXrpcResponder<?> responder = new CorrIdXrpcResponder();
+    private @NonNull XrpcReceiverRegistry messageRegistry;
 
-    @Setter
-    private @NonNull DynamicXrpcAckResponder ackResponder = DynamicXrpcAckResponder.DEFAULT;
+    private @NonNull XrpcAckResponder ackResponder;
 
-    @Override
-    protected void onConsumerReady(Consumer consumer) {
-        if (responder instanceof XrpcConnectorResolvable) {
-            ((XrpcConnectorResolvable) responder).setConnectorResolver(getConnectorResolver());
-        }
-        responder.start();
-
-        consumer.subscribe(this::onRequest);
+    private boolean ack(XrpcRequestContext context, Message request) {
+        var deferred = context.getOriginalDeferred();
+        if (deferred != null)
+            this.ackResponder.sendAck(request, deferred);
+        return true;
     }
 
     @Override
-    protected void onProducerReady(Producer producer) {
-        responder.setFixedResponder(producer);
-    }
-
-    @Override
-    protected void onConnectorStopped() {
-        if (responder != null)
-            responder.stop();
-    }
-
-    private void onRequest(Message request, Deferred<Message, Exception> deferred) {
-        if (deferred != null) {
-            ackResponder.ack(request, deferred);
-        }
-        var internalDeferred = responder.registerMessage(request);
-        publish(request, internalDeferred);
+    protected void onConsumer(Consumer consumer) {
+        messageRegistry.getRequestDecorators().add(0, this::ack);
+        consumer.subscribe((request, originalDeferred) -> {
+            var context = new XrpcRequestContext();
+            context.setOriginalDeferred(originalDeferred);
+            messageRegistry.registerRequest(request, context);
+        });
     }
 }

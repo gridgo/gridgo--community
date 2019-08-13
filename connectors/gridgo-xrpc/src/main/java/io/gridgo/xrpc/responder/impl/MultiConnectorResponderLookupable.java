@@ -1,22 +1,24 @@
-package io.gridgo.xrpc.impl.dynamic;
+package io.gridgo.xrpc.responder.impl;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
 import io.gridgo.connector.Connector;
-import io.gridgo.connector.Producer;
+import io.gridgo.xrpc.impl.AbstractConnectorResolvable;
+import io.gridgo.xrpc.responder.XrpcResponder;
+import io.gridgo.xrpc.responder.XrpcResponderLookupable;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class MultiConnectorDynamicXrpcResponder<KeyType> extends AbstractDynamicXrpcResponder<KeyType> {
+public class MultiConnectorResponderLookupable extends AbstractConnectorResolvable implements XrpcResponderLookupable {
 
     private final List<Connector> connectors = new LinkedList<>();
 
-    private final Map<KeyType, Producer> responders = new NonBlockingHashMap<>();
+    private final Map<String, XrpcResponder> responders = new NonBlockingHashMap<>();
 
     @Override
     protected void onStop() {
@@ -31,18 +33,9 @@ public abstract class MultiConnectorDynamicXrpcResponder<KeyType> extends Abstra
         });
     }
 
-    protected final Producer buildResponder(String replyTo) {
-        KeyType key = genKey(replyTo);
-        if (key == null) {
-            return getFixedResponder();
-        }
-
-        Producer responder = lookupResponder(key);
-        if (responder != null)
-            return responder;
-
+    private XrpcResponder buildResponder(@NonNull String replyTo) {
         synchronized (responders) {
-            responder = lookupResponder(key);
+            var responder = responders.get(replyTo);
             if (responder != null)
                 return responder;
 
@@ -52,7 +45,7 @@ public abstract class MultiConnectorDynamicXrpcResponder<KeyType> extends Abstra
 
             connector.start();
 
-            Optional<Producer> producerOpt = connector.getProducer();
+            var producerOpt = connector.getProducer();
 
             if (producerOpt.isEmpty()) {
                 connector.stop();
@@ -61,24 +54,21 @@ public abstract class MultiConnectorDynamicXrpcResponder<KeyType> extends Abstra
 
             connectors.add(connector);
 
-            responder = producerOpt.get();
-            responders.put(key, responder);
-
-            onResponderReady(replyTo, key, responder);
+            var producer = producerOpt.get();
+            responders.put(replyTo, new FixedXrpcResponder(producer));
 
             return responder;
         }
     }
 
-    protected void onResponderReady(String replyTo, KeyType refKey, Producer responder) {
-
-    }
-
-    protected abstract KeyType genKey(String replyTo);
-
-    protected final Producer lookupResponder(KeyType key) {
-        if (key == null)
+    @Override
+    public final XrpcResponder lookup(String replyTo) {
+        if (replyTo == null)
             return null;
-        return responders.get(key);
+        var responder = responders.get(replyTo);
+        if (responder != null)
+            return responder;
+
+        return this.buildResponder(replyTo);
     }
 }

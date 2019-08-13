@@ -6,7 +6,7 @@ import io.gridgo.xrpc.impl.AbstractXrpcReceiver;
 public class SelfXrpcReceiver extends AbstractXrpcReceiver {
 
     @Override
-    protected void onConsumerReady(Consumer consumer) {
+    protected void onConsumer(Consumer consumer) {
         consumer.subscribe(this::publish);
     }
 }

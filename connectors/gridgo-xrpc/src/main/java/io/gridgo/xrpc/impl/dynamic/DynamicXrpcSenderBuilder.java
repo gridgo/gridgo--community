@@ -1,41 +1,64 @@
 package io.gridgo.xrpc.impl.dynamic;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import io.gridgo.connector.ConnectorResolver;
-import io.gridgo.xrpc.XrpcSender;
+import io.gridgo.xrpc.decorator.XrpcMessageDecorator;
+import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
+import io.gridgo.xrpc.decorator.XrpcResponseDecorator;
+import io.gridgo.xrpc.decorator.replyto.ReplyToSenderDecorator;
+import io.gridgo.xrpc.registry.XrpcSenderRegistry;
 import lombok.NonNull;
 
 public class DynamicXrpcSenderBuilder {
 
-    private final @NonNull ConnectorResolver connectorResolver;
+    @NonNull
+    private final ConnectorResolver connectorResolver;
+
+    @NonNull
     private String endpoint;
-    private String replyEndpoint;
+
+    @NonNull
     private String replyTo;
 
-    public DynamicXrpcSenderBuilder(@NonNull ConnectorResolver connectorResolver) {
+    @NonNull
+    private String replyEndpoint;
+
+    @NonNull
+    private final List<XrpcMessageDecorator> decorators = new LinkedList<>();
+
+    @NonNull
+    private String replyToFieldName = "gridgo-xrpc-reply-to";
+
+    public DynamicXrpcSenderBuilder(ConnectorResolver connectorResolver) {
         this.connectorResolver = connectorResolver;
     }
 
-    public DynamicXrpcSenderBuilder endpoint(@NonNull String endpoint) {
-        this.endpoint = endpoint;
-        return this;
+    private XrpcSenderRegistry buildRegistry() {
+        this.decorators.add(0, ReplyToSenderDecorator.builder() //
+                .replyTo(replyTo) //
+                .fieldName(replyToFieldName) //
+                .build());
+
+        var builder = XrpcSenderRegistry.builder();
+        decorators.forEach(decorator -> {
+            if (decorator instanceof XrpcRequestDecorator) {
+                builder.requestDecorator((XrpcRequestDecorator) decorator);
+            }
+            if (decorator instanceof XrpcResponseDecorator) {
+                builder.responseDecorator((XrpcResponseDecorator) decorator);
+            }
+        });
+        return builder.build();
     }
 
-    public DynamicXrpcSenderBuilder replyEndpoint(@NonNull String replyEndpoint) {
-        this.replyEndpoint = replyEndpoint;
-        return this;
-    }
-
-    public DynamicXrpcSenderBuilder replyTo(@NonNull String replyTo) {
-        this.replyTo = replyTo;
-        return this;
-    }
-
-    public XrpcSender build() {
-        var result = new DynamicXrpcSender();
+    public DynamicXrpcSender build() {
+        DynamicXrpcSender result = new DynamicXrpcSender();
         result.setConnectorResolver(connectorResolver);
         result.setEndpoint(endpoint);
         result.setReplyEndpoint(replyEndpoint);
-        result.setReplyTo(replyTo);
+        result.setMessageRegistry(buildRegistry());
         return result;
     }
 }

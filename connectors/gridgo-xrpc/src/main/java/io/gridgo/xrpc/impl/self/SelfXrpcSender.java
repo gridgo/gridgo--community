@@ -15,7 +15,7 @@ public class SelfXrpcSender extends AbstractXrpcSender {
     private Producer producer;
 
     @Override
-    protected void onProducerReady(Producer producer) {
+    protected void onProducer(Producer producer) {
         if (!producer.isCallSupported()) {
             throw new RuntimeException("Call is not supported for endpoint: " + getEndpoint());
         }

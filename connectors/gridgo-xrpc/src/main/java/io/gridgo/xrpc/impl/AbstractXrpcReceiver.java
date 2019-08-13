@@ -33,13 +33,15 @@ public abstract class AbstractXrpcReceiver extends HasEndpointConnectorResolvabl
         if (connector.getConsumer().isEmpty())
             throw new RuntimeException("Consumer isn't available for endpoint: " + this.getEndpoint());
 
-        onConsumerReady(connector.getConsumer().get());
-        connector.getProducer().ifPresent(this::onProducerReady);
+        onConsumer(connector.getConsumer().get());
+
+        var producerOpt = connector.getProducer();
+        onProducer(producerOpt.isEmpty() ? null : producerOpt.get());
     }
 
-    protected abstract void onConsumerReady(Consumer consumer);
+    protected abstract void onConsumer(Consumer consumer);
 
-    protected void onProducerReady(Producer producer) {
+    protected void onProducer(Producer producer) {
         // do nothing
     }
 }
