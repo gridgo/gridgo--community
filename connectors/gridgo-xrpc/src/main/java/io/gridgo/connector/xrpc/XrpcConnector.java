@@ -11,14 +11,14 @@ import io.gridgo.xrpc.XrpcReceiver;
 import io.gridgo.xrpc.XrpcSender;
 import lombok.NonNull;
 
-@ConnectorEndpoint(scheme = "xrpc", syntax = "{protocol}:{type}")
+@ConnectorEndpoint(scheme = "xrpc", syntax = "{role}:{type}")
 public class XrpcConnector extends AbstractConnector {
 
     private static final ConnectorResolver RESOLVER = DefaultConnectorFactory.DEFAULT_CONNECTOR_RESOLVER;
 
     @Override
     protected void onInit() {
-        var protocol = getPlaceholder("protocol");
+        var role = getPlaceholder("role");
         var type = getPlaceholder("type");
 
         var endpoint = getParamOrRegistry("endpoint", "endpointKey");
@@ -28,10 +28,10 @@ public class XrpcConnector extends AbstractConnector {
         var resolver = getResolver();
         var builder = XrpcBuilder.newBuilder(resolver);
 
-        if (XrpcConstants.PROTOCOL_SENDER.equals(protocol)) {
+        if (XrpcConstants.ROLE_SENDER.equals(role)) {
             var sender = createSender(type, endpoint, replyTo, replyEndpoint, builder);
             this.producer = Optional.of(new XrpcSenderProducer(getContext(), sender));
-        } else if (XrpcConstants.PROTOCOL_RECEIVER.equals(protocol)) {
+        } else if (XrpcConstants.ROLE_RECEIVER.equals(role)) {
             var receiver = createReceiver(type, endpoint, builder);
             this.consumer = Optional.of(new XrpcReceiverConsumer(getContext(), receiver));
         } else {

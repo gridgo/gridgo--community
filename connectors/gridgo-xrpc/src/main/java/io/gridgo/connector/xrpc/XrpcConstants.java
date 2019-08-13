@@ -8,7 +8,7 @@ public class XrpcConstants {
 
     public static final String TYPE_DYNAMIC = "dynamic";
 
-    public static final String PROTOCOL_SENDER = "sender";
+    public static final String ROLE_SENDER = "sender";
 
-    public static final String PROTOCOL_RECEIVER = "receiver";
+    public static final String ROLE_RECEIVER = "receiver";
 }
