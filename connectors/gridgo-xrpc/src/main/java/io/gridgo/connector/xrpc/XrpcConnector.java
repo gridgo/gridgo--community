@@ -21,9 +21,9 @@ public class XrpcConnector extends AbstractConnector {
         var protocol = getPlaceholder("protocol");
         var type = getPlaceholder("type");
 
-        var endpoint = getParam("endpoint");
-        var replyTo = getParam("replyTo");
-        var replyEndpoint = getParam("replyEndpoint");
+        var endpoint = getParamOrRegistry("endpoint", "endpointKey");
+        var replyTo = getParamOrRegistry("replyTo", "replyToKey");
+        var replyEndpoint = getParamOrRegistry("replyEndpoint", "replyEndpointKey");
 
         var resolver = getResolver();
         var builder = XrpcBuilder.newBuilder(resolver);
@@ -37,6 +37,13 @@ public class XrpcConnector extends AbstractConnector {
         } else {
             throw new IllegalArgumentException("Unsupported protocol: " + type);
         }
+    }
+
+    private String getParamOrRegistry(String paramName, String regKey) {
+        var result = getParam(paramName);
+        if (result != null)
+            return result;
+        return getContext().getRegistry().lookup(getParam(regKey), String.class);
     }
 
     private XrpcReceiver createReceiver(String type, String endpoint, XrpcBuilder builder) {
