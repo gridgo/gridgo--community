@@ -52,6 +52,11 @@ public class XrpcConnector extends AbstractConnector {
                           .endpoint(endpoint.toString()) //
                           .build();
         }
+        if (XrpcConstants.TYPE_FIXED.equals(type)) {
+            return builder.fixedReceiver() //
+                          .endpoint(endpoint.toString()) //
+                          .build();
+        }
         if (XrpcConstants.TYPE_SELF.equals(type)) {
             return builder.selfReceiver() //
                           .endpoint(endpoint.toString()) //
@@ -69,6 +74,11 @@ public class XrpcConnector extends AbstractConnector {
                           .endpoint(endpoint.toString()) //
                           .replyEndpoint(replyEndpoint.toString()) //
                           .replyTo(replyTo.toString()) //
+                          .build();
+        }
+        if (XrpcConstants.TYPE_FIXED.equals(type)) {
+            return builder.fixedSender() //
+                          .endpoint(endpoint.toString()) //
                           .build();
         }
         if (XrpcConstants.TYPE_SELF.equals(type)) {
