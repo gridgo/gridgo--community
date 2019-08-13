@@ -7,6 +7,7 @@ import java.util.Map;
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
 import io.gridgo.connector.Connector;
+import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.xrpc.impl.AbstractConnectorResolvable;
 import io.gridgo.xrpc.responder.XrpcResponder;
 import io.gridgo.xrpc.responder.XrpcResponderLookupable;
@@ -19,6 +20,10 @@ public class MultiConnectorResponderLookupable extends AbstractConnectorResolvab
     private final List<Connector> connectors = new LinkedList<>();
 
     private final Map<String, XrpcResponder> responders = new NonBlockingHashMap<>();
+
+    public MultiConnectorResponderLookupable(ConnectorResolver resolver) {
+        this.setConnectorResolver(resolver);
+    }
 
     @Override
     protected void onStop() {
@@ -54,8 +59,8 @@ public class MultiConnectorResponderLookupable extends AbstractConnectorResolvab
 
             connectors.add(connector);
 
-            var producer = producerOpt.get();
-            responders.put(replyTo, new FixedXrpcResponder(producer));
+            responder = new FixedXrpcResponder(producerOpt.get());
+            responders.put(replyTo, responder);
 
             return responder;
         }

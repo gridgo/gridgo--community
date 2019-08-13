@@ -43,10 +43,10 @@ public class TestZmqRPCPushPull extends AbstractRPCTest {
 
     @Test
     public void testEcho() throws PromiseException, InterruptedException {
-        this.receiver.subscribe((requestBody, deferred) -> deferred.resolve(requestBody));
+        this.receiver.subscribe(this::echo);
 
         var origin = BValue.of("this is test text");
-        var response = this.sender.call(origin).get();
+        var response = this.sender.call(origin).get().body();
 
         assertEquals(origin, response);
     }

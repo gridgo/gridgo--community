@@ -1,5 +1,7 @@
 package io.gridgo.xrpc.impl.fixed;
 
+import static lombok.AccessLevel.PACKAGE;
+
 import org.joo.promise4j.Promise;
 
 import io.gridgo.connector.Consumer;
@@ -9,11 +11,13 @@ import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.impl.AbstractXrpcSender;
 import io.gridgo.xrpc.registry.XrpcSenderRegistry;
 import lombok.NonNull;
+import lombok.Setter;
 
 public class FixedXrpcSender extends AbstractXrpcSender {
 
     private Producer producer;
 
+    @Setter(PACKAGE)
     private XrpcSenderRegistry messageRegistry;
 
     @Override

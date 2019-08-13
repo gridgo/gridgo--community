@@ -1,5 +1,6 @@
 package io.gridgo.xrpc.registry.impl;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
@@ -14,9 +15,9 @@ public class AbstractMessageDecorable implements XrpcMessageDecorable {
 
     @Getter
     @Singular
-    private List<XrpcRequestDecorator> requestDecorators;
+    private final List<XrpcRequestDecorator> requestDecorators = new LinkedList<>();
 
     @Getter
     @Singular
-    private List<XrpcResponseDecorator> responseDecorators;
+    private final List<XrpcResponseDecorator> responseDecorators = new LinkedList<>();
 }

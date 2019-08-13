@@ -15,6 +15,8 @@ public class ReplyToReceiverDecorator extends ReplyToDecorator implements XrpcRe
         if (replyTo == null)
             throw new XrpcException("Reply to header (by key '" + getFieldName() + "') cannot be found in request");
 
+        request.headers().remove(getFieldName());
+        System.out.println("[Receiver] receive replyTo from request: " + replyTo);
         context.setReplyTo(replyTo);
         return true;
     }

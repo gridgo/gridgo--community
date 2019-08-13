@@ -1,6 +1,10 @@
 package io.gridgo.xrpc;
 
 import io.gridgo.connector.ConnectorResolver;
+import io.gridgo.xrpc.impl.dynamic.DynamicXrpcReceiverBuilder;
+import io.gridgo.xrpc.impl.dynamic.DynamicXrpcSenderBuilder;
+import io.gridgo.xrpc.impl.fixed.FixedXrpcReceiverBuilder;
+import io.gridgo.xrpc.impl.fixed.FixedXrpcSenderBuilder;
 import io.gridgo.xrpc.impl.self.SelfXrpcReceiverBuilder;
 import io.gridgo.xrpc.impl.self.SelfXrpcSenderBuilder;
 import lombok.NonNull;
@@ -23,5 +27,21 @@ public class XrpcBuilder {
 
     public SelfXrpcSenderBuilder selfSender() {
         return new SelfXrpcSenderBuilder(connectorResolver);
+    }
+
+    public FixedXrpcReceiverBuilder fixedReceiver() {
+        return new FixedXrpcReceiverBuilder(connectorResolver);
+    }
+
+    public FixedXrpcSenderBuilder fixedSender() {
+        return new FixedXrpcSenderBuilder(connectorResolver);
+    }
+
+    public DynamicXrpcSenderBuilder dynamicSender() {
+        return new DynamicXrpcSenderBuilder(connectorResolver);
+    }
+
+    public DynamicXrpcReceiverBuilder dynamicReceiver() {
+        return new DynamicXrpcReceiverBuilder(connectorResolver);
     }
 }

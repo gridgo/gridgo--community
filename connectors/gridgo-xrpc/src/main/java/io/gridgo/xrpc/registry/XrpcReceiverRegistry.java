@@ -10,9 +10,15 @@ import org.joo.promise4j.impl.CompletableDeferredObject;
 import io.gridgo.framework.support.Message;
 import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
+import io.gridgo.xrpc.registry.impl.DefaultReceiverRegistry;
+import io.gridgo.xrpc.registry.impl.DefaultReceiverRegistry.DefaultReceiverRegistryBuilder;
 import lombok.NonNull;
 
 public interface XrpcReceiverRegistry extends XrpcMessageRegistry, XrpcMessageDecorable {
+
+    static DefaultReceiverRegistryBuilder<?, ?> builder() {
+        return DefaultReceiverRegistry.builder();
+    }
 
     @NonNull
     Function<Exception, Message> getFailureHandler();
@@ -30,7 +36,15 @@ public interface XrpcReceiverRegistry extends XrpcMessageRegistry, XrpcMessageDe
 
         deferred.always((stt, res, exception) -> {
             var response = stt == RESOLVED ? res : getFailureHandler().apply(exception);
-            getResponseDecorators().forEach(decorator -> decorator.decorateResponse(context, response));
+            for (var decorator : getResponseDecorators())
+                try {
+                    if (!decorator.decorateResponse(context, response))
+                        break;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return;
+                }
+
             if (context.getResponder() != null) {
                 context.getResponder().sendResponse(response);
             }

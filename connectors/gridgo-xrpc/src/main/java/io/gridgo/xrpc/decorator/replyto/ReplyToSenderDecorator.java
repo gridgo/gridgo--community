@@ -13,6 +13,7 @@ public class ReplyToSenderDecorator extends ReplyToDecorator implements XrpcRequ
 
     @Override
     public boolean decorateRequest(XrpcRequestContext context, Message request) {
+        System.out.println("[Sender] inject replyTo to request: " + replyTo);
         request.headers().putAny(getFieldName(), replyTo);
         return true;
     }

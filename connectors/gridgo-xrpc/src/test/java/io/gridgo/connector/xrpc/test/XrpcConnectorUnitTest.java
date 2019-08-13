@@ -21,8 +21,8 @@ public class XrpcConnectorUnitTest {
 
     @Before
     public void setup() throws UnsupportedEncodingException {
-        var address = "localhost:8989";
-        var replyAddress = "localhost:8888";
+        var address = "localhost:7788";
+        var replyAddress = "localhost:8899";
 
         var registry = new SimpleRegistry();
         registry.register("senderEndpoint", "http2://" + address + "?method=POST&format=json")
@@ -52,7 +52,7 @@ public class XrpcConnectorUnitTest {
             deferred.resolve(Message.ofAny("testing"));
         });
         var msg = producer.callAny(null).get();
-        Assert.assertEquals("testing", msg.body());
+        Assert.assertEquals("testing", msg.body().asValue().getString());
     }
 
     @After

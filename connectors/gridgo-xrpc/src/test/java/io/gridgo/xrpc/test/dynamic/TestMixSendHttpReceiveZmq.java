@@ -21,7 +21,7 @@ public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
     @Before
     public void setup() {
         String address = "localhost:8989";
-        String replyAddress = "localhost:8888";
+        String replyAddress = "localhost:9999";
         sender = getRpcBuilder().dynamicSender() //
                 .endpoint("http2://" + address + "?method=POST&format=json") //
                 .replyTo("zmq:push:tcp://" + replyAddress) //
@@ -44,13 +44,11 @@ public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
 
     @Test
     public void testEcho() throws PromiseException, InterruptedException {
-        this.receiver.subscribe((request, deferred) -> {
-            deferred.resolve(request);
-        });
+        this.receiver.subscribe(this::echo);
 
         var origin = BValue.of("this is test text");
-        var response = this.sender.call(origin).get();
+        var response = BElement.ofJson(this.sender.call(origin).get().body().asValue().getString());
 
-        assertEquals(origin, response.body());
+        assertEquals(origin, response);
     }
 }

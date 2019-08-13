@@ -1,4 +1,4 @@
-package io.gridgo.xrpc.test.dynamic;
+package io.gridgo.xrpc.test.fixed;
 
 import static org.junit.Assert.assertEquals;
 
@@ -20,11 +20,11 @@ public class TestZmqRPCPair extends AbstractRPCTest {
     @Before
     public void setup() {
         String address = "localhost:8989";
-        sender = getRpcBuilder().dynamicSender()//
+        sender = getRpcBuilder().fixedSender()//
                 .endpoint("zmq:pair:tcp:connect://" + address) //
                 .build();
 
-        receiver = getRpcBuilder().dynamicReceiver() //
+        receiver = getRpcBuilder().fixedReceiver() //
                 .endpoint("zmq:pair:tcp:bind://" + address) //
                 .build();
 
@@ -40,10 +40,10 @@ public class TestZmqRPCPair extends AbstractRPCTest {
 
     @Test
     public void testEcho() throws PromiseException, InterruptedException {
-        this.receiver.subscribe((requestBody, deferred) -> deferred.resolve(requestBody));
+        this.receiver.subscribe(this::echo);
 
         var origin = BValue.of("this is test text");
-        var response = this.sender.call(origin).get();
+        var response = this.sender.call(origin).get().body();
 
         assertEquals(origin, response);
     }

@@ -19,6 +19,7 @@ public class CorrIdSenderCodec extends CorrIdSenderDecorator implements XrpcMess
     @Override
     public boolean decorateRequest(XrpcRequestContext context, Message request) {
         var corrId = idGenerator.get();
+        System.out.println("[Sender] inject corrId to request: " + corrId);
 
         var deferred = context.getDeferred();
         deferred.promise().always((stt, res, ex) -> {
@@ -36,6 +37,7 @@ public class CorrIdSenderCodec extends CorrIdSenderDecorator implements XrpcMess
     @Override
     public boolean decorateResponse(XrpcRequestContext context, Message response) {
         var corrId = response.headers().getValue(getFieldName(), null);
+        System.out.println("[Sender] got corrId from response: " + corrId);
         if (corrId != null) {
             var deferred = getDeferredCache().get(corrId);
             context.setDeferred(deferred);
