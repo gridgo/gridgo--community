@@ -164,16 +164,24 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
             if (offset == -1)
                 return;
             if (!force && "async".equals(configuration.getCommitType())) {
-                consumer.commitAsync(Collections.singletonMap(partition, new OffsetAndMetadata(offset + 1)),
-                        (result, ex) -> {
-                            if (ex != null) {
-                                log.error("Commit failed on topic {} - {}", partition.topic(), partition.partition(),
-                                        ex);
-                            }
-                        });
+                commitAsync(offset, partition);
             } else {
-                consumer.commitSync(Collections.singletonMap(partition, new OffsetAndMetadata(offset + 1)));
+                commitSync(offset, partition);
             }
+        }
+
+        private void commitSync(long offset, TopicPartition partition) {
+            consumer.commitSync(Collections.singletonMap(partition, new OffsetAndMetadata(offset + 1)));
+        }
+
+        private void commitAsync(long offset, TopicPartition partition) {
+            consumer.commitAsync(Collections.singletonMap(partition, new OffsetAndMetadata(offset + 1)),
+                    (result, ex) -> {
+                        if (ex != null) {
+                            log.error("Commit failed on topic {} - {}", partition.topic(), partition.partition(),
+                                    ex);
+                        }
+                    });
         }
 
         protected void doInit() {
