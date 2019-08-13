@@ -91,10 +91,9 @@ public class XrpcConnector extends AbstractConnector {
 
     private ConnectorResolver getResolver() {
         var resolverBean = getConnectorConfig().getParameters().get("resolver");
-        var resolver = RESOLVER;
         if (resolverBean != null) {
-            resolver = getContext().getRegistry().lookupMandatory(resolverBean.toString(), ConnectorResolver.class);
+            return getContext().getRegistry().lookupMandatory(resolverBean.toString(), ConnectorResolver.class);
         }
-        return resolver;
+        return RESOLVER;
     }
 }
