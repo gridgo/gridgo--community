@@ -4,5 +4,5 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 public class DefaultReceiverRegistry extends AbstractReceiverRegistry {
-
+    
 }
