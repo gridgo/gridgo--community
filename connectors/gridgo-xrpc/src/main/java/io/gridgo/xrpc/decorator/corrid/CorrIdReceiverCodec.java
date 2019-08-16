@@ -5,14 +5,16 @@ import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.decorator.XrpcMessageCodec;
 import io.gridgo.xrpc.exception.XrpcException;
 import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @SuperBuilder
 public class CorrIdReceiverCodec extends CorrIdReceiverDecorator implements XrpcMessageCodec {
 
     @Override
     public boolean decorateRequest(XrpcRequestContext context, Message request) {
         var corrId = request.headers().remove(getFieldName());
-        System.out.println("[Receiver] receive corrId from request: " + corrId);
+        log.trace("[Receiver] receive corrId from request: {}", corrId);
         if (corrId == null)
             throw new XrpcException("corrId not found in request's header");
         if (!corrId.isValue())
@@ -24,7 +26,7 @@ public class CorrIdReceiverCodec extends CorrIdReceiverDecorator implements Xrpc
     @Override
     public boolean decorateResponse(XrpcRequestContext context, Message response) {
         var corrId = context.getCorrId();
-        System.out.println("[Receiver] inject corrId to response: " + corrId);
+        log.trace("[Receiver] inject corrId to response: {}", corrId);
         response.headers().put(getFieldName(), corrId);
         return true;
     }
