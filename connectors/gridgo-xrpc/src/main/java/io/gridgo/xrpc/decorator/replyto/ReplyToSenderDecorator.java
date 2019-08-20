@@ -5,7 +5,9 @@ import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @SuperBuilder
 public class ReplyToSenderDecorator extends ReplyToDecorator implements XrpcRequestDecorator {
 
@@ -13,7 +15,7 @@ public class ReplyToSenderDecorator extends ReplyToDecorator implements XrpcRequ
 
     @Override
     public boolean decorateRequest(XrpcRequestContext context, Message request) {
-        System.out.println("[Sender] inject replyTo to request: " + replyTo);
+        log.trace("[Sender] inject replyTo to request: {}", replyTo);
         request.headers().putAny(getFieldName(), replyTo);
         return true;
     }

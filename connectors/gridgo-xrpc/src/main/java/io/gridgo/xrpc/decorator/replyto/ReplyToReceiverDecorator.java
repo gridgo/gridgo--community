@@ -5,7 +5,9 @@ import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
 import io.gridgo.xrpc.exception.XrpcException;
 import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @SuperBuilder
 public class ReplyToReceiverDecorator extends ReplyToDecorator implements XrpcRequestDecorator {
 
@@ -16,7 +18,7 @@ public class ReplyToReceiverDecorator extends ReplyToDecorator implements XrpcRe
             throw new XrpcException("Reply to header (by key '" + getFieldName() + "') cannot be found in request");
 
         request.headers().remove(getFieldName());
-        System.out.println("[Receiver] receive replyTo from request: " + replyTo);
+        log.trace("[Receiver] receive replyTo from request: {}", replyTo);
         context.setReplyTo(replyTo);
         return true;
     }

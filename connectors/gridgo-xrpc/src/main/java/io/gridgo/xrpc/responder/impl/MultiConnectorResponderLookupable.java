@@ -33,7 +33,7 @@ public class MultiConnectorResponderLookupable extends AbstractConnectorResolvab
                 connector.stop();
             } catch (Exception e) {
                 e.printStackTrace();
-                log.error("Stop connector error: " + connector.getName(), e);
+                log.error("Stop connector error: {}", connector.getName(), e);
             }
         });
     }
