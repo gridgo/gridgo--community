@@ -1,5 +1,6 @@
 package io.gridgo.connector.http;
 
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_PATH;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS_CODE;
 
@@ -29,7 +30,6 @@ import io.gridgo.bean.BArray;
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.connector.httpcommon.AbstractHttpProducer;
-import io.gridgo.connector.httpcommon.HttpCommonConstants;
 import io.gridgo.connector.httpcommon.support.exceptions.ConnectionException;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.framework.support.Message;
@@ -63,7 +63,7 @@ public class HttpProducer extends AbstractHttpProducer {
 
     private Message buildMessage(Response response) {
         var headers = buildHeaders(response.getHeaders()).setAny(HEADER_STATUS, response.getStatusText())
-                .setAny(HEADER_STATUS_CODE, response.getStatusCode());
+                                                         .setAny(HEADER_STATUS_CODE, response.getStatusCode());
         var body = deserialize(response.getResponseBodyAsBytes());
         return createMessage(headers, body);
     }
@@ -81,9 +81,9 @@ public class HttpProducer extends AbstractHttpProducer {
 
     private List<Param> buildParams(BObject object) {
         return object.entrySet().stream() //
-                .filter(e -> e.getValue().isValue()) //
-                .map(e -> new Param(e.getKey(), e.getValue().asValue().getString())) //
-                .collect(Collectors.toList());
+                     .filter(e -> e.getValue().isValue()) //
+                     .map(e -> new Param(e.getKey(), e.getValue().asValue().getString())) //
+                     .collect(Collectors.toList());
     }
 
     private Request buildRequest(Message message) {
@@ -117,18 +117,15 @@ public class HttpProducer extends AbstractHttpProducer {
     private RequestBuilder createBuilder(Message message) {
         if (message == null)
             return new RequestBuilder().setUrl(endpointUri);
+        var endpointUri = this.endpointUri + message.headers().getString(HEADER_PATH, "");
         var method = getMethod(message, defaultMethod);
         var headers = getHeaders(message);
         var params = buildParams(getQueryParams(message));
         var body = serialize(message.body());
-
-        var url = this.endpointUri + message.headers().getString(HttpCommonConstants.HEADER_PATH, "");
-        return new RequestBuilder(method) //
-                .setUrl(url) //
-                .setBody(body) //
-                .setHeaders(headers) //
-                .setQueryParams(params);
-
+        return new RequestBuilder(method).setUrl(endpointUri) //
+                                         .setBody(body) //
+                                         .setHeaders(headers) //
+                                         .setQueryParams(params);
     }
 
     private Map<CharSequence, List<String>> getHeaders(Message message) {
