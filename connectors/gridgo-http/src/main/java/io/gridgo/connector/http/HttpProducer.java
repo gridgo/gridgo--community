@@ -1,5 +1,6 @@
 package io.gridgo.connector.http;
 
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_PATH;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS_CODE;
 
@@ -116,6 +117,7 @@ public class HttpProducer extends AbstractHttpProducer {
     private RequestBuilder createBuilder(Message message) {
         if (message == null)
             return new RequestBuilder().setUrl(endpointUri);
+        var endpointUri = this.endpointUri + message.headers().getString(HEADER_PATH, "");
         var method = getMethod(message, defaultMethod);
         var headers = getHeaders(message);
         var params = buildParams(getQueryParams(message));
@@ -124,7 +126,6 @@ public class HttpProducer extends AbstractHttpProducer {
                                          .setBody(body) //
                                          .setHeaders(headers) //
                                          .setQueryParams(params);
-
     }
 
     private Map<CharSequence, List<String>> getHeaders(Message message) {
