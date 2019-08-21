@@ -66,6 +66,8 @@ public class KafkaConfiguration {
 
     private String seekTo;
 
+    private Integer seekPartition;
+
     private boolean batchEnabled = false;
 
     private boolean batchCommit = true;
