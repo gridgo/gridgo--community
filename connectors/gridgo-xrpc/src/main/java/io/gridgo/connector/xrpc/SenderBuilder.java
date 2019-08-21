@@ -17,15 +17,15 @@ public interface SenderBuilder {
     }
 
     public default XrpcSender buildSelfSender(Object endpoint, XrpcBuilder builder) {
-        return builder.dynamicSender() //
-                      .endpoint(endpoint.toString()) //
-                      .build();
+        return builder.selfSender() //
+                .endpoint(endpoint.toString()) //
+                .build();
     }
 
     public default XrpcSender buildFixedSender(Object endpoint, XrpcBuilder builder) {
         return builder.fixedSender() //
-                      .endpoint(endpoint.toString()) //
-                      .build();
+                .endpoint(endpoint.toString()) //
+                .build();
     }
 
     public default XrpcSender buildDynamicSender(Object endpoint, XrpcBuilder builder) {
@@ -35,10 +35,10 @@ public interface SenderBuilder {
         if (replyEndpoint == null || replyTo == null)
             throw new IllegalArgumentException("Both replyEndpoint and replyTo must be non-null");
         return builder.dynamicSender() //
-                      .endpoint(endpoint.toString()) //
-                      .replyEndpoint(replyEndpoint.toString()) //
-                      .replyTo(replyTo.toString()) //
-                      .build();
+                .endpoint(endpoint.toString()) //
+                .replyEndpoint(replyEndpoint.toString()) //
+                .replyTo(replyTo.toString()) //
+                .build();
     }
 
     public Object getParamOrRegistry(String paramName, String paramKey);
