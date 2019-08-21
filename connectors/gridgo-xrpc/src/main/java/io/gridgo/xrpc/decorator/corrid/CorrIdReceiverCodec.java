@@ -4,12 +4,14 @@ import io.gridgo.framework.support.Message;
 import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.decorator.XrpcMessageCodec;
 import io.gridgo.xrpc.exception.XrpcException;
-import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@SuperBuilder
 public class CorrIdReceiverCodec extends CorrIdReceiverDecorator implements XrpcMessageCodec {
+
+    public CorrIdReceiverCodec(String fieldName) {
+        super(fieldName);
+    }
 
     @Override
     public boolean decorateRequest(XrpcRequestContext context, Message request) {

@@ -12,13 +12,13 @@ import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
 import io.gridgo.xrpc.registry.XrpcReceiverRegistry;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.experimental.SuperBuilder;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@SuperBuilder
 public abstract class AbstractReceiverRegistry extends AbstractMessageRegistry implements XrpcReceiverRegistry {
 
+    @Setter
     @Getter
     private @NonNull Function<Exception, Message> failureHandler;
 

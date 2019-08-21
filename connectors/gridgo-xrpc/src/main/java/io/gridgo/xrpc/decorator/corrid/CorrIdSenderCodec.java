@@ -1,20 +1,27 @@
 package io.gridgo.xrpc.decorator.corrid;
 
+import java.util.Map;
 import java.util.function.Supplier;
+
+import org.joo.promise4j.Deferred;
 
 import io.gridgo.bean.BValue;
 import io.gridgo.framework.support.Message;
 import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.decorator.XrpcMessageCodec;
 import lombok.NonNull;
-import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@SuperBuilder
 public class CorrIdSenderCodec extends CorrIdSenderDecorator implements XrpcMessageCodec {
 
-    private @NonNull Supplier<BValue> idGenerator;
+    private final @NonNull Supplier<BValue> idGenerator;
+
+    public CorrIdSenderCodec(String fieldName, Map<BValue, Deferred<Message, Exception>> deferredCache,
+            Supplier<BValue> idGenerator) {
+        super(fieldName, deferredCache);
+        this.idGenerator = idGenerator;
+    }
 
     @Override
     public boolean decorateRequest(XrpcRequestContext context, Message request) {

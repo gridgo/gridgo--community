@@ -14,6 +14,7 @@ import io.gridgo.xrpc.decorator.corrid.CorrIdReceiverCodec;
 import io.gridgo.xrpc.decorator.corrid.CorrIdTypeConverterSenderCodec;
 import io.gridgo.xrpc.decorator.replyto.ReplyToReceiverDecorator;
 import io.gridgo.xrpc.registry.XrpcReceiverRegistry;
+import io.gridgo.xrpc.registry.impl.DefaultReceiverRegistry;
 import io.gridgo.xrpc.responder.XrpcResponderLookupable;
 import io.gridgo.xrpc.responder.impl.MultiConnectorResponderLookupable;
 import lombok.NonNull;
@@ -75,26 +76,15 @@ public class DynamicXrpcReceiverBuilder {
 
     private XrpcReceiverRegistry buildRegistry() {
 
-        this.decorators.add(0, ReplyToReceiverDecorator.builder() //
-                .fieldName(replyToFieldName) //
-                .build());
-
-        this.decorators.add(0, CorrIdReceiverCodec.builder() //
-                .fieldName(corrIdFieldName) //
-                .build());
-
-        var convertCorrIdToLong = CorrIdTypeConverterSenderCodec.builder() //
-                .fieldName(corrIdFieldName) //
-                .targetType(Long.class) //
-                .build();
+        this.decorators.add(0, new ReplyToReceiverDecorator(replyToFieldName));
+        this.decorators.add(0, new CorrIdReceiverCodec(corrIdFieldName));
+        var convertCorrIdToLong = new CorrIdTypeConverterSenderCodec(corrIdFieldName, Long.class);
 
         this.decorators.add(0, convertCorrIdToLong.getRequestDecorator());
         this.decorators.add(convertCorrIdToLong.getResponseDecorator());
 
-        var builder = XrpcReceiverRegistry.builder();
-
-        builder.failureHandler(failureHandler);
-        XrpcReceiverRegistry result = builder.build();
+        var result = new DefaultReceiverRegistry();
+        result.setFailureHandler(failureHandler);
 
         decorators.forEach(decorator -> {
             if (decorator instanceof XrpcRequestDecorator) {

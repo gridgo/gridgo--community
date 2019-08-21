@@ -11,6 +11,7 @@ import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
 import io.gridgo.xrpc.decorator.XrpcResponseDecorator;
 import io.gridgo.xrpc.decorator.corrid.CorrIdReceiverCodec;
 import io.gridgo.xrpc.registry.XrpcReceiverRegistry;
+import io.gridgo.xrpc.registry.impl.DefaultReceiverRegistry;
 import lombok.NonNull;
 
 public class FixedXrpcReceiverBuilder {
@@ -42,12 +43,10 @@ public class FixedXrpcReceiverBuilder {
     private XrpcReceiverRegistry buildRequestRegistry() {
         var decorators = new LinkedList<XrpcMessageDecorator>();
 
-        decorators.add(0, CorrIdReceiverCodec.builder() //
-                .fieldName(corrIdFieldName) //
-                .build());
+        decorators.add(0, new CorrIdReceiverCodec(corrIdFieldName));
 
-        var builder = XrpcReceiverRegistry.builder();
-        XrpcReceiverRegistry result = builder.failureHandler(failureHandler).build();
+        var result = new DefaultReceiverRegistry();
+        result.setFailureHandler(failureHandler);
         decorators.forEach(decorator -> {
             if (decorator instanceof XrpcRequestDecorator) {
                 result.getRequestDecorators().add((XrpcRequestDecorator) decorator);

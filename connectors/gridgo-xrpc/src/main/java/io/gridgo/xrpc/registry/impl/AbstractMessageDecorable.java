@@ -8,9 +8,7 @@ import io.gridgo.xrpc.decorator.XrpcResponseDecorator;
 import io.gridgo.xrpc.registry.XrpcMessageDecorable;
 import lombok.Getter;
 import lombok.Singular;
-import lombok.experimental.SuperBuilder;
 
-@SuperBuilder
 public class AbstractMessageDecorable implements XrpcMessageDecorable {
 
     @Getter

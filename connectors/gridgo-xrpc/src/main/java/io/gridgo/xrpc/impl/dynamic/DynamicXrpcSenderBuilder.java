@@ -82,27 +82,15 @@ public class DynamicXrpcSenderBuilder {
     }
 
     private XrpcSenderRegistry buildMessageRegistry() {
-        this.decorators.add(0, ReplyToSenderDecorator.builder() //
-                .replyTo(replyTo) //
-                .fieldName(replyToFieldName) //
-                .build());
+        this.decorators.add(0, new ReplyToSenderDecorator(replyToFieldName, replyTo));
 
-        var convertCorrIdToLong = CorrIdTypeConverterSenderCodec.builder() //
-                .fieldName(corrIdFieldName) //
-                .targetType(Long.class) //
-                .build();
-
+        var convertCorrIdToLong = new CorrIdTypeConverterSenderCodec(corrIdFieldName, Long.class);
         this.decorators.add(convertCorrIdToLong.getRequestDecorator());
         this.decorators.add(0, convertCorrIdToLong.getResponseDecorator());
 
-        this.decorators.add(0, CorrIdSenderCodec.builder() //
-                .deferredCache(new NonBlockingHashMap<>()) //
-                .fieldName(corrIdFieldName) //
-                .idGenerator(idGenerator) //
-                .build());
+        this.decorators.add(0, new CorrIdSenderCodec(corrIdFieldName, new NonBlockingHashMap<>(), idGenerator));
 
-        var builder = XrpcSenderRegistry.builder();
-        DefaultSenderRegistry result = builder.build();
+        var result = new DefaultSenderRegistry();
         decorators.forEach(decorator -> {
             if (decorator instanceof XrpcRequestDecorator) {
                 result.getRequestDecorators().add((XrpcRequestDecorator) decorator);

@@ -4,14 +4,17 @@ import io.gridgo.framework.support.Message;
 import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
 import lombok.NonNull;
-import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@SuperBuilder
 public class ReplyToSenderDecorator extends ReplyToDecorator implements XrpcRequestDecorator {
 
-    private @NonNull String replyTo;
+    private final @NonNull String replyTo;
+
+    public ReplyToSenderDecorator(String fieldName, String replyTo) {
+        super(fieldName);
+        this.replyTo = replyTo;
+    }
 
     @Override
     public boolean decorateRequest(XrpcRequestContext context, Message request) {

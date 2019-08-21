@@ -7,13 +7,16 @@ import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.decorator.FieldNameDecorator;
 import io.gridgo.xrpc.decorator.XrpcMessageCodec;
 import lombok.NonNull;
-import lombok.experimental.SuperBuilder;
 
-@SuperBuilder
 public class CorrIdTypeConverterSenderCodec extends FieldNameDecorator implements XrpcMessageCodec {
 
     @NonNull
     private final Class<?> targetType;
+
+    public CorrIdTypeConverterSenderCodec(String fieldName, Class<?> targetType) {
+        super(fieldName);
+        this.targetType = targetType;
+    }
 
     @Override
     public boolean decorateRequest(XrpcRequestContext context, Message request) {

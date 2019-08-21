@@ -13,6 +13,7 @@ import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
 import io.gridgo.xrpc.decorator.XrpcResponseDecorator;
 import io.gridgo.xrpc.decorator.corrid.CorrIdSenderCodec;
 import io.gridgo.xrpc.registry.XrpcSenderRegistry;
+import io.gridgo.xrpc.registry.impl.DefaultSenderRegistry;
 import lombok.NonNull;
 
 public class FixedXrpcSenderBuilder {
@@ -52,15 +53,9 @@ public class FixedXrpcSenderBuilder {
 
     private XrpcSenderRegistry buildMessageRegistry() {
         var decorators = new LinkedList<XrpcMessageDecorator>();
+        decorators.add(0, new CorrIdSenderCodec(corrIdFieldName, new NonBlockingHashMap<>(), idGenerator));
 
-        decorators.add(0, CorrIdSenderCodec.builder() //
-                .deferredCache(new NonBlockingHashMap<>()) //
-                .fieldName(corrIdFieldName) //
-                .idGenerator(idGenerator) //
-                .build());
-
-        var builder = XrpcSenderRegistry.builder();
-        XrpcSenderRegistry result = builder.build();
+        var result = new DefaultSenderRegistry();
         decorators.forEach(decorator -> {
             if (decorator instanceof XrpcRequestDecorator) {
                 result.getRequestDecorators().add((XrpcRequestDecorator) decorator);

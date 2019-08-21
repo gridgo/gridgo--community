@@ -11,11 +11,14 @@ import io.gridgo.framework.support.Message;
 import io.gridgo.xrpc.decorator.FieldNameDecorator;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.experimental.SuperBuilder;
 
-@SuperBuilder
 public abstract class CorrIdSenderDecorator extends FieldNameDecorator {
 
     @Getter(PROTECTED)
-    private @NonNull Map<BValue, Deferred<Message, Exception>> deferredCache;
+    private final @NonNull Map<BValue, Deferred<Message, Exception>> deferredCache;
+
+    public CorrIdSenderDecorator(String fieldName, Map<BValue, Deferred<Message, Exception>> deferredCache) {
+        super(fieldName);
+        this.deferredCache = deferredCache;
+    }
 }
