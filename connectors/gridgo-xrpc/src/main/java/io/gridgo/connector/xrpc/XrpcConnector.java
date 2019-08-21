@@ -12,7 +12,7 @@ import io.gridgo.xrpc.XrpcBuilder;
 public class XrpcConnector extends AbstractConnector implements SenderBuilder, ReceiverBuilder {
 
     private static final ConnectorResolver RESOLVER = DefaultConnectorFactory.DEFAULT_CONNECTOR_RESOLVER;
-    
+
     @Override
     protected void onInit() {
         var role = getPlaceholder("role");

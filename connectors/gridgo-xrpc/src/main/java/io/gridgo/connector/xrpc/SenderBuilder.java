@@ -31,10 +31,15 @@ public interface SenderBuilder {
     public default XrpcSender buildDynamicSender(Object endpoint, XrpcBuilder builder) {
         var replyTo = getParamOrRegistry("replyTo", "replyToKey");
         var replyEndpoint = getParamOrRegistry("replyEndpoint", "replyEndpointKey");
+        var encodeCorrIdToHex = (String) getParamOrRegistry("encodeCorrIdToHex", "encodeCorrIdToHexKey");
+        var decodeCorrIdFromHex = (String) getParamOrRegistry("decodeCorrIdFromHex", "decodeCorrIdFromHexKey");
 
         if (replyEndpoint == null || replyTo == null)
             throw new IllegalArgumentException("Both replyEndpoint and replyTo must be non-null");
+
         return builder.dynamicSender() //
+                .encodeCorrIdToHex(encodeCorrIdToHex == null ? false : Boolean.valueOf(encodeCorrIdToHex)) //
+                .decodeCorrIdFromHex(decodeCorrIdFromHex == null ? false : Boolean.valueOf(decodeCorrIdFromHex)) //
                 .endpoint(endpoint.toString()) //
                 .replyEndpoint(replyEndpoint.toString()) //
                 .replyTo(replyTo.toString()) //

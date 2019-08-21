@@ -33,9 +33,9 @@ public class XrpcConnectorUnitTest {
         var factory = new DefaultConnectorFactory();
         factory.setRegistry(registry);
 
-        var senderConnectorEndpoint = "xrpc:sender:dynamic?endpointKey=senderEndpoint&replyToKey=replyTo&replyEndpointKey=replyEndpoint";
+        var senderConnectorEndpoint = "xrpc:sender:dynamic?encodeCorrIdToHex=true&endpointKey=senderEndpoint&replyToKey=replyTo&replyEndpointKey=replyEndpoint";
 
-        var receiverConnectorEndpoint = "xrpc:receiver:dynamic?endpointKey=receiverEndpoint";
+        var receiverConnectorEndpoint = "xrpc:receiver:dynamic?decodeCorrIdFromHex=true&endpointKey=receiverEndpoint";
 
         this.senderConnector = factory.createConnector(senderConnectorEndpoint);
         this.receiverConnector = factory.createConnector(receiverConnectorEndpoint);

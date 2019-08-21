@@ -23,12 +23,14 @@ public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
         String address = "localhost:8989";
         String replyAddress = "localhost:9999";
         sender = getRpcBuilder().dynamicSender() //
+                .encodeCorrIdAsHex() //
                 .endpoint("http2://" + address + "?method=POST&format=json") //
                 .replyTo("zmq:push:tcp://" + replyAddress) //
                 .replyEndpoint("zmq:pull:tcp://" + replyAddress) //
                 .build();
 
         receiver = getRpcBuilder().dynamicReceiver()//
+                .decodeCorrIdFromHex() //
                 .endpoint("jetty:http://" + address) //
                 .build();
 

@@ -2,26 +2,19 @@ package io.gridgo.xrpc.impl.dynamic;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
-import org.cliffc.high_scale_lib.NonBlockingHashMap;
-
-import io.gridgo.bean.BValue;
 import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.xrpc.decorator.XrpcMessageDecorator;
 import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
 import io.gridgo.xrpc.decorator.XrpcResponseDecorator;
+import io.gridgo.xrpc.decorator.corrid.CorrIdHexSenderCodec;
 import io.gridgo.xrpc.decorator.corrid.CorrIdSenderCodec;
-import io.gridgo.xrpc.decorator.corrid.CorrIdTypeConverterSenderCodec;
 import io.gridgo.xrpc.decorator.replyto.ReplyToSenderDecorator;
 import io.gridgo.xrpc.registry.XrpcSenderRegistry;
 import io.gridgo.xrpc.registry.impl.DefaultSenderRegistry;
 import lombok.NonNull;
 
 public class DynamicXrpcSenderBuilder {
-
-    private static final AtomicLong DEFAULT_CORR_ID_SEED = new AtomicLong(0);
 
     @NonNull
     private final ConnectorResolver connectorResolver;
@@ -44,8 +37,9 @@ public class DynamicXrpcSenderBuilder {
     @NonNull
     private String corrIdFieldName = "gridgo-xrpc-corr-id";
 
-    @NonNull
-    private Supplier<BValue> idGenerator = () -> BValue.of(DEFAULT_CORR_ID_SEED.getAndIncrement());
+    private boolean encodeCorrIdToHex = false;
+
+    private boolean decodeCorrIdFromHex = false;
 
     public DynamicXrpcSenderBuilder(ConnectorResolver connectorResolver) {
         this.connectorResolver = connectorResolver;
@@ -56,8 +50,13 @@ public class DynamicXrpcSenderBuilder {
         return this;
     }
 
-    public DynamicXrpcSenderBuilder idGenerator(Supplier<BValue> idGenerator) {
-        this.idGenerator = idGenerator;
+    public DynamicXrpcSenderBuilder clearDecorators() {
+        this.decorators.clear();
+        return this;
+    }
+
+    public DynamicXrpcSenderBuilder addDecorator(@NonNull XrpcMessageDecorator decorator) {
+        this.decorators.add(decorator);
         return this;
     }
 
@@ -81,14 +80,39 @@ public class DynamicXrpcSenderBuilder {
         return this;
     }
 
+    public DynamicXrpcSenderBuilder encodeCorrIdAsHex() {
+        this.encodeCorrIdToHex = true;
+        return this;
+    }
+
+    public DynamicXrpcSenderBuilder encodeCorrIdToHex(boolean value) {
+        this.encodeCorrIdToHex = value;
+        return this;
+    }
+
+    public DynamicXrpcSenderBuilder decodeCorrIdFromHex() {
+        this.decodeCorrIdFromHex = true;
+        return this;
+    }
+
+    public DynamicXrpcSenderBuilder decodeCorrIdFromHex(boolean value) {
+        this.decodeCorrIdFromHex = value;
+        return this;
+    }
+
     private XrpcSenderRegistry buildMessageRegistry() {
-        this.decorators.add(0, new ReplyToSenderDecorator(replyToFieldName, replyTo));
+        var hexCodec = new CorrIdHexSenderCodec(corrIdFieldName);
+        var corrIdInjector = new CorrIdSenderCodec(corrIdFieldName);
 
-        var convertCorrIdToLong = new CorrIdTypeConverterSenderCodec(corrIdFieldName, Long.class);
-        this.decorators.add(convertCorrIdToLong.getRequestDecorator());
-        this.decorators.add(0, convertCorrIdToLong.getResponseDecorator());
+        decorators.add(corrIdInjector.getRequestDecorator());
+        if (encodeCorrIdToHex)
+            decorators.add(hexCodec.getRequestDecorator());
 
-        this.decorators.add(0, new CorrIdSenderCodec(corrIdFieldName, new NonBlockingHashMap<>(), idGenerator));
+        if (decodeCorrIdFromHex)
+            decorators.add(hexCodec.getResponseDecorator());
+        decorators.add(corrIdInjector.getResponseDecorator());
+
+        decorators.add(new ReplyToSenderDecorator(replyToFieldName, replyTo));
 
         var result = new DefaultSenderRegistry();
         decorators.forEach(decorator -> {
@@ -110,4 +134,5 @@ public class DynamicXrpcSenderBuilder {
         result.setMessageRegistry(buildMessageRegistry());
         return result;
     }
+
 }

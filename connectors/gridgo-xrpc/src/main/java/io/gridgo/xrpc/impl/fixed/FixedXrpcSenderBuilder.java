@@ -4,8 +4,6 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-import org.cliffc.high_scale_lib.NonBlockingHashMap;
-
 import io.gridgo.bean.BValue;
 import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.xrpc.decorator.XrpcMessageDecorator;
@@ -53,7 +51,7 @@ public class FixedXrpcSenderBuilder {
 
     private XrpcSenderRegistry buildMessageRegistry() {
         var decorators = new LinkedList<XrpcMessageDecorator>();
-        decorators.add(0, new CorrIdSenderCodec(corrIdFieldName, new NonBlockingHashMap<>(), idGenerator));
+        decorators.add(0, new CorrIdSenderCodec(corrIdFieldName));
 
         var result = new DefaultSenderRegistry();
         decorators.forEach(decorator -> {

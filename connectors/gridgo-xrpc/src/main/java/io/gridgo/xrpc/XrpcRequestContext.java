@@ -2,15 +2,15 @@ package io.gridgo.xrpc;
 
 import org.joo.promise4j.Deferred;
 
-import io.gridgo.bean.BValue;
 import io.gridgo.framework.support.Message;
+import io.gridgo.utils.wrapper.ByteArray;
 import io.gridgo.xrpc.responder.XrpcResponder;
 import lombok.Data;
 
 @Data
 public class XrpcRequestContext {
 
-    private BValue corrId;
+    private ByteArray corrId;
 
     private String replyTo;
 

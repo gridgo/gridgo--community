@@ -10,8 +10,8 @@ import io.gridgo.xrpc.decorator.XrpcAckResponder;
 import io.gridgo.xrpc.decorator.XrpcMessageDecorator;
 import io.gridgo.xrpc.decorator.XrpcRequestDecorator;
 import io.gridgo.xrpc.decorator.XrpcResponseDecorator;
+import io.gridgo.xrpc.decorator.corrid.CorrIdHexReceiverCodec;
 import io.gridgo.xrpc.decorator.corrid.CorrIdReceiverCodec;
-import io.gridgo.xrpc.decorator.corrid.CorrIdTypeConverterSenderCodec;
 import io.gridgo.xrpc.decorator.replyto.ReplyToReceiverDecorator;
 import io.gridgo.xrpc.registry.XrpcReceiverRegistry;
 import io.gridgo.xrpc.registry.impl.DefaultReceiverRegistry;
@@ -41,6 +41,10 @@ public class DynamicXrpcReceiverBuilder {
 
     @NonNull
     private XrpcResponderLookupable responderRegistry;
+
+    private boolean encodeCorrIdToHex = false;
+
+    private boolean decodeCorrIdFromHex = false;
 
     @NonNull
     private XrpcAckResponder ackResponder = XrpcAckResponder.DEFAULT;
@@ -74,14 +78,50 @@ public class DynamicXrpcReceiverBuilder {
         return this;
     }
 
+    public DynamicXrpcReceiverBuilder clearDecorators() {
+        this.decorators.clear();
+        return this;
+    }
+
+    public DynamicXrpcReceiverBuilder addDecorator(@NonNull XrpcMessageDecorator decorator) {
+        this.decorators.add(decorator);
+        return this;
+    }
+
+    public DynamicXrpcReceiverBuilder encodeCorrIdAsHex() {
+        this.encodeCorrIdToHex = true;
+        return this;
+    }
+
+    public DynamicXrpcReceiverBuilder encodeCorrIdAsHex(boolean value) {
+        this.encodeCorrIdToHex = value;
+        return this;
+    }
+
+    public DynamicXrpcReceiverBuilder decodeCorrIdFromHex() {
+        this.decodeCorrIdFromHex = true;
+        return this;
+    }
+
+    public DynamicXrpcReceiverBuilder decodeCorrIdFromHex(boolean value) {
+        this.decodeCorrIdFromHex = value;
+        return this;
+    }
+
     private XrpcReceiverRegistry buildRegistry() {
 
-        this.decorators.add(0, new ReplyToReceiverDecorator(replyToFieldName));
-        this.decorators.add(0, new CorrIdReceiverCodec(corrIdFieldName));
-        var convertCorrIdToLong = new CorrIdTypeConverterSenderCodec(corrIdFieldName, Long.class);
+        var hexEncoder = new CorrIdHexReceiverCodec(corrIdFieldName);
+        var extractCorrId = new CorrIdReceiverCodec(corrIdFieldName);
 
-        this.decorators.add(0, convertCorrIdToLong.getRequestDecorator());
-        this.decorators.add(convertCorrIdToLong.getResponseDecorator());
+        if (decodeCorrIdFromHex)
+            decorators.add(hexEncoder.getRequestDecorator());
+        decorators.add(extractCorrId.getRequestDecorator());
+
+        decorators.add(extractCorrId.getResponseDecorator());
+        if (encodeCorrIdToHex)
+            decorators.add(hexEncoder.getResponseDecorator());
+
+        decorators.add(new ReplyToReceiverDecorator(replyToFieldName));
 
         var result = new DefaultReceiverRegistry();
         result.setFailureHandler(failureHandler);
