@@ -11,9 +11,9 @@
 	<artifactId>gridgo-kafka</artifactId>
 
 	<properties>
-		<kafka.clients.version>2.1.0</kafka.clients.version>
+		<kafka.clients.version>2.3.0</kafka.clients.version>
 		<kafka.junit4.version>3.0.1</kafka.junit4.version>
-		<kafka_2.11.version>2.1.0</kafka_2.11.version>
+		<kafka_2.11.version>2.3.0</kafka_2.11.version>
 		<guava.version>20.0</guava.version>
 	</properties>
 

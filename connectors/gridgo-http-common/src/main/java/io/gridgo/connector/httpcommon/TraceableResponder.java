@@ -2,7 +2,7 @@ package io.gridgo.connector.httpcommon;
 
 import org.joo.promise4j.Deferred;
 
-import io.gridgo.connector.httpcommon.support.DeferredAndRoutingId;
+import io.gridgo.connector.support.DeferredAndRoutingId;
 import io.gridgo.framework.support.Message;
 
 public interface TraceableResponder {

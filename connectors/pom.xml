@@ -30,7 +30,7 @@
 		<module>gridgo-file</module>
 		<module>gridgo-redis</module>
 		<module>gridgo-scheduler</module>
-		<module>gridgo-rpc</module>
+		<module>gridgo-xrpc</module>
 	</modules>
 
 	<dependencies>
