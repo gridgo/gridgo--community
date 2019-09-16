@@ -4,14 +4,14 @@ import java.util.Optional;
 
 import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.connector.impl.AbstractConnector;
-import io.gridgo.connector.impl.factories.DefaultConnectorFactory;
+import io.gridgo.connector.impl.resolvers.ClasspathConnectorResolver;
 import io.gridgo.connector.support.annotations.ConnectorEndpoint;
 import io.gridgo.xrpc.XrpcBuilder;
 
 @ConnectorEndpoint(scheme = "xrpc", syntax = "{role}:{type}")
 public class XrpcConnector extends AbstractConnector implements SenderBuilder, ReceiverBuilder {
 
-    private static final ConnectorResolver RESOLVER = DefaultConnectorFactory.DEFAULT_CONNECTOR_RESOLVER;
+    private static final ConnectorResolver RESOLVER = new ClasspathConnectorResolver();
 
     @Override
     protected void onInit() {
