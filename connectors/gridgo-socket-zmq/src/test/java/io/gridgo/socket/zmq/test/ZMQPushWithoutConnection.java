@@ -39,7 +39,7 @@ public class ZMQPushWithoutConnection {
 
         int hwm = 1;
         var queryString = "batchingEnabled=false&maxBatchSize=2000&ringBufferSize=2048&sndhwm=" + hwm
-                + "&sendTimeOut=0";
+                + "&sendTimeOut=2000";
 
         var connector = RESOLVER.resolve("zmq:push:tcp://" + address + "?" + queryString);
         try {
