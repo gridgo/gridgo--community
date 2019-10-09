@@ -22,9 +22,12 @@ public class NNPushWithoutConnection {
 
     private int doAckSend(Producer producer, int numMessages) throws InterruptedException, PromiseException {
         for (int i = 0; i < numMessages; i++) {
+            long startTime = System.currentTimeMillis();
             try {
                 producer.sendWithAck(Message.of(Payload.of(BObject.ofSequence("index", i)))).get();
             } catch (Exception e) {
+                long errorAfter = System.currentTimeMillis() - startTime;
+                System.err.println("Queued/sent " + i + " msg, error after " + errorAfter + "ms");
                 return i;
             }
         }
