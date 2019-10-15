@@ -1,7 +1,6 @@
 package io.gridgo.socket.netty4.ws;
 
 import static io.gridgo.socket.netty4.ws.Netty4WebsocketFrameType.TEXT;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
@@ -26,6 +25,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpUtil;
@@ -45,6 +45,7 @@ import lombok.Setter;
 
 public class Netty4WebsocketServer extends AbstractNetty4SocketServer implements Netty4Websocket {
 
+    private static final byte[] WELCOME_PAGE = "Default gridgo-netty4 connector websocket welcome page".getBytes();
     private boolean ssl = false;
     private SSLContext sslContext;
 
@@ -127,15 +128,14 @@ public class Netty4WebsocketServer extends AbstractNetty4SocketServer implements
         int port = host.getPortOrDefault(ssl ? 443 : 80);
         StringBuilder sb = new StringBuilder();
         return sb.append(ssl ? "wss" : "ws") //
-                 .append("://") //
-                 .append(host.getHostOrDefault("localhost")) //
-                 .append(port == 80 ? "" : (":" + port)) //
-                 .append(getPath().startsWith("/") ? "" : "/") //
-                 .append(this.getPath()) //
-                 .toString();
+                .append("://") //
+                .append(host.getHostOrDefault("localhost")) //
+                .append(port == 80 ? "" : (":" + port)) //
+                .append(getPath().startsWith("/") ? "" : "/") //
+                .append(this.getPath()) //
+                .toString();
     }
 
-    @SuppressWarnings("deprecation")
     private void handleHttpRequest(Channel channel, FullHttpRequest req) {
         // Handle a bad request.
         if (!req.decoderResult().isSuccess()) {
@@ -151,12 +151,10 @@ public class Netty4WebsocketServer extends AbstractNetty4SocketServer implements
 
         // response for root path
         if ("/".equals(req.uri())) {
-            ByteBuf content = Unpooled.copiedBuffer("Default gridgo-socket-netty4 connector websocket welcome page".getBytes());
-            FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
-
-            res.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
+            var content = Unpooled.copiedBuffer(WELCOME_PAGE);
+            var res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
+            res.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
             HttpUtil.setContentLength(res, content.readableBytes());
-
             sendHttpResponse(channel, req, res);
             return;
         }
