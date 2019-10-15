@@ -18,7 +18,7 @@ import io.gridgo.framework.support.Message;
 
 public class ZMQPushBeforePullTest {
 
-    private static final String ADDRESS = "localhost:8080";
+    private static final String ADDRESS = "localhost:8089";
 
     private int hwm = 10;
     private Connector connector1;
@@ -69,12 +69,11 @@ public class ZMQPushBeforePullTest {
 
         connector1.start();
         int numQueuedMsgs = doAckSend(connector1.getProducer().orElseThrow(), 100);
-        sleep(100);
-
+        
         var counter = new AtomicInteger(0);
         connector2.getConsumer().orElseThrow().subscribe(msg -> counter.incrementAndGet());
         connector2.start();
-        sleep(100);
+        sleep(200);
 
         assertEquals(min(numQueuedMsgs, hwm), counter.get());
     }

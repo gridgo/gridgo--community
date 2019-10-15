@@ -1,20 +1,22 @@
 package io.gridgo.socket.impl;
 
+import static io.gridgo.socket.impl.SocketUtils.startPolling;
+
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import io.gridgo.connector.impl.AbstractHasResponderConsumer;
 import io.gridgo.connector.support.config.ConnectorContext;
+import io.gridgo.framework.support.Message;
 import io.gridgo.socket.Socket;
 import io.gridgo.socket.SocketConnector;
 import io.gridgo.socket.SocketConsumer;
 import io.gridgo.socket.SocketFactory;
 import io.gridgo.socket.SocketOptions;
-import io.gridgo.utils.ThreadUtils;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DefaultSocketConsumer extends AbstractHasResponderConsumer implements SocketConsumer {
 
     @Getter
@@ -33,7 +35,7 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
     private final String address;
 
-    private CountDownLatch stopDoneTrigger;
+    private CountDownLatch doneSignal;
 
     private boolean autoSkipTopicHeader = false;
 
@@ -101,56 +103,55 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
     @Override
     protected void onStart() {
 
-        final Socket socket = initSocket();
-
-        final AtomicReference<CountDownLatch> doneSignalRef = new AtomicReference<CountDownLatch>();
-        this.poller = new Thread(() -> {
-            this.poll(socket, (doneSignal) -> {
-                doneSignalRef.set(doneSignal);
-            });
-        });
-
+        var socket = initSocket();
         this.totalRecvBytes = 0;
         this.totalRecvMessages = 0;
 
+        this.doneSignal = new CountDownLatch(1);
+        this.poller = new Thread(() -> {
+            startPolling(socket, ByteBuffer.allocateDirect(bufferSize), autoSkipTopicHeader, //
+                    this::handleSocketMessage, //
+                    this::increaseTotalRecvBytes, //
+                    this::increaseTotalRecvMsgs, //
+                    getContext().getExceptionHandler()); // poller will do looping here until stop() called, mean this
+                                                         // thread got interupted
+
+            socket.close(); // close socket right after poll method escaped
+            doneSignal.countDown();
+        }, this.getName() + " POLLER");
+
         this.poller.start();
+    }
 
-        ThreadUtils.sleep(100);
+    private void handleSocketMessage(Message message) {
+        ensurePayloadId(message);
+        publish(message, null);
+    }
 
-        ThreadUtils.busySpin(() -> doneSignalRef.get() == null);
+    private void increaseTotalRecvBytes(long recvBytes) {
+        totalRecvBytes += recvBytes;
+    }
 
-        this.stopDoneTrigger = doneSignalRef.get();
+    private void increaseTotalRecvMsgs(long recvMsgs) {
+        totalRecvMessages += recvMsgs;
     }
 
     @Override
     protected final void onStop() {
-        if (this.poller != null && !this.poller.isInterrupted()) {
-            this.poller.interrupt();
-            this.poller = null;
-            try {
-                this.stopDoneTrigger.await();
-                this.stopDoneTrigger = null;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("error while waiting for stopped", e);
-            }
-        }
-        this.bindingPort = null;
-    }
+        if (this.poller == null || this.poller.isInterrupted())
+            return;
 
-    private void poll(Socket socket, Consumer<CountDownLatch> stopDoneTriggerOutput) {
-        final ByteBuffer buffer = ByteBuffer.allocateDirect(this.bufferSize);
-        Thread.currentThread().setName("[POLLER] " + this.getName());
-        SocketUtils.startPolling(socket, buffer, this.autoSkipTopicHeader, (message) -> {
-            ensurePayloadId(message);
-            publish(message, null);
-        }, (recvBytes) -> {
-            totalRecvBytes += recvBytes;
-        }, (recvMsgs) -> {
-            totalRecvMessages += recvMsgs;
-        }, this.getContext().getExceptionHandler(), stopDoneTriggerOutput);
-
-        socket.close();
+        this.poller.interrupt();
         this.poller = null;
+
+        try {
+            this.doneSignal.await();
+        } catch (InterruptedException e) {
+            log.error("Error while waiting for socket to be closed", e);
+        } finally {
+            this.doneSignal = null;
+        }
+
+        this.bindingPort = null;
     }
 }
