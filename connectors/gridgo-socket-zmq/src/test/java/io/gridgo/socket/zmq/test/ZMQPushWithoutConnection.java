@@ -22,9 +22,12 @@ public class ZMQPushWithoutConnection {
 
     private int doAckSend(Producer producer, int numMessages) throws InterruptedException, PromiseException {
         for (int i = 0; i < numMessages; i++) {
+            long startTime = System.currentTimeMillis();
             try {
                 producer.sendWithAck(Message.of(Payload.of(BObject.ofSequence("index", i)))).get();
             } catch (Exception e) {
+                long errorAfter = System.currentTimeMillis() - startTime;
+                System.err.println("Queued/sent " + i + " msg, error after " + errorAfter + "ms");
                 return i;
             }
         }
@@ -37,9 +40,9 @@ public class ZMQPushWithoutConnection {
         if (osName != null && osName.contains("Windows"))
             return;
 
-        int hwm = 1;
+        int hwm = 10;
         var queryString = "batchingEnabled=false&maxBatchSize=2000&ringBufferSize=2048&sndhwm=" + hwm
-                + "&sendTimeOut=0";
+                + "&sendTimeOut=2000";
 
         var connector = RESOLVER.resolve("zmq:push:tcp://" + address + "?" + queryString);
         try {

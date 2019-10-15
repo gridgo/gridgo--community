@@ -43,7 +43,7 @@ final class ZMQSocket extends AbstractSocket {
 
     @Override
     protected void doBind(Endpoint endpoint) {
-        String resolvedAddress = endpoint.getResolvedAddress();
+        var resolvedAddress = endpoint.getResolvedAddress();
         if (endpoint.getPort() <= 0) {
             bindingPort = this.socket.bindToRandomPort(resolvedAddress);
         } else {
@@ -61,7 +61,7 @@ final class ZMQSocket extends AbstractSocket {
 
     @Override
     protected void doConnect(Endpoint endpoint) {
-        String resolvedAddress = endpoint.getResolvedAddress();
+        var resolvedAddress = endpoint.getResolvedAddress();
         this.socket.connect(resolvedAddress);
     }
 

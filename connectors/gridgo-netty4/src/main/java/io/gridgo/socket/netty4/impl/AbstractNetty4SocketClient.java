@@ -72,9 +72,7 @@ public abstract class AbstractNetty4SocketClient extends AbstractNetty4Socket im
                 doneSignal.countDown();
             });
 
-            new Thread(() -> {
-                this.executeConnect(host, deferred);
-            }).start();
+            new Thread(() -> executeConnect(host, deferred)).start();
 
             try {
                 doneSignal.await();

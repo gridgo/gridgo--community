@@ -4,6 +4,7 @@ import static lombok.AccessLevel.PROTECTED;
 
 import org.joo.promise4j.Promise;
 
+import io.gridgo.connector.Connector;
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
 import io.gridgo.framework.support.Message;
@@ -24,6 +25,8 @@ public class DynamicXrpcSender extends AbstractXrpcSender {
     @Setter(PROTECTED)
     private XrpcSenderRegistry messageRegistry;
 
+    private Connector replyConnector;
+
     @Override
     public Promise<Message, Exception> call(Message message) {
         var deferred = messageRegistry.registerRequest(message, new XrpcRequestContext());
@@ -41,17 +44,22 @@ public class DynamicXrpcSender extends AbstractXrpcSender {
 
     @Override
     protected void onConsumer(Consumer consumer) {
-        var replyConnector = resolveConnector(replyEndpoint);
+        replyConnector = resolveConnector(replyEndpoint);
         if (replyConnector == null)
             throw new XrpcException("Reply connector cannot be resolved from endpoint: " + replyEndpoint);
 
         replyConnector.start();
-
         replyConnector.getConsumer().ifPresentOrElse(this::onReplyConsumer, this::onReplyConsumerUnavailable);
     }
 
     @Override
     protected void onProducer(@NonNull Producer producer) {
         this.producer = producer;
+    }
+
+    @Override
+    protected void onConnectorStopped() {
+        super.onConnectorStopped();
+        this.replyConnector.stop();
     }
 }
