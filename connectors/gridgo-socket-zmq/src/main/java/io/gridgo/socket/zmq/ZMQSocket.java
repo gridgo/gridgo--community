@@ -11,6 +11,7 @@ import io.gridgo.socket.impl.AbstractSocket;
 import io.gridgo.utils.ObjectUtils;
 import io.gridgo.utils.ObjectUtils.Setter;
 import io.gridgo.utils.helper.Assert;
+import lombok.Getter;
 import lombok.NonNull;
 
 final class ZMQSocket extends AbstractSocket {
@@ -18,11 +19,15 @@ final class ZMQSocket extends AbstractSocket {
     private static final Map<String, Setter> ZMQ_SOCKET_SETTERS = initSetters();
 
     private static Map<String, Setter> initSetters() {
-        return ObjectUtils.findAllClassSetters(ZMQ.Socket.class).entrySet().stream().collect(
-                Collectors.toMap((Map.Entry<String, Setter> entry) -> entry.getKey().toLowerCase(), (Map.Entry<String, Setter> entry) -> entry.getValue()));
+        return ObjectUtils.findAllClassSetters(ZMQ.Socket.class).entrySet().stream()
+                .collect(Collectors.toMap((Map.Entry<String, Setter> entry) -> entry.getKey().toLowerCase(),
+                        (Map.Entry<String, Setter> entry) -> entry.getValue()));
     }
 
     private final ZMQ.Socket socket;
+
+    @Getter
+    private Integer bindingPort = null;
 
     ZMQSocket(ZMQ.Socket socket) {
         this.socket = Assert.notNull(socket, "zmq.socket");
@@ -38,21 +43,26 @@ final class ZMQSocket extends AbstractSocket {
 
     @Override
     protected void doBind(Endpoint endpoint) {
-        String resolvedAddress = endpoint.getResolvedAddress();
-        this.socket.bind(resolvedAddress);
+        var resolvedAddress = endpoint.getResolvedAddress();
+        if (endpoint.getPort() <= 0) {
+            bindingPort = this.socket.bindToRandomPort(resolvedAddress);
+        } else {
+            this.socket.bind(resolvedAddress);
+            this.bindingPort = endpoint.getPort();
+        }
         // System.out.println("success bind to: " + resolvedAddress);
     }
 
     @Override
     protected void doClose() {
         this.socket.close();
+        this.bindingPort = null;
     }
 
     @Override
     protected void doConnect(Endpoint endpoint) {
-        String resolvedAddress = endpoint.getResolvedAddress();
+        var resolvedAddress = endpoint.getResolvedAddress();
         this.socket.connect(resolvedAddress);
-        // System.out.println("success connect to address: " + resolvedAddress);
     }
 
     @Override

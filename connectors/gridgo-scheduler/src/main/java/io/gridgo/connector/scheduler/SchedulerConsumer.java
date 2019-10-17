@@ -33,10 +33,6 @@ public class SchedulerConsumer extends AbstractConsumer {
 
     private Long period;
 
-    private Boolean fixedRate;
-
-    private Boolean fixedDelay;
-
     private Integer errorThreshold;
 
     private Integer idleThreshold;
@@ -55,14 +51,15 @@ public class SchedulerConsumer extends AbstractConsumer {
 
     private boolean daemon;
 
+    private String mode;
+
     public SchedulerConsumer(ConnectorContext context, String name, BObject params) {
         super(context);
         this.schedulerName = name;
         this.threads = params.getInteger("threads", 1);
         this.delay = params.getLong("delay", 1000);
         this.period = params.getLong("period", 1000);
-        this.fixedRate = params.getBoolean("fixedRate", false);
-        this.fixedDelay = params.getBoolean("fixedDelay", false);
+        this.mode = params.getString("mode", null);
         var generator = params.getString("generator");
         if (generator != null)
             this.generator = context.getRegistry().lookupMandatory("generator", MessageGenerator.class);
@@ -82,9 +79,9 @@ public class SchedulerConsumer extends AbstractConsumer {
                 key -> Executors.newScheduledThreadPool(threads, this::spawnThread));
         connRefs.computeIfAbsent(schedulerName, key -> new ConnectionRef<>(schedulerName)).ref();
 
-        if (fixedRate)
+        if ("fixedRate".equals(mode))
             this.future = scheduler.scheduleAtFixedRate(this::poll, delay, period, TimeUnit.MILLISECONDS);
-        else if (fixedDelay)
+        else if ("fixedDelay".equals(mode))
             this.future = scheduler.scheduleWithFixedDelay(this::poll, delay, period, TimeUnit.MILLISECONDS);
         else
             this.future = scheduler.schedule(this::poll, delay, TimeUnit.MILLISECONDS);

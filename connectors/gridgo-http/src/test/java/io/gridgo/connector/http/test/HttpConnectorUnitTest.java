@@ -77,7 +77,7 @@ public class HttpConnectorUnitTest {
                 atomic.set(ex);
             latch.countDown();
         });
-        producer.call(Message.of(Payload.of(null))).always((status, response, ex) -> {
+        producer.call(Message.ofEmpty()).always((status, response, ex) -> {
             if (ex != null) {
                 atomic.set(ex);
             } else {

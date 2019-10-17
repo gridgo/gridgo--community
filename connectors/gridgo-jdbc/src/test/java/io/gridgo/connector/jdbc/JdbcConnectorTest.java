@@ -4,9 +4,12 @@ import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
 
 import org.jdbi.v3.core.ConnectionFactory;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.zaxxer.hikari.HikariDataSource;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.connector.Connector;
@@ -17,24 +20,31 @@ import io.gridgo.connector.support.config.impl.DefaultConnectorContextBuilder;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Registry;
 import io.gridgo.framework.support.impl.SimpleRegistry;
-import snaq.db.ConnectionPool;
 
 public class JdbcConnectorTest {
 
-    private Registry registry;
-    private ConnectorContext context;
-    private Connector connector;
-    private Producer producer;
+    private static Registry registry;
+    private static ConnectorContext context;
+    private static Connector connector;
+    private static Producer producer;
+    private static HikariDataSource pool;
 
-    @Before
-    public void initialize() {
-        var pool = new ConnectionPool("local", 5, 15, 0, 180, "jdbc:mysql://localhost:3306/test", "root", "");
-        registry = new SimpleRegistry().register("sonaq", (ConnectionFactory) pool::getConnection);
+    @BeforeClass
+    public static void initialize() {
+        pool = new HikariDataSource();
+        pool.setJdbcUrl("jdbc:mysql://localhost:3306/test");
+        pool.setUsername("root");
+        registry = new SimpleRegistry().register("hikari", (ConnectionFactory) pool::getConnection);
         context = new DefaultConnectorContextBuilder().setRegistry(registry).build();
         connector = new DefaultConnectorFactory().createConnector(
-                "jdbc:mysql://localhost:3306/test?user=root&pool=sonaq", context);
+                "jdbc:mysql://localhost:3306/test?user=root&pool=hikari&useSSL=false", context);
         connector.start();
         producer = connector.getProducer().orElseThrow();
+    }
+    
+    @AfterClass
+    public static void cleanup() {
+        pool.close();
     }
 
     @Test

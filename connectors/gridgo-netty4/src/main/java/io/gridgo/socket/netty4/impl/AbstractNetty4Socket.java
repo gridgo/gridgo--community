@@ -1,5 +1,7 @@
 package io.gridgo.socket.netty4.impl;
 
+import static io.gridgo.utils.ThreadUtils.busySpin;
+
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -9,7 +11,6 @@ import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.socket.netty4.Netty4Socket;
 import io.gridgo.socket.netty4.Netty4Transport;
-import io.gridgo.utils.ThreadUtils;
 import io.gridgo.utils.helper.Loggable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
@@ -70,7 +71,7 @@ public abstract class AbstractNetty4Socket implements Netty4Socket, Loggable {
 
     @Override
     public final boolean isStarted() {
-        ThreadUtils.busySpin(10, this::isInChangingState);
+        busySpin(this::isInChangingState);
         return this.running;
     }
 

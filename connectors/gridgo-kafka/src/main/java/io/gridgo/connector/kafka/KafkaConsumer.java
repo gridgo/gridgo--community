@@ -164,16 +164,24 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
             if (offset == -1)
                 return;
             if (!force && "async".equals(configuration.getCommitType())) {
-                consumer.commitAsync(Collections.singletonMap(partition, new OffsetAndMetadata(offset + 1)),
-                        (result, ex) -> {
-                            if (ex != null) {
-                                log.error("Commit failed on topic {} - {}", partition.topic(), partition.partition(),
-                                        ex);
-                            }
-                        });
+                commitAsync(offset, partition);
             } else {
-                consumer.commitSync(Collections.singletonMap(partition, new OffsetAndMetadata(offset + 1)));
+                commitSync(offset, partition);
             }
+        }
+
+        private void commitSync(long offset, TopicPartition partition) {
+            consumer.commitSync(Collections.singletonMap(partition, new OffsetAndMetadata(offset + 1)));
+        }
+
+        private void commitAsync(long offset, TopicPartition partition) {
+            consumer.commitAsync(Collections.singletonMap(partition, new OffsetAndMetadata(offset + 1)),
+                    (result, ex) -> {
+                        if (ex != null) {
+                            log.error("Commit failed on topic {} - {}", partition.topic(), partition.partition(),
+                                    ex);
+                        }
+                    });
         }
 
         protected void doInit() {
@@ -343,16 +351,17 @@ public class KafkaConsumer extends AbstractConsumer implements FormattedMarshall
         private void seekOffset(Duration pollDuration) {
             if (configuration.getSeekTo() == null)
                 return;
+            consumer.poll(pollDuration);
+            // This poll to ensures we have an assigned partition otherwise seek won't work
             if (configuration.getSeekTo().equals("beginning")) {
-                // This poll to ensures we have an assigned partition otherwise seek won't work
-                consumer.poll(pollDuration);
                 consumer.seekToBeginning(consumer.assignment());
             } else if (configuration.getSeekTo().equals("end")) {
-                // This poll to ensures we have an assigned partition otherwise seek won't work
-                consumer.poll(pollDuration);
                 consumer.seekToEnd(consumer.assignment());
             } else {
-                throw new IllegalArgumentException("Invalid seekTo option: " + configuration.getSeekTo());
+                if (configuration.getSeekPartition() == null)
+                    throw new IllegalArgumentException("seekPartition must be set when seekOffset is set as Long");
+                var offset = Long.parseLong(configuration.getSeekTo());
+                consumer.seek(new TopicPartition(configuration.getTopic(), configuration.getSeekPartition()), offset);
             }
         }
 

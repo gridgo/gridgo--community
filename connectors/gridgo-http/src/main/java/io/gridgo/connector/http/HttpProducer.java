@@ -1,9 +1,15 @@
 package io.gridgo.connector.http;
 
-import static io.gridgo.connector.http.HttpConstants.*;
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_PATH;
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS;
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS_CODE;
+
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.asynchttpclient.AsyncCompletionHandler;
@@ -20,6 +26,8 @@ import org.asynchttpclient.Response;
 import org.joo.promise4j.Promise;
 import org.joo.promise4j.impl.CompletableDeferredObject;
 
+import io.gridgo.bean.BArray;
+import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.connector.httpcommon.AbstractHttpProducer;
 import io.gridgo.connector.httpcommon.support.exceptions.ConnectionException;
@@ -109,14 +117,40 @@ public class HttpProducer extends AbstractHttpProducer {
     private RequestBuilder createBuilder(Message message) {
         if (message == null)
             return new RequestBuilder().setUrl(endpointUri);
+        var endpointUri = this.endpointUri + message.headers().getString(HEADER_PATH, "");
         var method = getMethod(message, defaultMethod);
+        var headers = getHeaders(message);
         var params = buildParams(getQueryParams(message));
         var body = serialize(message.body());
-        return new RequestBuilder(method) //
-                                         .setUrl(endpointUri) //
+        return new RequestBuilder(method).setUrl(endpointUri) //
                                          .setBody(body) //
+                                         .setHeaders(headers) //
                                          .setQueryParams(params);
+    }
 
+    private Map<CharSequence, List<String>> getHeaders(Message message) {
+        var headers = message.headers();
+        var map = new HashMap<CharSequence, List<String>>();
+        for (var entry : headers.entrySet()) {
+            var list = map.computeIfAbsent(entry.getKey(), key -> new ArrayList<>());
+            if (entry.getValue().isArray()) {
+                putMultiHeaders(list, entry.getValue().asArray());
+            } else {
+                putHeader(list, entry.getValue());
+            }
+        }
+        return map;
+    }
+
+    private void putMultiHeaders(List<String> list, BArray arr) {
+        for (var e : arr) {
+            putHeader(list, e);
+        }
+    }
+
+    private void putHeader(List<String> list, BElement e) {
+        if (e.isValue())
+            list.add(e.asValue().getString());
     }
 
     @Override

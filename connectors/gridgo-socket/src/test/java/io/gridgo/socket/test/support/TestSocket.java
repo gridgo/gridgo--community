@@ -9,12 +9,16 @@ import org.apache.commons.io.IOUtils;
 
 import io.gridgo.socket.helper.Endpoint;
 import io.gridgo.socket.impl.AbstractSocket;
+import lombok.Getter;
 
 public class TestSocket extends AbstractSocket {
 
     private java.net.Socket socket;
 
     private java.net.ServerSocket serverSocket;
+
+    @Getter
+    private Integer bindingPort;
 
     public TestSocket() {
     }
@@ -30,6 +34,7 @@ public class TestSocket extends AbstractSocket {
             serverSocket = new java.net.ServerSocket();
             serverSocket.setSoTimeout(100);
             serverSocket.bind(new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
+            this.bindingPort = endpoint.getPort();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

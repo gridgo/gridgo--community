@@ -28,6 +28,9 @@ public class NNSocket extends AbstractSocket {
     private boolean applyConfig(int option, int value) {
         return nanomsg.nn_setsockopt_int(this.getId(), nanomsg.NN_SOL_SOCKET, option, value) >= 0;
     }
+    
+    @Getter
+    private Integer bindingPort;
 
     @Override
     public void applyConfig(String name, Object value) {

@@ -9,7 +9,7 @@ import io.gridgo.redis.command.AbstractRedisCommandHandler;
 import io.gridgo.redis.command.RedisCommand;
 import io.gridgo.redis.command.RedisCommands;
 
-@RedisCommand(RedisCommands.ZREVRANGEBYLEX)
+@RedisCommand(RedisCommands.ZRANGEBYLEX)
 public class RedisZrangeByLexHandler extends AbstractRedisCommandHandler {
 
     public RedisZrangeByLexHandler() {

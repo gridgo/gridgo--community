@@ -21,6 +21,7 @@ import io.gridgo.connector.keyvalue.AbstractKeyValueProducer;
 import io.gridgo.connector.support.config.ConnectorConfig;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.framework.support.Message;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,6 +33,7 @@ public class RocksDBProducer extends AbstractKeyValueProducer {
 
     private Options options;
 
+    @Getter
     private RocksDB db;
 
     public RocksDBProducer(ConnectorContext context, ConnectorConfig connectorConfig, String path) {
