@@ -12,16 +12,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import io.gridgo.bean.BValue;
 import io.gridgo.connector.Connector;
 import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
 import io.gridgo.connector.impl.resolvers.ClasspathConnectorResolver;
 import io.gridgo.framework.support.Message;
-import io.gridgo.framework.support.Payload;
 
 public class ZMQPubSubUnitTest {
+
+    private static final String WARMUP = "warmup";
 
     private static final String TEXT = "This is test text";
 
@@ -63,27 +63,38 @@ public class ZMQPubSubUnitTest {
 
             subscriber1.subscribe((msg) -> {
                 String body = msg.body().asValue().getString();
+                System.out.println("s1 got " + body);
+                if (WARMUP.equalsIgnoreCase(body))
+                    return;
                 recv1.set(body);
                 doneSignal.countDown();
             });
 
             subscriber2.subscribe((msg) -> {
                 String body = msg.body().asValue().getString();
+                System.out.println("s2 got " + body);
+                if (WARMUP.equalsIgnoreCase(body))
+                    return;
                 recv2.set(body);
                 doneSignal.countDown();
             });
 
             subscriber3.subscribe((msg) -> {
                 String body = msg.body().asValue().getString();
+                System.out.println("s3 got " + body);
+                if (WARMUP.equalsIgnoreCase(body))
+                    return;
                 recv3.add(body);
                 doneSignal.countDown();
             });
 
             // publish data
-            publisher.send(Message.of(Payload.of(BValue.of(text1))).setRoutingIdFromAny("topic1"));
-            publisher.send(Message.of(Payload.of(BValue.of(text2))).setRoutingIdFromAny("topic2"));
+            publisher.send(Message.ofAny(WARMUP).setRoutingIdFromAny("topic1"));
+            publisher.send(Message.ofAny(WARMUP).setRoutingIdFromAny("topic2"));
+            publisher.send(Message.ofAny(text1).setRoutingIdFromAny("topic1"));
+            publisher.send(Message.ofAny(text2).setRoutingIdFromAny("topic2"));
 
-            doneSignal.await(5, TimeUnit.SECONDS);
+            doneSignal.await(10, TimeUnit.SECONDS);
 
             assertEquals(text1, recv1.get());
             assertEquals(text2, recv2.get());

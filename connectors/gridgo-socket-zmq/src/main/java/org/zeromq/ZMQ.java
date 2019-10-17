@@ -27,21 +27,24 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * ZeroMQ JNI Bindings.
  * 
  * @author Gonzalo Diethelm
  * 
  */
+@Slf4j
 public class ZMQ {
 
     static {
         // if no embedded native library, revert to loading from java.library.path
         if (!EmbeddedLibraryTools.LOADED_EMBEDDED_LIBRARY) {
-            System.out.println("Embedded jzmq and zmq libraries not found, loading system library...");
+            log.info("Embedded jzmq and zmq libraries not found, loading system library...");
             System.loadLibrary("jzmq");
         } else {
-            System.out.println("Using embedded zmq library!!!");
+            log.info("Using embedded zmq library!!!");
         }
     }
 

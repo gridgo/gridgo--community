@@ -4,6 +4,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class NanoLibrary {
     static {
         ensureNativeCode();
@@ -247,9 +250,9 @@ public class NanoLibrary {
 
     private static void ensureNativeCode() {
         if (EmbeddedLibraryTools.LOADED_EMBEDDED_LIBRARY) {
-            System.out.println("Using embedded native jnano lib");
+            log.info("Using embedded native jnano lib");
         } else {
-            System.out.println("Try to load native library from system shared libs");
+            log.info("Try to load native library from system shared libs");
             System.loadLibrary("jnano");
         }
     }
