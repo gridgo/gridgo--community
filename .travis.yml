@@ -19,6 +19,10 @@ addons:
     organization: "gridgo"
     token: $SONAR_TOKEN
 
+before_script:
+  - go get -v go.etcd.io/etcd
+  - $GOPATH/bin/etcd &
+
 before_install:
   - sudo apt-get install -y libpgm-dev 
   - sudo apt-get install -y libstdc++6
