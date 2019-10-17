@@ -45,7 +45,7 @@ before_script:
   - sleep 5
 
 script:
-- mvn test -B jacoco:report sonar:sonar -Dsonar.projectKey=gridgo_gridgo-connector
+- mvn test -B jacoco:report # sonar:sonar -Dsonar.projectKey=gridgo_gridgo-connector
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)
