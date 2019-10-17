@@ -1,6 +1,13 @@
 language: java
 jdk:
 - oraclejdk11
+sudo: false
+
+env:
+  global:
+    - CONSUL_VERSION=0.5.0
+    - CONSUL_DC=dev1
+    - CONSUL_DIR=$HOME/consul_$CONSUL_VERSION
 
 services:
 - rabbitmq
@@ -22,6 +29,15 @@ addons:
 before_script:
   - go get -v go.etcd.io/etcd
   - $GOPATH/bin/etcd &
+  - 'if [[ ! -f $CONSUL_DIR/consul ]]; then (mkdir -p $CONSUL_DIR && cd $CONSUL_DIR && wget https://dl.bintray.com/mitchellh/consul/${CONSUL_VERSION}_linux_amd64.zip && unzip ${CONSUL_VERSION}_linux_amd64.zip); fi'
+  - $CONSUL_DIR/consul --version
+  - $CONSUL_DIR/consul agent -server -bootstrap-expect 1 -data-dir /tmp/consul -dc=$CONSUL_DC &
+  # Wait for consul to elect itself as leader
+  - sleep 5
+
+cache:
+  directories:
+    - $CONSUL_DIR
 
 before_install:
   - sudo apt-get install -y libpgm-dev 
