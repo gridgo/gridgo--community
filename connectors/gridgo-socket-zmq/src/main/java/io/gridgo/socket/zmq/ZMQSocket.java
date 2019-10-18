@@ -10,7 +10,6 @@ import io.gridgo.socket.helper.Endpoint;
 import io.gridgo.socket.impl.AbstractSocket;
 import io.gridgo.utils.ObjectUtils;
 import io.gridgo.utils.ObjectUtils.Setter;
-import io.gridgo.utils.helper.Assert;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -29,8 +28,8 @@ final class ZMQSocket extends AbstractSocket {
     @Getter
     private Integer bindingPort = null;
 
-    ZMQSocket(ZMQ.Socket socket) {
-        this.socket = Assert.notNull(socket, "zmq.socket");
+    ZMQSocket(@NonNull ZMQ.Socket socket) {
+        this.socket = socket;
     }
 
     @Override
