@@ -1,0 +1,51 @@
+language: java
+jdk:
+- oraclejdk11
+sudo: false
+
+env:
+  global:
+    - CONSUL_VERSION=0.5.0
+    - CONSUL_DC=dev1
+    - CONSUL_DIR=$HOME/consul_$CONSUL_VERSION
+
+services:
+- rabbitmq
+- mongodb
+- redis-server
+- mysql
+
+notifications:
+  slack: gridgo:EkUUzu8RhdhIVeNKg9JlcuIv
+  
+addons:
+  apt:
+    packages:
+    - rabbitmq-server 
+  sonarcloud:
+    organization: "gridgo"
+    token: $SONAR_TOKEN
+
+cache:
+  directories:
+    - $CONSUL_DIR
+
+before_install:
+  - sudo apt-get install -y libpgm-dev 
+  - sudo apt-get install -y libstdc++6
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
+
+before_script:
+  - go get -v go.etcd.io/etcd
+  - $GOPATH/bin/etcd &
+  - 'if [[ ! -f $CONSUL_DIR/consul ]]; then (mkdir -p $CONSUL_DIR && cd $CONSUL_DIR && wget https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip && unzip consul_${CONSUL_VERSION}_linux_amd64.zip); fi'
+  - $CONSUL_DIR/consul --version
+  - $CONSUL_DIR/consul agent -server -bootstrap-expect 1 -data-dir /tmp/consul -dc=$CONSUL_DC &
+  # Wait for consul to elect itself as leader
+  - sleep 5
+
+script:
+- mvn test -B jacoco:report # sonar:sonar -Dsonar.projectKey=gridgo_gridgo-connector
+
+after_success:
+- bash <(curl -s https://codecov.io/bash)
