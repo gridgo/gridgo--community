@@ -8,9 +8,9 @@ import org.nanomsg.NanoLibrary;
 import io.gridgo.socket.helper.Endpoint;
 import io.gridgo.socket.impl.AbstractSocket;
 import io.gridgo.utils.PrimitiveUtils;
-import io.gridgo.utils.helper.Assert;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NonNull;
 
 public class NNSocket extends AbstractSocket {
 
@@ -20,23 +20,20 @@ public class NNSocket extends AbstractSocket {
     @Getter(AccessLevel.PROTECTED)
     private final NanoLibrary nanomsg;
 
-    NNSocket(int id, NanoLibrary nanoLibrary) {
+    NNSocket(int id, @NonNull NanoLibrary nanoLibrary) {
         this.id = id;
-        this.nanomsg = Assert.notNull(nanoLibrary, "Nanomsg");
+        this.nanomsg = nanoLibrary;
     }
 
     private boolean applyConfig(int option, int value) {
         return nanomsg.nn_setsockopt_int(this.getId(), nanomsg.NN_SOL_SOCKET, option, value) >= 0;
     }
-    
+
     @Getter
     private Integer bindingPort;
 
     @Override
-    public void applyConfig(String name, Object value) {
-        Assert.notNull(name, "Config's name");
-        Assert.notNull(value, "Config's value");
-
+    public void applyConfig(@NonNull String name, @NonNull Object value) {
         boolean success = false;
         switch (name.toLowerCase()) {
         case "linger":

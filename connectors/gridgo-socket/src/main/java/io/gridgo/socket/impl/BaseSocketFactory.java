@@ -3,7 +3,7 @@ package io.gridgo.socket.impl;
 import io.gridgo.socket.Configurable;
 import io.gridgo.socket.Socket;
 import io.gridgo.socket.SocketOptions;
-import io.gridgo.utils.helper.Assert;
+import lombok.NonNull;
 
 public abstract class BaseSocketFactory extends AbstractSocketFactory {
 
@@ -29,9 +29,7 @@ public abstract class BaseSocketFactory extends AbstractSocketFactory {
 
     @SuppressWarnings("unchecked")
     @Override
-    public final <T extends Socket> T createSocket(SocketOptions options) {
-        Assert.notNull(options, "socket options");
-        Assert.notNull(options.getType(), "socket type");
+    public final <T extends Socket> T createSocket(@NonNull SocketOptions options) {
 
         Socket socket = this.createCustomSocket(options.getType());
 

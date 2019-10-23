@@ -4,8 +4,8 @@ import org.nanomsg.NanoLibrary;
 
 import io.gridgo.socket.Socket;
 import io.gridgo.socket.impl.BaseSocketFactory;
-import io.gridgo.utils.helper.Assert;
 import lombok.Getter;
+import lombok.NonNull;
 
 public class NNSocketFactory extends BaseSocketFactory {
 
@@ -14,8 +14,7 @@ public class NNSocketFactory extends BaseSocketFactory {
     @Getter
     private final String type = "nanomsg";
 
-    protected Socket createCustomSocket(String type) {
-        Assert.notNull(type, "Socket type");
+    protected Socket createCustomSocket(@NonNull String type) {
         switch (type.toLowerCase()) {
         case "bus":
             return createNanoSocket(nanomsg.NN_BUS);

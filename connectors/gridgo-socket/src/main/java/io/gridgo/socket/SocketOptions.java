@@ -4,11 +4,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import lombok.Data;
+import lombok.NonNull;
 
 @Data
 public class SocketOptions {
 
-    private String type;
+    private @NonNull String type;
 
     private final Map<String, Object> config = new HashMap<>();
 
