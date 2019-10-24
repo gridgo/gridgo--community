@@ -16,7 +16,6 @@ import org.joo.promise4j.impl.CompletableDeferredObject;
 import com.mongodb.async.client.FindIterable;
 import com.mongodb.async.client.MongoClient;
 import com.mongodb.async.client.MongoCollection;
-import com.mongodb.async.client.MongoDatabase;
 import com.mongodb.client.model.CountOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.InsertManyOptions;
@@ -31,6 +30,7 @@ import io.gridgo.connector.impl.AbstractProducer;
 import io.gridgo.connector.mongodb.support.MongoOperationException;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.framework.support.Message;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -43,17 +43,16 @@ public class MongoDBProducer extends AbstractProducer {
 
     private Map<String, ProducerHandler> operations = new HashMap<>();
 
+    @Getter
     private MongoCollection<Document> collection;
-
-    private MongoDatabase database;
 
     private String generatedName;
 
     public MongoDBProducer(ConnectorContext context, String connectionBean, String database, String collectionName) {
         super(context);
         var connection = getContext().getRegistry().lookupMandatory(connectionBean, MongoClient.class);
-        this.database = connection.getDatabase(database);
-        this.collection = this.database.getCollection(collectionName);
+        var db = connection.getDatabase(database);
+        this.collection = db.getCollection(collectionName);
         this.generatedName = "producer.mongodb." + connectionBean + "." + database + "." + collectionName;
 
         bindHandlers();

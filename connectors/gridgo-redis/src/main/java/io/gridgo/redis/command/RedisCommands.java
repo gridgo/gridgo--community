@@ -1,11 +1,11 @@
 package io.gridgo.redis.command;
 
+import static io.gridgo.utils.ClasspathUtils.scanForAnnotatedTypes;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-import org.reflections.Reflections;
-
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -206,40 +206,31 @@ public class RedisCommands {
         scanPackage(RedisCommands.class.getPackageName());
     }
 
-    public static RedisCommandHandler getHandler(String command) {
-        if (command == null) {
-            return null;
-        }
+    public static RedisCommandHandler getHandler(@NonNull String command) {
         return handlers.get(command);
     }
 
     public static void scanPackage(String packageName) {
-        scanPackage(packageName, RedisCommands.class.getClassLoader());
+        scanPackage(packageName, Thread.currentThread().getContextClassLoader());
+    }
+
+    private synchronized static void registerHandlerByAnnotation(Class<?> clazz, RedisCommand annotation) {
+        var cmd = annotation.value().toLowerCase().trim();
+
+        if (handlers.containsKey(cmd)) {
+            var existing = handlers.get(cmd).getClass().getName();
+            log.warn("Command '{}' has already registered with another handler: {}", cmd, existing);
+            return;
+        }
+
+        try {
+            handlers.put(cmd, (RedisCommandHandler) clazz.getConstructor().newInstance());
+        } catch (Exception e) {
+            throw new RuntimeException("Error while trying to create redis command handler", e);
+        }
     }
 
     public static void scanPackage(String packageName, ClassLoader classLoader) {
-        Reflections reflections = new Reflections(packageName, classLoader);
-        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(RedisCommand.class);
-        synchronized (handlers) {
-            for (Class<?> clazz : classes) {
-                if (RedisCommandHandler.class.isAssignableFrom(clazz)) {
-                    var cmd = clazz.getAnnotation(RedisCommand.class).value().toLowerCase().trim();
-                    if (!handlers.containsKey(cmd)) {
-                        try {
-                            RedisCommandHandler handler = (RedisCommandHandler) clazz.getConstructor().newInstance();
-                            handlers.put(cmd, handler);
-                        } catch (Exception e) {
-                            throw new RuntimeException("Error while trying to create redis command handler", e);
-                        }
-                    } else {
-                        log.warn("Command '" + cmd + "' (in package '" + packageName + "') has already registered with another handler: "
-                                + handlers.get(cmd).getClass().getName());
-                    }
-                } else {
-                    log.warn("class " + clazz + " is annotated with " + RedisCommand.class.getName() + " but doesn't implement "
-                            + RedisCommandHandler.class.getName() + " -> ignored");
-                }
-            }
-        }
+        scanForAnnotatedTypes(packageName, RedisCommand.class, RedisCommands::registerHandlerByAnnotation, classLoader);
     }
 }

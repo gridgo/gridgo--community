@@ -3,6 +3,7 @@ package io.gridgo.connector.kafka.test;
 import java.text.DecimalFormat;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -216,7 +217,7 @@ public class KafkaProducerUnitTest {
         String key = "test-key";
         BObject headers = BObject.ofEmpty().setAny(KafkaConstants.KEY, key).setAny(KafkaConstants.PARTITION, 0);
         Message msg = Message.of(Payload.of(headers, BObject.ofEmpty().setAny("test", 1).setAny("hello", "world")));
-        
+
         long started = System.nanoTime();
 
         for (int i = 0; i < NUM_MESSAGES; i++) {
@@ -226,6 +227,42 @@ public class KafkaProducerUnitTest {
         long elapsed = System.nanoTime() - started;
         printPace("KafkaProducerSend", NUM_MESSAGES, elapsed);
 
+        connector.stop();
+    }
+
+    @Test
+    public void testSendWithCustomTopic() throws InterruptedException {
+        String extraQuery = "&mode=producer";
+        String topicName = createTopic();
+
+        String brokers = sharedKafkaTestResource.getKafkaConnectString();
+
+        var connectString = "kafka:dummy?brokers=" + brokers + extraQuery;
+        var connector = createKafkaConnector(connectString);
+        var producer = connector.getProducer().orElseThrow();
+
+        connector.start();
+
+        String key = "test-key";
+        var headers = BObject.of(KafkaConstants.KEY, key) //
+                             .setAny(KafkaConstants.CUSTOM_TOPIC, topicName);
+        var body = BObject.of("test", 1).setAny("hello", "world");
+        Message msg = Message.ofAny(headers, body);
+
+        var latch = new CountDownLatch(1);
+        
+        var result = new AtomicReference<Message>();
+
+        producer.sendWithAck(msg).always((s, r, e) -> {
+            result.set(r);
+            latch.countDown();
+        });
+        
+        latch.await();
+        
+        Assert.assertNotNull(result.get());
+        Assert.assertEquals(topicName, result.get().headers().getString(KafkaConstants.TOPIC));
+        
         connector.stop();
     }
 }

@@ -2,7 +2,6 @@ package io.gridgo.socket.impl;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 import io.gridgo.bean.BArray;
@@ -29,14 +28,15 @@ public class SocketUtils {
             body.add(BArray.ofSequence(payload.getId().orElse(null), payload.getHeaders(), payload.getBody()));
         }
         Payload payload = Payload.of(body)//
-                                 .addHeader(SocketConstants.IS_BATCH, true) //
-                                 .addHeader(SocketConstants.BATCH_SIZE, messages.size());
+                .addHeader(SocketConstants.IS_BATCH, true) //
+                .addHeader(SocketConstants.BATCH_SIZE, messages.size());
 
         return Message.of(payload);
     }
 
-    private static void process(ByteBuffer buffer, boolean skipTopicHeader, Consumer<Message> receiver, Consumer<Integer> recvByteCounter,
-            Consumer<Integer> recvMsgCounter, Consumer<Throwable> exceptionHandler, int rc) {
+    private static void process(ByteBuffer buffer, boolean skipTopicHeader, Consumer<Message> receiver,
+            Consumer<Integer> recvByteCounter, Consumer<Integer> recvMsgCounter, Consumer<Throwable> exceptionHandler,
+            int rc) {
         recvByteCounter.accept(rc);
 
         try {
@@ -65,7 +65,8 @@ public class SocketUtils {
         }
     }
 
-    private static void processBatch(Consumer<Message> receiver, Consumer<Integer> recvMsgCounter, Message message, BObject headers) {
+    private static void processBatch(Consumer<Message> receiver, Consumer<Integer> recvMsgCounter, Message message,
+            BObject headers) {
         var subMessages = message.body().asArray();
         recvMsgCounter.accept(headers.getInteger(SocketConstants.BATCH_SIZE, subMessages.size()));
         for (BElement payload : subMessages) {
@@ -81,14 +82,7 @@ public class SocketUtils {
             Consumer<Message> receiver, //
             Consumer<Integer> recvByteCounter, //
             Consumer<Integer> recvMsgCounter, //
-            Consumer<Throwable> exceptionHandler, //
-            Consumer<CountDownLatch> doneSignalOutput) {
-
-        var doneSignal = new CountDownLatch(1);
-
-        if (doneSignalOutput != null) {
-            doneSignalOutput.accept(doneSignal);
-        }
+            Consumer<Throwable> exceptionHandler) {
 
         while (!Thread.currentThread().isInterrupted()) {
             buffer.clear();
@@ -101,7 +95,5 @@ public class SocketUtils {
                 process(buffer, skipTopicHeader, receiver, recvByteCounter, recvMsgCounter, exceptionHandler, rc);
             }
         }
-
-        doneSignal.countDown();
     }
 }

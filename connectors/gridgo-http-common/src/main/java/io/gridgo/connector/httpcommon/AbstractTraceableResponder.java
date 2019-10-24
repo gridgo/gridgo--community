@@ -7,8 +7,8 @@ import org.joo.promise4j.Deferred;
 import org.joo.promise4j.impl.CompletableDeferredObject;
 
 import io.gridgo.bean.BValue;
-import io.gridgo.connector.httpcommon.support.DeferredAndRoutingId;
 import io.gridgo.connector.impl.AbstractResponder;
+import io.gridgo.connector.support.DeferredAndRoutingId;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.generators.IdGenerator;

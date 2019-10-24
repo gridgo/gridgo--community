@@ -30,6 +30,8 @@ public class KafkaConstants {
 
     public static final String TOPIC = "kafka.TOPIC";
 
+    public static final String CUSTOM_TOPIC = "kafka.CUSTOM_TOPIC";
+
     public static final String OFFSET = "kafka.OFFSET";
 
     public static final String TIMESTAMP = "kafka.TIMESTAMP";

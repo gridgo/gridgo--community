@@ -23,14 +23,12 @@ import io.gridgo.framework.execution.ExecutionStrategy;
 import io.gridgo.framework.execution.impl.DefaultExecutionStrategy;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
-import io.gridgo.framework.support.generators.impl.TimeBasedIdGenerator;
+import io.gridgo.utils.UuidUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 
 public abstract class AbstractRabbitMQProducer extends AbstractProducer implements RabbitMQProducer {
-
-    private static final TimeBasedIdGenerator TIME_BASED_ID_GENERATOR = new TimeBasedIdGenerator();
 
     private static final ExecutionStrategy DEFAULT_EXECUTION_STRATEGY = new DefaultExecutionStrategy();
 
@@ -50,8 +48,8 @@ public abstract class AbstractRabbitMQProducer extends AbstractProducer implemen
 
     private final Map<String, Deferred<Message, Exception>> correlationIdToDeferredMap = new NonBlockingHashMap<>();
 
-    protected AbstractRabbitMQProducer(@NonNull ConnectorContext context, @NonNull Connection connection, @NonNull RabbitMQQueueConfig queueConfig,
-            @NonNull String uniqueIdentifier) {
+    protected AbstractRabbitMQProducer(@NonNull ConnectorContext context, @NonNull Connection connection,
+            @NonNull RabbitMQQueueConfig queueConfig, @NonNull String uniqueIdentifier) {
         super(context);
         this.connection = connection;
         this.queueConfig = queueConfig;
@@ -82,7 +80,7 @@ public abstract class AbstractRabbitMQProducer extends AbstractProducer implemen
             var routingId = request.getRoutingId();
             var routingKey = routingId.isPresent() ? routingId.get().getString() : null;
 
-            var corrId = TIME_BASED_ID_GENERATOR.generateId().orElseThrow().getString();
+            var corrId = UuidUtils.timebasedUUIDAsString();
             var props = createBasicProperties(corrId);
             var bytes = buildRequestBody(request.getPayload());
 
@@ -94,7 +92,7 @@ public abstract class AbstractRabbitMQProducer extends AbstractProducer implemen
             });
 
             var strategy = getContext().getProducerExecutionStrategy() //
-                                       .orElse(DEFAULT_EXECUTION_STRATEGY);
+                    .orElse(DEFAULT_EXECUTION_STRATEGY);
             strategy.execute(() -> {
                 try {
                     this.publish(bytes, props, routingKey);
@@ -106,14 +104,15 @@ public abstract class AbstractRabbitMQProducer extends AbstractProducer implemen
             return deferred.promise();
         }
 
-        throw new UnsupportedOperationException("Cannot make a call on non-rpc rabbitmq producer, use rpc=true in connector endpoint");
+        throw new UnsupportedOperationException(
+                "Cannot make a call on non-rpc rabbitmq producer, use rpc=true in connector endpoint");
     }
 
     protected BasicProperties createBasicProperties(String correlationId) {
         return new BasicProperties.Builder() //
-                                            .correlationId(correlationId) //
-                                            .replyTo(this.responseQueue) //
-                                            .build();
+                .correlationId(correlationId) //
+                .replyTo(this.responseQueue) //
+                .build();
     }
 
     protected Deferred<Message, Exception> createDeferred() {
