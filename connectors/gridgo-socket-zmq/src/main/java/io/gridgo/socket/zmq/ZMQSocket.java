@@ -1,43 +1,47 @@
 package io.gridgo.socket.zmq;
 
-import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.zeromq.ZMQ;
+
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import io.gridgo.socket.helper.Endpoint;
 import io.gridgo.socket.impl.AbstractSocket;
-import io.gridgo.utils.ObjectUtils;
-import io.gridgo.utils.ObjectUtils.Setter;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 final class ZMQSocket extends AbstractSocket {
-
-    private static final Map<String, Setter> ZMQ_SOCKET_SETTERS = initSetters();
-
-    private static Map<String, Setter> initSetters() {
-        return ObjectUtils.findAllClassSetters(ZMQ.Socket.class).entrySet().stream()
-                .collect(Collectors.toMap((Map.Entry<String, Setter> entry) -> entry.getKey().toLowerCase(),
-                        (Map.Entry<String, Setter> entry) -> entry.getValue()));
-    }
 
     private final ZMQ.Socket socket;
 
     @Getter
     private Integer bindingPort = null;
 
+    private Map<String, Consumer<String>> setters = new HashMap<>();
+
     ZMQSocket(@NonNull ZMQ.Socket socket) {
         this.socket = socket;
+        this.initializeSetters();
+    }
+
+    private void initializeSetters() {
+        setters.put("receivetimeout", arg -> socket.setReceiveTimeOut(Integer.parseInt(arg.toString())));
+        setters.put("sendtimeout", arg -> socket.setSendTimeOut(Integer.parseInt(arg.toString())));
+        setters.put("sndhwm", arg -> socket.setSndHWM(Long.parseLong(arg.toString())));
     }
 
     @Override
     public void applyConfig(@NonNull String name, Object value) {
-        Setter setter = ZMQ_SOCKET_SETTERS.get(name.toLowerCase());
-        if (setter != null) {
-            setter.applyAsPrimitive(this.socket, value);
+        var consumer = setters.get(name.toLowerCase());
+        if (consumer == null) {
+            log.warn("No setter found for {}", name);
+            return;
         }
+        consumer.accept(value != null ? value.toString() : null);
     }
 
     @Override
@@ -49,7 +53,7 @@ final class ZMQSocket extends AbstractSocket {
             this.socket.bind(resolvedAddress);
             this.bindingPort = endpoint.getPort();
         }
-        // System.out.println("success bind to: " + resolvedAddress);
+        log.debug("success bind to: {}", resolvedAddress);
     }
 
     @Override
