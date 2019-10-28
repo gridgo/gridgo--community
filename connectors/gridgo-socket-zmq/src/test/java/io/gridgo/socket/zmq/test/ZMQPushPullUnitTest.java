@@ -54,7 +54,7 @@ public class ZMQPushPullUnitTest {
     }
 
     private void doFnFSend(Consumer consumer, Producer producer) throws InterruptedException {
-        int numMessages = (int) 1e2;
+        int numMessages = (int) 1e7;
         CountDownLatch doneSignal = new CountDownLatch(numMessages);
 
         consumer.subscribe((message) -> {
