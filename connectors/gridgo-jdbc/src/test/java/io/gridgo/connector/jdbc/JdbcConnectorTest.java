@@ -1,15 +1,16 @@
 package io.gridgo.connector.jdbc;
 
-import java.math.BigDecimal;
-import java.util.concurrent.CountDownLatch;
+import com.zaxxer.hikari.HikariDataSource;
 
 import org.jdbi.v3.core.ConnectionFactory;
+import org.joo.promise4j.PromiseException;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.zaxxer.hikari.HikariDataSource;
+import java.math.BigDecimal;
+import java.util.concurrent.CountDownLatch;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.connector.Connector;
@@ -36,15 +37,24 @@ public class JdbcConnectorTest {
         pool.setUsername("root");
         registry = new SimpleRegistry().register("hikari", (ConnectionFactory) pool::getConnection);
         context = new DefaultConnectorContextBuilder().setRegistry(registry).build();
-        connector = new DefaultConnectorFactory().createConnector(
-                "jdbc:mysql://localhost:3306/test?user=root&pool=hikari&useSSL=false", context);
+        connector = new DefaultConnectorFactory()
+                .createConnector("jdbc:mysql://localhost:3306/test?user=root&pool=hikari&useSSL=false", context);
         connector.start();
         producer = connector.getProducer().orElseThrow();
     }
-    
+
     @AfterClass
     public static void cleanup() {
         pool.close();
+    }
+
+    @Test
+    public void testSelectWithAlias() throws PromiseException, InterruptedException {
+        var msg = producer.callAny("drop table if exists test_users")
+                .then(r -> producer.callAny("create table test_users(id int)"))
+                .then(r -> producer.callAny("insert into test_users values(1)"))
+                .then(r -> producer.callAny("select id as user_id from test_users where id = 1")).get();
+        Assert.assertEquals(1, (int) msg.body().asArray().getObject(0).getInteger("user_id", 0));
     }
 
     @Test
