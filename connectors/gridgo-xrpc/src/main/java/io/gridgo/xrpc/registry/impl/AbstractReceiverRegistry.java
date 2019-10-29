@@ -28,10 +28,9 @@ public abstract class AbstractReceiverRegistry extends AbstractMessageRegistry i
 
         context.setDeferred(deferred);
 
-        for (XrpcRequestDecorator decorator : this.getRequestDecorators()) {
+        for (XrpcRequestDecorator decorator : this.getRequestDecorators())
             if (!decorator.decorateRequest(context, request))
                 break;
-        }
 
         deferred.pipeFail(this::mapError) //
                 .then(response -> {
@@ -49,15 +48,13 @@ public abstract class AbstractReceiverRegistry extends AbstractMessageRegistry i
     }
 
     protected void decorateResponse(XrpcRequestContext context, Message response) {
-        for (var decorator : getResponseDecorators()) {
+        for (var decorator : getResponseDecorators())
             if (!decorator.decorateResponse(context, response))
                 break;
-        }
     }
 
     protected void sendResponse(XrpcRequestContext context, Message response) {
-        if (context.getResponder() != null) {
+        if (context.getResponder() != null)
             context.getResponder().sendResponse(response);
-        }
     }
 }

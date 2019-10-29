@@ -32,9 +32,8 @@ public class CorrIdSenderCodec extends FieldNameDecorator implements XrpcMessage
         var deferred = context.getDeferred();
         deferred.promise().always((stt, res, ex) -> {
             deferredCache.remove(corrId);
-            if (ex != null) {
+            if (ex != null)
                 log.error("Exception caught on sender promise", ex);
-            }
         });
 
         deferredCache.put(corrId, deferred);

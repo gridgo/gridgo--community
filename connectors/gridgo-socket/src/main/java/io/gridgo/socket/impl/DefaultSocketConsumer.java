@@ -109,7 +109,8 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
         this.doneSignal = new CountDownLatch(1);
         this.poller = new Thread(() -> {
-            startPolling(socket, ByteBuffer.allocateDirect(bufferSize), autoSkipTopicHeader, //
+            var buffer = ByteBuffer.allocateDirect(bufferSize);
+            startPolling(socket, buffer, autoSkipTopicHeader, //
                     this::handleSocketMessage, //
                     this::increaseTotalRecvBytes, //
                     this::increaseTotalRecvMsgs, //

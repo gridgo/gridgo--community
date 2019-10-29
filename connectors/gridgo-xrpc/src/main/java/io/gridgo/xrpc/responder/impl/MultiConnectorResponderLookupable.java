@@ -25,51 +25,52 @@ public class MultiConnectorResponderLookupable extends AbstractConnectorResolvab
         this.setConnectorResolver(resolver);
     }
 
+    private void stopConnector(Connector connector) {
+        try {
+            connector.stop();
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Stop connector error: {}", connector.getName(), e);
+        }
+    }
+
     @Override
     protected void onStop() {
         super.onStop();
-        connectors.forEach(connector -> {
-            try {
-                connector.stop();
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("Stop connector error: {}", connector.getName(), e);
-            }
-        });
+        connectors.forEach(this::stopConnector);
     }
 
-    private XrpcResponder buildResponder(@NonNull String replyTo) {
-        synchronized (responders) {
-            var responder = responders.get(replyTo);
-            if (responder != null)
-                return responder;
-
-            Connector connector = resolveConnector(replyTo);
-            if (connector == null)
-                throw new RuntimeException("Connector cannot be resolved from reply endpoint: " + replyTo);
-
-            connector.start();
-
-            var producerOpt = connector.getProducer();
-
-            if (producerOpt.isEmpty()) {
-                connector.stop();
-                throw new RuntimeException("Producer is not available for endpoint: " + replyTo);
-            }
-
-            connectors.add(connector);
-
-            responder = new FixedXrpcResponder(producerOpt.get());
-            responders.put(replyTo, responder);
-
+    private synchronized XrpcResponder buildResponder(@NonNull String replyTo) {
+        var responder = responders.get(replyTo);
+        if (responder != null)
             return responder;
+
+        Connector connector = resolveConnector(replyTo);
+        if (connector == null)
+            throw new RuntimeException("Connector cannot be resolved from reply endpoint: " + replyTo);
+
+        connector.start();
+
+        var producerOpt = connector.getProducer();
+
+        if (producerOpt.isEmpty()) {
+            connector.stop();
+            throw new RuntimeException("Producer is not available for endpoint: " + replyTo);
         }
+
+        connectors.add(connector);
+
+        responder = new FixedXrpcResponder(producerOpt.get());
+        responders.put(replyTo, responder);
+
+        return responder;
     }
 
     @Override
     public final XrpcResponder lookup(String replyTo) {
         if (replyTo == null)
             return null;
+
         var responder = responders.get(replyTo);
         if (responder != null)
             return responder;

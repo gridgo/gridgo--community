@@ -69,7 +69,6 @@ public class DefaultSocketReceiver extends AbstractConsumer
                     this::increaseTotalRecvMsgs, // callback to update total recv msg count
                     getContext().getExceptionHandler()); // exception handler
 
-            System.out.println("Closing socket: " + socket.getEndpoint());
             // close socket right after the polling thread got interupted
             socket.close();
             doneSignal.countDown();

@@ -2,6 +2,8 @@ package io.gridgo.xrpc.test.dynamic;
 
 import static io.gridgo.utils.ThreadUtils.isShuttingDown;
 import static io.gridgo.utils.ThreadUtils.registerShutdownTask;
+import static io.gridgo.utils.ThreadUtils.sleepSilence;
+import static java.lang.Thread.currentThread;
 
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,8 +60,8 @@ public class TestZmqRPCPushPullPerf extends AbstractRPCTest {
         var monitor = new Thread(() -> {
             long last = 0;
             var formatter = new DecimalFormat("###,###.##");
-            while (!Thread.currentThread().isInterrupted()) {
-                if (!ThreadUtils.sleepSilence(1000))
+            while (!currentThread().isInterrupted()) {
+                if (!sleepSilence(1000))
                     return;
 
                 long done = doneCount.get();
