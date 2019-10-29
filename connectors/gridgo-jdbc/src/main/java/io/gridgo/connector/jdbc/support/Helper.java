@@ -1,13 +1,13 @@
 package io.gridgo.connector.jdbc.support;
 
+import org.jdbi.v3.core.statement.SqlStatement;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.jdbi.v3.core.statement.SqlStatement;
 
 import io.gridgo.bean.BArray;
 import io.gridgo.bean.BObject;
@@ -28,7 +28,7 @@ public class Helper {
             while (resultSet.next()) {
                 var row = new HashMap<String, Object>(columns);
                 for (int i = 1; i <= columns; ++i) {
-                    row.put(md.getColumnName(i), resultSet.getObject(i));
+                    row.put(md.getColumnLabel(i), resultSet.getObject(i));
                 }
                 rows.add(row);
             }
@@ -46,7 +46,8 @@ public class Helper {
                 } else if (entry.getValue() instanceof BArray) {
                     sqlStatement.bindList(entry.getKey(), entry.getValue().asArray().toList());
                 } else {
-                    sqlStatement.bind(entry.getKey(), (Object) entry.getValue().asReference().getReference());
+                    var ref = entry.getValue().asReference().getReference();
+                    sqlStatement.bind(entry.getKey(), ref);
                 }
             }
         } catch (ClassCastException ex) {
