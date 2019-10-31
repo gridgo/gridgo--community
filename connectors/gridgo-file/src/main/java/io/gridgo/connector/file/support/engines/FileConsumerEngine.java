@@ -2,8 +2,8 @@ package io.gridgo.connector.file.support.engines;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BValue;
+import io.gridgo.connector.file.support.exceptions.UnsupportedFormatException;
 import io.gridgo.connector.support.FormattedMarshallable;
-import io.gridgo.connector.support.exceptions.UnsupportedFormatException;
 
 public interface FileConsumerEngine extends FormattedMarshallable {
 
