@@ -1,7 +1,7 @@
 package io.gridgo.xrpc.impl;
 
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 
 import org.joo.promise4j.Deferred;
@@ -16,12 +16,14 @@ import lombok.NonNull;
 
 public abstract class AbstractXrpcReceiver extends HasEndpointConnectorResolvable implements XrpcReceiver {
 
-    private final List<BiConsumer<Message, Deferred<Message, Exception>>> consumers = new CopyOnWriteArrayList<>();
+    private final List<BiConsumer<Message, Deferred<Message, Exception>>> consumers = new LinkedList<>();
 
     @Override
     public final SubscriberDisposable subscribe(@NonNull BiConsumer<Message, Deferred<Message, Exception>> consumer) {
-        consumers.add(consumer);
-        return () -> consumers.remove(consumer);
+        synchronized (consumers) {
+            consumers.add(consumer);
+            return () -> consumers.remove(consumer);
+        }
     }
 
     protected final void publish(Message body, Deferred<Message, Exception> deferred) {

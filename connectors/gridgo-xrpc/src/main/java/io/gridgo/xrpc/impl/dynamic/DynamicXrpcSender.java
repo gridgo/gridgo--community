@@ -29,9 +29,16 @@ public class DynamicXrpcSender extends AbstractXrpcSender {
 
     @Override
     public Promise<Message, Exception> call(Message message) {
-        var deferred = messageRegistry.registerRequest(message, new XrpcRequestContext());
-        this.producer.send(message);
-        return deferred.promise();
+        try {
+            var deferred = messageRegistry.registerRequest(message, new XrpcRequestContext());
+            producer.sendWithAck(message).pipeFail(ex -> {
+                deferred.reject(ex);
+                return Promise.ofCause(ex);
+            });
+            return deferred.promise();
+        } catch (Exception e) {
+            return Promise.ofCause(e);
+        }
     }
 
     private void onReplyConsumer(Consumer replyConsumer) {

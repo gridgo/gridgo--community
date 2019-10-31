@@ -14,15 +14,25 @@ public interface XrpcSenderRegistry extends XrpcMessageRegistry, XrpcMessageDeco
         for (var decorator : getRequestDecorators())
             if (!decorator.decorateRequest(context, request))
                 break;
+
         return context.getDeferred();
     }
 
     @Override
     default void resolveResponse(Message response) {
         var context = new XrpcRequestContext();
-        for (var decorator : getResponseDecorators())
-            if (!decorator.decorateResponse(context, response))
-                break;
+
+        try {
+            for (var decorator : getResponseDecorators())
+                if (!decorator.decorateResponse(context, response))
+                    break;
+        } catch (Exception e) {
+            if (context.getDeferred() != null)
+                context.getDeferred().reject(e);
+            else
+                throw e;
+        }
+
         if (context.getDeferred() != null)
             context.getDeferred().resolve(response);
     }

@@ -3,6 +3,7 @@ package io.gridgo.socket.impl;
 import static io.gridgo.socket.impl.SocketUtils.startPolling;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.concurrent.CountDownLatch;
 
 import io.gridgo.connector.impl.AbstractHasResponderConsumer;
@@ -13,6 +14,7 @@ import io.gridgo.socket.SocketConnector;
 import io.gridgo.socket.SocketConsumer;
 import io.gridgo.socket.SocketFactory;
 import io.gridgo.socket.SocketOptions;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,16 +41,22 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
     private boolean autoSkipTopicHeader = false;
 
+    private boolean useDirectBuffer = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+
     @Getter
     private Integer bindingPort;
 
-    public DefaultSocketConsumer(ConnectorContext context, SocketFactory factory, SocketOptions options, String address,
-            int bufferSize) {
+    @Builder(builderClassName = "SocketConsumerBuidler")
+    private DefaultSocketConsumer(ConnectorContext context, SocketFactory factory, SocketOptions options,
+            String address, int bufferSize, Boolean useDirectBuffer) {
         super(context);
         this.factory = factory;
         this.options = options;
         this.address = address;
         this.bufferSize = bufferSize;
+
+        if (useDirectBuffer != null)
+            this.useDirectBuffer = useDirectBuffer.booleanValue();
     }
 
     @Override
@@ -109,7 +117,12 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
         this.doneSignal = new CountDownLatch(1);
         this.poller = new Thread(() -> {
-            var buffer = ByteBuffer.allocateDirect(bufferSize);
+            var buffer = useDirectBuffer //
+                    ? ByteBuffer.allocateDirect(bufferSize) //
+                    : ByteBuffer.allocate(bufferSize);
+
+            log.debug("****** Using {} byte buffer", useDirectBuffer ? "direct" : "heap");
+
             startPolling(socket, buffer, autoSkipTopicHeader, //
                     this::handleSocketMessage, //
                     this::increaseTotalRecvBytes, //
@@ -119,7 +132,7 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
             socket.close(); // close socket right after poll method escaped
             doneSignal.countDown();
-        }, this.getName() + " POLLER");
+        }, this.getName() + ".poller");
 
         this.poller.start();
     }

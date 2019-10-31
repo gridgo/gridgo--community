@@ -47,11 +47,24 @@ final class ZMQSocket extends AbstractSocket {
     @Override
     public void applyConfig(@NonNull String name, Object value) {
         var fieldName = LOWERCASE_FIELD_NAMES.get(name.toLowerCase());
-        if (fieldName == null)
+
+        if (fieldName != null) {
+            doApplyConfig(fieldName, value);
             return;
-        log.debug("Applying zmq socket config: {} (orig={})={}", name, fieldName, value);
+        }
+
+        if ("buffersize".equalsIgnoreCase(name)) {
+            doApplyConfig("sendBufferSize", value);
+            doApplyConfig("receiveBufferSize", value);
+        }
+    }
+
+    private void doApplyConfig(String fieldName, Object value) {
         var realValue = PrimitiveUtils.getValueFrom(SIGNATURES.get(fieldName), value);
         SETTER_PROXY.applyValue(socket, fieldName, realValue);
+
+        if (log.isDebugEnabled())
+            log.debug("Applied zmq socket config: {}={}", fieldName, realValue);
     }
 
     @Override
@@ -80,23 +93,28 @@ final class ZMQSocket extends AbstractSocket {
     @Override
     protected int doReveive(ByteBuffer buffer, boolean block) {
         int flags = block ? 0 : ZMQ.NOBLOCK;
-        return buffer.isDirect() //
-                ? socket.recvZeroCopy(buffer, buffer.capacity(), flags) //
-                : socket.recvByteBuffer(buffer, flags);
+        if (buffer.isDirect())
+            return socket.recvByteBuffer(buffer, flags);
+
+        int offset = buffer.position();
+        int maxLength = buffer.capacity() - offset;
+        int rc = socket.recv(buffer.array(), offset, maxLength, flags);
+        if (rc >= 0)
+            buffer.position(offset + rc);
+
+        return rc;
     }
 
     @Override
     protected int doSend(ByteBuffer buffer, boolean block) {
         int flags = block ? 0 : ZMQ.NOBLOCK;
-        if (!buffer.isDirect()) {
-            int pos = buffer.position();
-            int len = buffer.limit() - pos;
-            if (this.socket.send(buffer.array(), pos, len, flags)) {
-                return len;
-            }
-            return -1;
-        }
-        return this.socket.sendByteBuffer(buffer, flags);
+
+        if (buffer.isDirect())
+            return socket.sendByteBuffer(buffer, flags);
+
+        int pos = buffer.position();
+        int len = buffer.limit() - pos;
+        return socket.send(buffer.array(), pos, len, flags) ? len : -1;
     }
 
     @Override

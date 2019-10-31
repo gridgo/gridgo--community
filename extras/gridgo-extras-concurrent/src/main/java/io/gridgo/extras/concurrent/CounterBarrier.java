@@ -31,9 +31,8 @@ public class CounterBarrier {
     private final AtomicReference<AtomicInteger> decrementLock = new AtomicReference<>(counter);
 
     private CounterBarrier(int initValue, int lowerBound, int upperBound) {
-        if (upperBound < lowerBound) {
+        if (upperBound < lowerBound)
             throw new IllegalArgumentException("upperBound cannot be less than lowerBound");
-        }
 
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
@@ -65,9 +64,8 @@ public class CounterBarrier {
         this.waitForIncrementUnlocked();
         return this.counter.accumulateAndGet(1, (currentValue, incrementBy) -> {
             int newValue = currentValue + incrementBy;
-            if (newValue > upperBound) {
+            if (newValue > upperBound)
                 return upperBound;
-            }
             return newValue;
         });
     }
@@ -76,9 +74,8 @@ public class CounterBarrier {
         this.waitForDecrementUnlocked();
         return this.counter.accumulateAndGet(-1, (currentValue, incrementBy) -> {
             int newValue = currentValue + incrementBy;
-            if (newValue < lowerBound) {
+            if (newValue < lowerBound)
                 return lowerBound;
-            }
             return newValue;
         });
     }
@@ -88,11 +85,9 @@ public class CounterBarrier {
     }
 
     private final void lockAndWaitFor(int value, AtomicReference<AtomicInteger> lock) {
-        if (lock.compareAndSet(this.counter, null)) {
-            this.waitFor(value);
-        } else {
+        if (!lock.compareAndSet(this.counter, null))
             throw new IllegalStateException("The lock has been locked");
-        }
+        this.waitFor(value);
     }
 
     public final void lockIncrementAndWaitFor(int value) {
@@ -108,10 +103,10 @@ public class CounterBarrier {
     }
 
     public boolean unlockIncrement() {
-        return this.incrementLock.compareAndSet(null, this.counter);
+        return this.incrementLock.compareAndSet(null, counter);
     }
 
     public boolean unlockDecrement() {
-        return this.decrementLock.compareAndSet(null, this.counter);
+        return this.decrementLock.compareAndSet(null, counter);
     }
 }

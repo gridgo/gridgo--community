@@ -31,4 +31,6 @@ public class SocketConstants {
     public static final String TYPE_SUBSCRIBE = "sub";
 
     public static final String SOCKET_MESSAGE_TYPE = "socketMessageType";
+
+    public static final String USE_DIRECT_BUFFER = "useDirectBuffer";
 }

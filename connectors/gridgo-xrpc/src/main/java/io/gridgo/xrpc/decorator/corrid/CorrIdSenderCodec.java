@@ -14,9 +14,7 @@ import io.gridgo.xrpc.XrpcRequestContext;
 import io.gridgo.xrpc.decorator.FieldNameDecorator;
 import io.gridgo.xrpc.decorator.XrpcMessageCodec;
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class CorrIdSenderCodec extends FieldNameDecorator implements XrpcMessageCodec {
 
     private final @NonNull Map<ByteArray, Deferred<Message, Exception>> deferredCache = new NonBlockingHashMap<>();
@@ -30,22 +28,20 @@ public class CorrIdSenderCodec extends FieldNameDecorator implements XrpcMessage
         var corrId = generateCorrId();
 
         var deferred = context.getDeferred();
-        deferred.promise().always((stt, res, ex) -> {
-            deferredCache.remove(corrId);
-            if (ex != null)
-                log.error("Exception caught on sender promise", ex);
-        });
+        deferred.promise().always((stt, res, ex) -> deferredCache.remove(corrId));
 
         deferredCache.put(corrId, deferred);
         request.headers().putAny(getFieldName(), corrId.getSource());
+
         return true;
     }
 
     @Override
     public boolean decorateResponse(XrpcRequestContext context, Message response) {
-        var corrId = response.headers().get(getFieldName());
+        var corrId = response.headers().remove(getFieldName());
         if (corrId != null)
             context.setDeferred(deferredCache.get(wrapCorrId(corrId)));
+
         return true;
     }
 }

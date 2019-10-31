@@ -29,5 +29,7 @@
 			<AppenderRef ref="console" />
 		</Root>
 		<Logger name="org.reflections" level="off" />
+		<Logger name="io.gridgo.xrpc.decorator.replyto.ReplyToSenderDecorator" level="off" />
+		<Logger name="io.gridgo.xrpc.decorator.replyto.ReplyToReceiverDecorator" level="off" />
 	</Loggers>
 </Configuration>

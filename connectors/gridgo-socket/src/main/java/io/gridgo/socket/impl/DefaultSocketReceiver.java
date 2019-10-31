@@ -3,6 +3,7 @@ package io.gridgo.socket.impl;
 import static io.gridgo.socket.impl.SocketUtils.startPolling;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
@@ -13,6 +14,7 @@ import io.gridgo.connector.support.exceptions.FailureHandlerAware;
 import io.gridgo.framework.support.Message;
 import io.gridgo.socket.Socket;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,14 +34,22 @@ public class DefaultSocketReceiver extends AbstractConsumer
     @Getter
     private long totalRecvMessages;
 
+    private boolean useDirectBuffer = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+
     @Getter(AccessLevel.PROTECTED)
     private Function<Throwable, Message> failureHandler;
 
-    public DefaultSocketReceiver(ConnectorContext context, Socket socket, int bufferSize, String uniqueIdentifier) {
+    @Builder
+    private DefaultSocketReceiver(ConnectorContext context, Socket socket, int bufferSize, Boolean useDirectBuffer,
+            String uniqueIdentifier) {
         super(context);
         this.socket = socket;
         this.bufferSize = bufferSize;
         this.uniqueIdentifier = uniqueIdentifier;
+
+        if (useDirectBuffer != null)
+            this.useDirectBuffer = useDirectBuffer.booleanValue();
+
         this.setFailureHandler(context.getExceptionHandler());
     }
 
@@ -61,7 +71,9 @@ public class DefaultSocketReceiver extends AbstractConsumer
 
         this.doneSignal = new CountDownLatch(1);
         this.poller = new Thread(() -> {
-            var buffer = ByteBuffer.allocateDirect(bufferSize);
+            var buffer = useDirectBuffer //
+                    ? ByteBuffer.allocateDirect(bufferSize)
+                    : ByteBuffer.allocate(bufferSize);
 
             startPolling(socket, buffer, false, //
                     this::handleSocketMessage, // message handler
@@ -72,7 +84,7 @@ public class DefaultSocketReceiver extends AbstractConsumer
             // close socket right after the polling thread got interupted
             socket.close();
             doneSignal.countDown();
-        }, socket.getEndpoint().getAddress() + " POLLER");
+        }, socket.getEndpoint().getAddress() + ".poller");
 
         this.poller.start();
     }
