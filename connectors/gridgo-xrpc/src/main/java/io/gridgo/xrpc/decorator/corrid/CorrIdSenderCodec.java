@@ -6,7 +6,9 @@ import static io.gridgo.xrpc.decorator.corrid.CorrIdDecoratorHelper.generateCorr
 import static io.gridgo.xrpc.decorator.corrid.CorrIdDecoratorHelper.wrapCorrId;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
@@ -51,6 +53,8 @@ public class CorrIdSenderCodec extends FieldNameDecorator implements XrpcMessage
         return true;
     }
 
+    private final Set<ByteArray> tmpSet = new HashSet<>();
+
     @Override
     public boolean decorateResponse(XrpcRequestContext context, Message response) {
         var corrIdHeader = response.headers().remove(getFieldName());
@@ -59,9 +63,11 @@ public class CorrIdSenderCodec extends FieldNameDecorator implements XrpcMessage
             var deferred = deferredCache.get(corrId);
             if (deferred == null) {
                 if (log.isWarnEnabled())
-                    log.warn("deferred cannot be found for corrId: {} --> request time: {}", corrId,
-                            new Date(getTimeFromUUID(bytesToUUID(corrId.getSource()))));
+                    log.warn("deferred cannot be found for corrId: {} --> request time: {}, {}", corrId,
+                            new Date(getTimeFromUUID(bytesToUUID(corrId.getSource()))), //
+                            tmpSet.contains(corrId) ? "this one is already resolved" : "not resolved");
             } else {
+                tmpSet.add(corrId);
                 context.setDeferred(deferred);
             }
         } else {
