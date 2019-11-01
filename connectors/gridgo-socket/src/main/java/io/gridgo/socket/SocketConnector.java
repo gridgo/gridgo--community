@@ -3,6 +3,7 @@ package io.gridgo.socket;
 import static io.gridgo.socket.SocketConstants.BATCHING_ENABLED;
 import static io.gridgo.socket.SocketConstants.BUFFER_SIZE;
 import static io.gridgo.socket.SocketConstants.MAX_BATCH_SIZE;
+import static io.gridgo.socket.SocketConstants.MONITOR_ENABLED;
 import static io.gridgo.socket.SocketConstants.RING_BUFFER_SIZE;
 import static io.gridgo.socket.SocketConstants.USE_DIRECT_BUFFER;
 
@@ -66,6 +67,8 @@ public class SocketConnector extends AbstractConnector implements Connector {
 
     private boolean useDirectBuffer = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
+    private boolean monitorEnabled = false;
+
     protected SocketConnector(SocketFactory factory) {
         this.factory = factory;
     }
@@ -85,6 +88,7 @@ public class SocketConnector extends AbstractConnector implements Connector {
                     .ringBufferSize(ringBufferSize) //
                     .batchingEnabled(batchingEnabled) //
                     .maxBatchSize(maxBatchSize) //
+                    .monitorEnabled(monitorEnabled) //
                     .build();
             break;
         case "pull":
@@ -96,6 +100,7 @@ public class SocketConnector extends AbstractConnector implements Connector {
                     .address(address) //
                     .bufferSize(bufferSize) //
                     .useDirectBuffer(useDirectBuffer) //
+                    .monitorEnabled(monitorEnabled) //
                     .build();
             break;
         case "pair":
@@ -114,6 +119,7 @@ public class SocketConnector extends AbstractConnector implements Connector {
                         .ringBufferSize(ringBufferSize) //
                         .batchingEnabled(batchingEnabled) //
                         .maxBatchSize(maxBatchSize) //
+                        .monitorEnabled(monitorEnabled) //
                         .build();
                 p.start();
                 c = ((HasReceiver) p).getReceiver();
@@ -126,6 +132,7 @@ public class SocketConnector extends AbstractConnector implements Connector {
                         .address(address) //
                         .bufferSize(bufferSize) //
                         .useDirectBuffer(useDirectBuffer) //
+                        .monitorEnabled(monitorEnabled) //
                         .build();
                 c.start();
                 p = ((HasResponder) c).getResponder();
@@ -162,6 +169,7 @@ public class SocketConnector extends AbstractConnector implements Connector {
         maxBatchSize = Integer.valueOf(params.getOrDefault(MAX_BATCH_SIZE, maxBatchSize).toString());
         bufferSize = Integer.valueOf(params.getOrDefault(BUFFER_SIZE, bufferSize).toString());
         useDirectBuffer = Boolean.valueOf(params.getOrDefault(USE_DIRECT_BUFFER, useDirectBuffer).toString());
+        monitorEnabled = Boolean.valueOf(params.getOrDefault(MONITOR_ENABLED, monitorEnabled).toString());
 
         options = new SocketOptions(type);
         options.getConfig().putAll(params);

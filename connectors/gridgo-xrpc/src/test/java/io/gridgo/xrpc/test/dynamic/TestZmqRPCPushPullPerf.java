@@ -6,6 +6,7 @@ import static io.gridgo.utils.ThreadUtils.sleepSilence;
 import static java.lang.Thread.currentThread;
 
 import java.text.DecimalFormat;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,15 +37,15 @@ public class TestZmqRPCPushPullPerf extends AbstractRPCTest {
         String address = "localhost:8989";
         String replyAddress = "localhost:8888";
 
-        var defaultParams = "?batchingEnabled=true&maxBatchSize=1000&sndhwm=100000&bufferSize=4194304";
+        var defaultParams = "?batchingEnabled=true&maxBatchSize=1000&sndhwm=100000&bufferSize=4194304&monitorEnabled=false";
         var sender = getRpcBuilder().dynamicSender() //
                 .endpoint("zmq:push:tcp://" + address + defaultParams) //
                 .replyTo("zmq:push:tcp://" + replyAddress + defaultParams) //
-                .replyEndpoint("zmq:pull:tcp://" + replyAddress + "?bufferSize=4194304") //
+                .replyEndpoint("zmq:pull:tcp://" + replyAddress + "?bufferSize=4194304&monitorEnabled=false") //
                 .build();
 
         var receiver = getRpcBuilder().dynamicReceiver()//
-                .endpoint("zmq:pull:tcp://" + address + "?bufferSize=4194304") //
+                .endpoint("zmq:pull:tcp://" + address + "?bufferSize=4194304&monitorEnabled=true") //
                 .build();
 
         sender.start();
@@ -75,6 +76,7 @@ public class TestZmqRPCPushPullPerf extends AbstractRPCTest {
 
         var sent = new AtomicLong(0);
         var doneCount = new AtomicLong();
+        var doneSignal = new CountDownLatch(1);
 
         var monitor = new Thread(() -> {
             long last = 0;
@@ -86,7 +88,6 @@ public class TestZmqRPCPushPullPerf extends AbstractRPCTest {
                 long done = doneCount.get();
                 double pace = done - last;
                 last = done;
-
                 log.debug("sent: {}, done: {} ({}%) -> pace: {} tps", //
                         formatter.format(sent.get()), //
                         formatter.format(done), //
@@ -96,16 +97,25 @@ public class TestZmqRPCPushPullPerf extends AbstractRPCTest {
         }, "monitor");
         monitor.start();
 
-        while (true) {
+        int numMessages = (int) 1e6;
+
+        for (int i = 0; i < numMessages; i++) {
             sender.call(request).always((stt, resp, ex) -> {
-                doneCount.incrementAndGet();
                 if (ex != null)
                     ex.printStackTrace();
+
+                if (doneCount.incrementAndGet() == numMessages)
+                    doneSignal.countDown();
             });
+
             sent.incrementAndGet();
             if (isShuttingDown())
                 break;
         }
+
+        doneSignal.await();
+        ThreadUtils.sleep(500);
+        monitor.interrupt();
     }
 
     @SuppressWarnings("unchecked")

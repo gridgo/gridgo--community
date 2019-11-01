@@ -1,9 +1,12 @@
 package io.gridgo.socket.impl;
 
 import static io.gridgo.socket.impl.SocketUtils.startPolling;
+import static io.gridgo.utils.ThreadUtils.isShuttingDown;
+import static io.gridgo.utils.ThreadUtils.sleepSilence;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.DecimalFormat;
 import java.util.concurrent.CountDownLatch;
 
 import io.gridgo.connector.impl.AbstractHasResponderConsumer;
@@ -46,9 +49,16 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
     @Getter
     private Integer bindingPort;
 
+    private final Thread monitorThread;
+
     @Builder(builderClassName = "SocketConsumerBuidler")
-    private DefaultSocketConsumer(ConnectorContext context, SocketFactory factory, SocketOptions options,
-            String address, int bufferSize, Boolean useDirectBuffer) {
+    private DefaultSocketConsumer(ConnectorContext context, //
+            SocketFactory factory, //
+            SocketOptions options, //
+            String address, //
+            int bufferSize, //
+            Boolean useDirectBuffer, //
+            Boolean monitorEnabled) {
         super(context);
         this.factory = factory;
         this.options = options;
@@ -57,6 +67,34 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
         if (useDirectBuffer != null)
             this.useDirectBuffer = useDirectBuffer.booleanValue();
+
+        if (monitorEnabled != null && monitorEnabled.booleanValue()) {
+            monitorThread = new Thread(this::monitor);
+        } else {
+            monitorThread = null;
+        }
+    }
+
+    private void monitor() {
+        String name = this.generateName();
+        Thread.currentThread().setName(name + ".monitor");
+        log.info("start monitoring socket consumer: {}", name);
+        long last = 0;
+        var df = new DecimalFormat("###,###.##");
+        while (!isShuttingDown()) {
+            if (!sleepSilence(1000))
+                return;
+
+            long deltaMsgCount = totalRecvMessages - last;
+            if (deltaMsgCount > 0) {
+                log.debug("total received bytes: {}, total received msg: {} -> pace: {}", //
+                        df.format(totalRecvBytes), //
+                        df.format(totalRecvMessages), //
+                        df.format(deltaMsgCount));
+
+                last = totalRecvMessages;
+            }
+        }
     }
 
     @Override
@@ -135,6 +173,8 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
         }, this.getName() + ".poller");
 
         this.poller.start();
+        if (this.monitorThread != null)
+            this.monitorThread.start();
     }
 
     private void handleSocketMessage(Message message) {
@@ -152,6 +192,9 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
     @Override
     protected final void onStop() {
+        if (this.monitorThread != null)
+            this.monitorThread.interrupt();
+
         if (this.poller == null || this.poller.isInterrupted())
             return;
 

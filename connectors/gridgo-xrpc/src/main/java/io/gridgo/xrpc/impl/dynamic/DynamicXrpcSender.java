@@ -31,6 +31,9 @@ public class DynamicXrpcSender extends AbstractXrpcSender {
     public Promise<Message, Exception> call(Message message) {
         try {
             var deferred = messageRegistry.registerRequest(message, new XrpcRequestContext());
+            if (deferred == null)
+                return Promise.ofCause(new XrpcException("Request cannot be made, internal connector error"));
+
             producer.sendWithAck(message).pipeFail(ex -> {
                 deferred.reject(ex);
                 return Promise.ofCause(ex);

@@ -2,9 +2,12 @@ package io.gridgo.socket.impl;
 
 import static io.gridgo.socket.SocketConnector.DEFAULT_BUFFER_SIZE;
 import static io.gridgo.socket.SocketConsumer.DEFAULT_RECV_TIMEOUT;
+import static io.gridgo.utils.ThreadUtils.isShuttingDown;
+import static io.gridgo.utils.ThreadUtils.sleepSilence;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.DecimalFormat;
 import java.util.Collection;
 
 import io.gridgo.bean.BValue;
@@ -27,7 +30,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DefaultSocketProducer extends SingleThreadSendingProducer implements SocketProducer, Loggable {
 
     private static final byte ZERO_BYTE = (byte) 0;
@@ -54,6 +59,8 @@ public class DefaultSocketProducer extends SingleThreadSendingProducer implement
 
     private boolean useDirectBuffer = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
+    private Thread monitorThread;
+
     @Builder(builderClassName = "SocketProducerBuilder")
     private DefaultSocketProducer(//
             ConnectorContext context, //
@@ -61,9 +68,11 @@ public class DefaultSocketProducer extends SingleThreadSendingProducer implement
             SocketOptions options, //
             String address, //
             int bufferSize, //
-            Boolean useDirectBuffer, int ringBufferSize, //
+            Boolean useDirectBuffer, //
+            int ringBufferSize, //
             boolean batchingEnabled, //
-            int maxBatchSize) {
+            int maxBatchSize, //
+            Boolean monitorEnabled) {
 
         super(context, //
                 ringBufferSize, //
@@ -81,6 +90,29 @@ public class DefaultSocketProducer extends SingleThreadSendingProducer implement
         this.buffer = this.useDirectBuffer//
                 ? ByteBuffer.allocateDirect(bufferSize) //
                 : ByteBuffer.allocate(bufferSize);
+
+        if (monitorEnabled != null && monitorEnabled.booleanValue())
+            monitorThread = new Thread(this::monitor);
+    }
+
+    private void monitor() {
+        Thread.currentThread().setName(this.generateName() + ".monitor");
+        long last = 0;
+        var df = new DecimalFormat("###,###.##");
+        while (!isShuttingDown()) {
+            if (!sleepSilence(1000))
+                return;
+
+            long deltaMsgCount = totalSentMessages - last;
+            if (deltaMsgCount > 0) {
+                log.debug("total sent bytes: {}, total sent msg: {} -> pace: {}", //
+                        df.format(totalSentBytes), //
+                        df.format(totalSentMessages), //
+                        df.format(deltaMsgCount));
+
+                last = totalSentMessages;
+            }
+        }
     }
 
     @Override
@@ -169,12 +201,16 @@ public class DefaultSocketProducer extends SingleThreadSendingProducer implement
             break;
         default:
         }
+        if (this.monitorThread != null)
+            this.monitorThread.start();
         super.onStart();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        if (this.monitorThread != null)
+            this.monitorThread.interrupt();
         this.socket.close();
     }
 }

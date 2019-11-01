@@ -37,9 +37,8 @@ public abstract class AbstractReceiverRegistry extends AbstractMessageRegistry i
                     decorateResponse(context, response);
                     sendResponse(context, response);
                     return Promise.of(null);
-                }).fail(ex -> {
-                    log.error("Exception caught while trying to send response", ex);
-                });
+                }).fail(ex -> log.error("Exception caught while trying to send response", ex));
+
         return deferred;
     }
 
