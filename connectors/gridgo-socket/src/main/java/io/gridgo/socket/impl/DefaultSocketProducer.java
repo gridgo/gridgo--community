@@ -37,7 +37,9 @@ public class DefaultSocketProducer extends SingleThreadSendingProducer implement
 
     private static final byte ZERO_BYTE = (byte) 0;
 
-    private final ByteBuffer buffer;
+    private int bufferSize = 128 * 1024;
+
+    private ByteBuffer buffer;
 
     @Getter
     private long totalSentBytes;
@@ -83,13 +85,10 @@ public class DefaultSocketProducer extends SingleThreadSendingProducer implement
         this.options = options;
         this.factory = factory;
         this.address = address;
+        this.bufferSize = bufferSize;
 
         if (useDirectBuffer != null)
             this.useDirectBuffer = useDirectBuffer.booleanValue();
-
-        this.buffer = this.useDirectBuffer//
-                ? ByteBuffer.allocateDirect(bufferSize) //
-                : ByteBuffer.allocate(bufferSize);
 
         if (monitorEnabled != null && monitorEnabled.booleanValue())
             monitorThread = new Thread(this::monitor);
@@ -170,6 +169,11 @@ public class DefaultSocketProducer extends SingleThreadSendingProducer implement
     @Override
     protected void onStart() {
         this.socket = this.factory.createSocket(options);
+
+        this.buffer = (socket.forceUsingDirectBuffer() || useDirectBuffer) //
+                ? ByteBuffer.allocateDirect(bufferSize) //
+                : ByteBuffer.allocate(bufferSize);
+
         String type = options.getType().trim().toLowerCase();
         switch (type) {
         case "push":

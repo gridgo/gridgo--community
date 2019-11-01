@@ -106,6 +106,11 @@ public class NNSocket extends AbstractSocket {
     }
 
     @Override
+    public boolean forceUsingDirectBuffer() {
+        return true;
+    }
+
+    @Override
     protected int doSend(ByteBuffer buffer, boolean block) {
         int flags = block ? 0 : nanomsg.NN_DONTWAIT;
         if (buffer.isDirect()) {

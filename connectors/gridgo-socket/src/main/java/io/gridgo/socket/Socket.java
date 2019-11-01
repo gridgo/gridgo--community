@@ -15,6 +15,10 @@ public interface Socket extends Configurable, Bindable {
         }
     }
 
+    default boolean forceUsingDirectBuffer() {
+        return false;
+    }
+
     void applyConfig(String name, Object value);
 
     void close();

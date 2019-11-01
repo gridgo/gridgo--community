@@ -138,8 +138,19 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
                 maxBatchSize = Integer.valueOf((String) this.options.getConfig().getOrDefault("maxBatchingSize",
                         SocketConnector.DEFAULT_MAX_BATCH_SIZE));
             }
-            this.setResponder(new DefaultSocketResponder(getContext(), socket, bufferSize, 1024, batchingEnabled,
-                    maxBatchSize, this.getUniqueIdentifier()));
+            this.setResponder(DefaultSocketResponder.builder() //
+                    .context(getContext()) //
+                    .socket(socket) //
+                    .bufferSize(bufferSize) //
+                    .ringBufferSize(2048) //
+                    .batchingEnabled(batchingEnabled) //
+                    .maxBatchSize(maxBatchSize) //
+                    .uniqueIdentifier(getUniqueIdentifier()) //
+                    .useDirectBuffer(useDirectBuffer) //
+                    .build());
+            // new DefaultSocketResponder(getContext(), socket, bufferSize, 1024,
+            // batchingEnabled,
+            // maxBatchSize, this.getUniqueIdentifier())
             break;
         default:
         }
@@ -155,7 +166,7 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
         this.doneSignal = new CountDownLatch(1);
         this.poller = new Thread(() -> {
-            var buffer = useDirectBuffer //
+            var buffer = socket.forceUsingDirectBuffer() || useDirectBuffer //
                     ? ByteBuffer.allocateDirect(bufferSize) //
                     : ByteBuffer.allocate(bufferSize);
 

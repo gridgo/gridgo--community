@@ -71,7 +71,7 @@ public class DefaultSocketReceiver extends AbstractConsumer
 
         this.doneSignal = new CountDownLatch(1);
         this.poller = new Thread(() -> {
-            var buffer = useDirectBuffer //
+            var buffer = (socket.forceUsingDirectBuffer() || useDirectBuffer) //
                     ? ByteBuffer.allocateDirect(bufferSize)
                     : ByteBuffer.allocate(bufferSize);
 
