@@ -1,21 +1,21 @@
 package io.gridgo.socket.impl;
 
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.function.Function;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.joo.promise4j.Promise;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.function.Function;
 
 import io.gridgo.connector.Responder;
 import io.gridgo.connector.impl.SingleThreadSendingProducer;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.connector.support.exceptions.FailureHandlerAware;
-import io.gridgo.connector.support.exceptions.SendMessageException;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
 import io.gridgo.socket.Socket;
+import io.gridgo.socket.exceptions.SendMessageException;
 import lombok.Getter;
 import lombok.NonNull;
 
