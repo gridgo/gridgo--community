@@ -14,7 +14,7 @@ public interface FileConsumerEngine extends FormattedMarshallable {
         if (format == null || format.equals("json"))
             return BElement.ofJson(new String(responseBody, 0, length));
         if (format.equals("xml"))
-            return BElement.ofXml(new String(responseBody, 0, length));
+            return BElement.ofBytes(responseBody, "xml");
         if (format.equals("string"))
             return BValue.of(responseBody);
         if (format.equals("raw"))
