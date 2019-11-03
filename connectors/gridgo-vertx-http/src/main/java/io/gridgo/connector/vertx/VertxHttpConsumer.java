@@ -1,10 +1,17 @@
 package io.gridgo.connector.vertx;
 
+import org.joo.promise4j.impl.AsyncDeferredObject;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_HTTP_METHOD;
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_PATH;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_QUERY_PARAMS;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS_CODE;
-import static io.gridgo.connector.httpcommon.HttpCommonConsumerConstants.HEADER_PATH;
 import static io.gridgo.connector.vertx.VertxHttpConstants.COOKIE_DOMAIN;
 import static io.gridgo.connector.vertx.VertxHttpConstants.COOKIE_NAME;
 import static io.gridgo.connector.vertx.VertxHttpConstants.COOKIE_PATH;
@@ -13,12 +20,6 @@ import static io.gridgo.connector.vertx.VertxHttpConstants.HEADER_CONTENT_TYPE;
 import static io.gridgo.connector.vertx.VertxHttpConstants.HEADER_COOKIE;
 import static io.gridgo.connector.vertx.VertxHttpConstants.HEADER_OUTPUT_STREAM;
 import static io.gridgo.connector.vertx.VertxHttpConstants.PARAM_PARSE_COOKIE;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-
-import org.joo.promise4j.impl.AsyncDeferredObject;
 
 import io.gridgo.bean.BArray;
 import io.gridgo.bean.BObject;
@@ -362,8 +363,10 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
             response.end(Buffer.buffer((ByteBuf) ref));
         } else if (ref instanceof Buffer) {
             response.end((Buffer) ref);
+        } else if (ref instanceof File) {
+            response.sendFile(((File)ref).getPath());
         } else {
-            throw new IllegalArgumentException("Response of type BReference must be either Buffer or ByteBuf");
+            throw new IllegalArgumentException("Response of type BReference must be either Buffer/ByteBuf or File");
         }
     }
 }

@@ -31,5 +31,11 @@
 			<version>${httpclient.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>io.gridgo</groupId>
+			<artifactId>gridgo-bean-xml</artifactId>
+			<version>${gridgo.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>
