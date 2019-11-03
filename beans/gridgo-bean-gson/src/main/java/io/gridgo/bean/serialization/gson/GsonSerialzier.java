@@ -1,18 +1,18 @@
 package io.gridgo.bean.serialization.gson;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.Map.Entry;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonWriter;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.util.Map.Entry;
 
 import io.gridgo.bean.BArray;
 import io.gridgo.bean.BElement;
@@ -21,6 +21,7 @@ import io.gridgo.bean.BValue;
 import io.gridgo.bean.exceptions.BeanSerializationException;
 import io.gridgo.bean.serialization.AbstractBSerializer;
 import io.gridgo.bean.serialization.BSerializationPlugin;
+import io.gridgo.bean.serialization.text.JsonSerializer;
 import io.gridgo.utils.ByteArrayUtils;
 import io.gridgo.utils.exception.RuntimeIOException;
 
@@ -35,7 +36,7 @@ public class GsonSerialzier extends AbstractBSerializer {
         } else if (element.isObject()) {
             writeObject(writer, element.asObject());
         } else {
-            writeValue(writer, element.toJsonElement());
+            writeValue(writer, JsonSerializer.toJsonElement(element));
         }
     }
 
@@ -72,7 +73,7 @@ public class GsonSerialzier extends AbstractBSerializer {
         } else if (value instanceof byte[]) {
             writer.value(ByteArrayUtils.toHex((byte[]) value, "0x"));
         } else if (value instanceof Character) {
-            writer.value(String.valueOf((Character) value));
+            writer.value(String.valueOf(value));
         } else {
             throw new BeanSerializationException("Cannot write json from value instanceof " + value.getClass());
         }
