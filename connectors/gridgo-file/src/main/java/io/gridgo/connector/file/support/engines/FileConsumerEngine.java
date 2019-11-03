@@ -10,16 +10,23 @@ public interface FileConsumerEngine extends FormattedMarshallable {
     public default BElement deserialize(byte[] responseBody, int length) {
         if (responseBody == null)
             return null;
+        var sliced = slice(responseBody, length);
         var format = getFormat();
         if (format == null || format.equals("json"))
-            return BElement.ofJson(new String(responseBody, 0, length));
+            return BElement.ofBytes(sliced, "json");
         if (format.equals("xml"))
-            return BElement.ofBytes(responseBody, "xml");
+            return BElement.ofBytes(sliced, "xml");
         if (format.equals("string"))
-            return BValue.of(responseBody);
+            return BValue.of(sliced);
         if (format.equals("raw"))
-            return BElement.ofBytes(responseBody);
+            return BElement.ofBytes(sliced);
         throw new UnsupportedFormatException(format);
+    }
+
+    private byte[] slice(byte[] responseBody, int length) {
+        var result = new byte[length];
+        System.arraycopy(responseBody, 0, result, 0, length);
+        return result;
     }
 
     public void readAndPublish();
