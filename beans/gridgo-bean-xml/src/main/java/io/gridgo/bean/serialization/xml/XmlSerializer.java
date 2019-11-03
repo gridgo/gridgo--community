@@ -1,4 +1,4 @@
-package io.gridgo.bean.serialization.xml.text;
+package io.gridgo.bean.serialization.xml;
 
 
 import java.io.InputStream;

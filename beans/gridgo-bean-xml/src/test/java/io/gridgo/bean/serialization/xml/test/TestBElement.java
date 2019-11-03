@@ -1,4 +1,4 @@
-package io.gridgo.bean.serialization.text.xml.test;
+package io.gridgo.bean.serialization.xml.test;
 
 import org.junit.Assert;
 import org.junit.Test;

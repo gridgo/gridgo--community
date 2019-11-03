@@ -1,4 +1,4 @@
-package io.gridgo.bean.serialization.text.xml.test;
+package io.gridgo.bean.serialization.xml.test;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -15,7 +15,7 @@ import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.bean.BValue;
 import io.gridgo.bean.factory.BFactory;
-import io.gridgo.bean.serialization.xml.text.BXmlReader;
+import io.gridgo.bean.serialization.xml.BXmlReader;
 
 public class TextXmlSerializer {
 
