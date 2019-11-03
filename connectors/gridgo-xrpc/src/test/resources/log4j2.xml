@@ -24,7 +24,7 @@
 	</Appenders>
 
 	<Loggers>
-		<Root level="info" includeLocation="true">
+		<Root level="debug" includeLocation="true">
 			<!-- <AppenderRef ref="fileOutputLog" /> -->
 			<AppenderRef ref="console" />
 		</Root>
