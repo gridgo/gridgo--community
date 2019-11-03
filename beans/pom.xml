@@ -16,6 +16,7 @@
 		<module>gridgo-bean-protobuf</module>
 		<module>gridgo-bean-gson</module>
 		<module>gridgo-bean-dsl-json</module>
+		<module>gridgo-bean-xml</module>
 	</modules>
 
 	<dependencies>
