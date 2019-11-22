@@ -45,7 +45,7 @@ public class TestZmqRPCPushPullPerf extends AbstractRPCTest {
                 .build();
 
         var receiver = getRpcBuilder().dynamicReceiver()//
-                .endpoint("zmq:pull:tcp://" + address + "?bufferSize=4194304&monitorEnabled=true") //
+                .endpoint("zmq:pull:tcp://" + address + "?bufferSize=4194304&monitorEnabled=false") //
                 .build();
 
         sender.start();
@@ -97,7 +97,7 @@ public class TestZmqRPCPushPullPerf extends AbstractRPCTest {
         }, "monitor");
         monitor.start();
 
-        int numMessages = (int) 1e6;
+        int numMessages = (int) 1e7;
 
         for (int i = 0; i < numMessages; i++) {
             sender.call(request).always((stt, resp, ex) -> {
