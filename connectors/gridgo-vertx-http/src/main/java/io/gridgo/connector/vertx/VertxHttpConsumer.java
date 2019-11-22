@@ -29,6 +29,7 @@ import io.gridgo.connector.httpcommon.AbstractHttpConsumer;
 import io.gridgo.connector.support.ConnectionRef;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.connector.support.exceptions.NoSubscriberException;
+import io.gridgo.connector.vertx.support.exceptions.DuplicateConnectionException;
 import io.gridgo.connector.vertx.support.exceptions.HttpException;
 import io.gridgo.framework.support.Message;
 import io.netty.buffer.ByteBuf;
@@ -87,8 +88,10 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
 
     private boolean wrap;
 
-    public VertxHttpConsumer(ConnectorContext context, Vertx vertx, VertxOptions vertxOptions,
-            HttpServerOptions options, String path, String method, String format, Map<String, Object> params) {
+    private boolean allowDuplicateConnection;
+
+    public VertxHttpConsumer(ConnectorContext context, Vertx vertx, VertxOptions vertxOptions, HttpServerOptions options, String path,
+            String method, String format, Map<String, Object> params) {
         super(context, format);
         this.vertx = vertx;
         this.vertxOptions = vertxOptions;
@@ -96,6 +99,7 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
         this.path = path;
         this.method = method;
         this.wrap = "true".equals(params.get(VertxHttpConstants.WRAP_RESPONSE));
+        this.allowDuplicateConnection = "true".equals(params.get(VertxHttpConstants.ALLOW_DUPLICATE_CONN));
         this.parseCookie = Boolean.valueOf(params.getOrDefault(PARAM_PARSE_COOKIE, "false").toString());
     }
 
@@ -232,9 +236,9 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
         var router = Router.router(vertx);
         router.route("/*").handler(BodyHandler.create());
         router.route() //
-              .last() //
-              .handler(rc -> rc.fail(404)) //
-              .failureHandler(this::handleException);
+                .last() //
+                .handler(rc -> rc.fail(404)) //
+                .failureHandler(this::handleException);
         return router;
     }
 
@@ -244,14 +248,27 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
         ConnectionRef<ServerRouterTuple> connRef;
         String connectionKey = buildConnectionKey();
         if (ownedVertx) {
+            if (LOCAL_SERVER_MAP.get().containsKey(connectionKey)) {
+                throwDuplicateConnection(connectionKey);
+            }
             synchronized (SERVER_MAP) {
                 connRef = createOrGetConnection(true, connectionKey, SERVER_MAP);
             }
         } else {
+            if (SERVER_MAP.containsKey(connectionKey)) {
+                throwDuplicateConnection(connectionKey);
+            }
             connRef = createOrGetConnection(false, connectionKey, LOCAL_SERVER_MAP.get());
         }
 
         configureRouter(connRef.getConnection().router);
+    }
+
+    private void throwDuplicateConnection(String connectionKey) {
+        log.warn("A Vert.x instance has already been created for connection {}. {}", connectionKey,
+                "Requests will be round-robined and might cause unexpected behavior");
+        if (!allowDuplicateConnection)
+            throw new DuplicateConnectionException(connectionKey);
     }
 
     @Override
@@ -286,15 +303,15 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
         for (var query : ctx.request().params()) {
             queryParams.put(query.getKey(), BValue.of(query.getValue()));
         }
-        headers.set(HEADER_QUERY_PARAMS, queryParams).setAny(HEADER_HTTP_METHOD, ctx.request().method().name())
-               .setAny(HEADER_PATH, ctx.request().path());
+        headers.set(HEADER_QUERY_PARAMS, queryParams).setAny(HEADER_HTTP_METHOD, ctx.request().method().name()).setAny(HEADER_PATH,
+                ctx.request().path());
 
         if (parseCookie) {
             var cookies = BArray.ofEmpty();
             for (var cookie : ctx.cookies()) {
                 var cookieObj = BObject.ofEmpty() //
-                                       .setAny(COOKIE_NAME, cookie.getName()).setAny(COOKIE_DOMAIN, cookie.getDomain())
-                                       .setAny(COOKIE_PATH, cookie.getPath()).setAny(COOKIE_VALUE, cookie.getValue());
+                        .setAny(COOKIE_NAME, cookie.getName()).setAny(COOKIE_DOMAIN, cookie.getDomain())
+                        .setAny(COOKIE_PATH, cookie.getPath()).setAny(COOKIE_VALUE, cookie.getValue());
                 cookies.add(cookieObj);
             }
             headers.put(HEADER_COOKIE, cookies);
@@ -364,7 +381,7 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
         } else if (ref instanceof Buffer) {
             response.end((Buffer) ref);
         } else if (ref instanceof File) {
-            response.sendFile(((File)ref).getPath());
+            response.sendFile(((File) ref).getPath());
         } else {
             throw new IllegalArgumentException("Response of type BReference must be either Buffer/ByteBuf or File");
         }
