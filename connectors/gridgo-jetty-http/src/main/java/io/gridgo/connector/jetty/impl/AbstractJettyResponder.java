@@ -227,49 +227,57 @@ public class AbstractJettyResponder extends AbstractTraceableResponder implement
         }
     }
 
-    private boolean trySendContent(ServletOutputStream output, BElement body) throws Exception {
-        if (output instanceof HttpOutput) {
-            HttpOutput httpOutput = (HttpOutput) output;
-            if (body.isReference()) {
-                var ref = body.asReference().getReference();
-                if (ref instanceof File) {
-                    File file = (File) ref;
-                    if (mmapEnabled) {
-                        long length = file.length();
-                        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
-                            ByteBuffer buffer = randomAccessFile.getChannel().map(MapMode.READ_ONLY, 0, length);
-                            httpOutput.sendContent(buffer);
-                        }
-                    } else {
-                        try (InputStream input = new FileInputStream(file)) {
-                            httpOutput.sendContent(input);
-                        }
-                    }
-                } else if (ref instanceof ByteBuffer) {
-                    httpOutput.sendContent((ByteBuffer) ref);
-                } else if (ref instanceof InputStream) {
-                    httpOutput.sendContent((InputStream) ref);
-                } else if (ref instanceof ReadableByteChannel) {
-                    httpOutput.sendContent((ReadableByteChannel) ref);
-                } else {
-                    return false;
-                }
+    private boolean trySendContent(ServletOutputStream output, BElement body) {
+        if (!(output instanceof HttpOutput) || !body.isReference())
+            return false;
 
+        var httpOutput = (HttpOutput) output;
+        var ref = body.asReference().getReference();
+
+        try {
+            if (ref instanceof File) {
+                var file = (File) ref;
+                if (mmapEnabled) {
+                    long length = file.length();
+                    try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
+                        ByteBuffer buffer = randomAccessFile.getChannel().map(MapMode.READ_ONLY, 0, length);
+                        httpOutput.sendContent(buffer);
+                    }
+                } else {
+                    try (InputStream input = new FileInputStream(file)) {
+                        httpOutput.sendContent(input);
+                    }
+                }
                 return true;
             }
+
+            if (ref instanceof ByteBuffer) {
+                httpOutput.sendContent((ByteBuffer) ref);
+                return true;
+            }
+
+            if (ref instanceof InputStream) {
+                httpOutput.sendContent((InputStream) ref);
+                return true;
+            }
+
+            if (ref instanceof ReadableByteChannel) {
+                httpOutput.sendContent((ReadableByteChannel) ref);
+                return true;
+            }
+
+            return false;
+        } catch (Exception e) {
+            handleException(e);
+            return true;
         }
-        return false;
     }
 
     protected void writeBodyBinary(BElement body, HttpServletResponse response, LongConsumer contentLengthConsumer) {
         takeOutputStream(response, output -> {
-            try {
-                if (!trySendContent(output, body)) {
-                    body.writeBytes(output, format);
-                }
-            } catch (Exception e) {
-                handleException(e);
-            }
+            if (trySendContent(output, body))
+                return;
+            body.writeBytes(output, format);
         });
     }
 
@@ -280,8 +288,12 @@ public class AbstractJettyResponder extends AbstractTraceableResponder implement
     protected void writeBodyJson(BElement body, HttpServletResponse response) {
         if (body instanceof BValue) {
             writeBodyTextPlain(body, response);
-            // } else if (body instanceof BReference) {
-            // writeBodyBinary(body, response);
+        } else if (body instanceof BReference) {
+            takeOutputStream(response, output -> {
+                if (trySendContent(output, body))
+                    return;
+                body.writeJson(output);
+            });
         } else {
             takeOutputStream(response, body::writeJson);
         }
