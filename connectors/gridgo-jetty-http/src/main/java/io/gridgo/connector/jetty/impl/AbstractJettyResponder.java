@@ -280,8 +280,8 @@ public class AbstractJettyResponder extends AbstractTraceableResponder implement
     protected void writeBodyJson(BElement body, HttpServletResponse response) {
         if (body instanceof BValue) {
             writeBodyTextPlain(body, response);
-        } else if (body instanceof BReference) {
-            writeBodyBinary(body, response);
+            // } else if (body instanceof BReference) {
+            // writeBodyBinary(body, response);
         } else {
             takeOutputStream(response, body::writeJson);
         }
