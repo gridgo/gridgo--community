@@ -1,12 +1,12 @@
 package io.gridgo.connector.httpjdk;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.text.DecimalFormat;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 import io.gridgo.connector.Connector;
 import io.gridgo.connector.Producer;
@@ -113,7 +113,7 @@ public class HttpJdkUnitTest {
 
     private Connector createConnector() {
         var connector = new DefaultConnectorFactory().createConnector(
-                "https2://raw.githubusercontent.com/gridgo/gridgo-connector/dungba/developing/connectors/gridgo-http/src/test/resources/test.txt");
+                "https2://raw.githubusercontent.com/gridgo/gridgo-connector/dungba/developing/connectors/gridgo-http/src/test/resources/test.txt?format=string");
         return connector;
     }
 
