@@ -1,9 +1,5 @@
 package io.gridgo.connector.vertx.test;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
@@ -16,12 +12,19 @@ import org.joo.promise4j.Deferred;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import io.gridgo.bean.BObject;
 import io.gridgo.bean.BValue;
 import io.gridgo.connector.impl.factories.DefaultConnectorFactory;
 import io.gridgo.connector.support.config.impl.DefaultConnectorContextBuilder;
+import io.gridgo.connector.vertx.support.exceptions.DuplicateConnectionException;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
+import io.gridgo.framework.support.impl.SimpleRegistry;
+import io.vertx.core.Vertx;
 
 public class VertxHttpUnitTest {
 
@@ -52,7 +55,7 @@ public class VertxHttpUnitTest {
 
         var request = new HttpPost(url);
         request.addHeader("test-header", "XYZ");
-        request.setEntity(new StringEntity("{'abc':'def'}"));
+        request.setEntity(new StringEntity("{\"abc\":\"def\"}"));
         var response = client.execute(request);
         Assert.assertEquals(200, response.getStatusLine().getStatusCode());
         Assert.assertEquals("XYZ", response.getFirstHeader("test-header").getValue());
@@ -61,7 +64,7 @@ public class VertxHttpUnitTest {
 
         var putRequest = new HttpPut(url);
         putRequest.addHeader("test-header", "XYZ");
-        putRequest.setEntity(new StringEntity("{'abc':'def'}"));
+        putRequest.setEntity(new StringEntity("{\"abc\":\"def\"}"));
         response = client.execute(putRequest);
         Assert.assertEquals(200, response.getStatusLine().getStatusCode());
         Assert.assertEquals("XYZ", response.getFirstHeader("test-header").getValue());
@@ -85,7 +88,7 @@ public class VertxHttpUnitTest {
 
         var request = new HttpPost(url);
         request.addHeader("test-header", "XYZ");
-        request.setEntity(new StringEntity("{'abc':'def'}"));
+        request.setEntity(new StringEntity("{\"abc\":\"def\"}"));
         var response = client.execute(request);
         Assert.assertEquals(200, response.getStatusLine().getStatusCode());
         Assert.assertEquals("XYZ", response.getFirstHeader("test-header").getValue());
@@ -94,7 +97,7 @@ public class VertxHttpUnitTest {
 
         var putRequest = new HttpPut(url);
         putRequest.addHeader("test-header", "XYZ");
-        putRequest.setEntity(new StringEntity("{'abc':'def'}"));
+        putRequest.setEntity(new StringEntity("{\"abc\":\"def\"}"));
         response = client.execute(putRequest);
         Assert.assertEquals(200, response.getStatusLine().getStatusCode());
         Assert.assertEquals("XYZ", response.getFirstHeader("test-header").getValue());
@@ -130,7 +133,7 @@ public class VertxHttpUnitTest {
         var client = HttpClientBuilder.create().build();
         var request = new HttpPost(url);
         request.addHeader("test-header", "XYZ");
-        request.setEntity(new StringEntity("{'abc':'def'}"));
+        request.setEntity(new StringEntity("{\"abc\":\"def\"}"));
         var response = client.execute(request);
         Assert.assertEquals(200, response.getStatusLine().getStatusCode());
         Assert.assertEquals("XYZ", response.getFirstHeader("test-header").getValue());
@@ -262,7 +265,7 @@ public class VertxHttpUnitTest {
         var client = HttpClientBuilder.create().build();
         var request = new HttpPost(url);
         request.addHeader("test-header", "XYZ");
-        request.setEntity(new StringEntity("{'abc':'def'}"));
+        request.setEntity(new StringEntity("{\"abc\":\"def\"}"));
         var response = client.execute(request);
         Assert.assertEquals(200, response.getStatusLine().getStatusCode());
         Assert.assertEquals("XYZ", response.getFirstHeader("test-header").getValue());
@@ -302,5 +305,37 @@ public class VertxHttpUnitTest {
         client.close();
 
         connector.stop();
+    }
+
+    @Test(expected = DuplicateConnectionException.class)
+    public void testDuplicateConnection() {
+        var registry = new SimpleRegistry().register("vertx", Vertx.vertx());
+        var factory = new DefaultConnectorFactory();
+        factory.setRegistry(registry);
+        var connector1 = factory.createConnector("vertx:http://localhost:80/[path1]?vertxBean=vertx");
+        var connector2 = factory.createConnector("vertx:http://localhost:80/[path2]");
+        try {
+            connector1.start();
+            connector2.start();
+        } finally {
+            connector1.stop();
+            connector2.stop();
+        }
+    }
+
+    @Test
+    public void testAllowDuplicateConnection() {
+        var registry = new SimpleRegistry().register("vertx", Vertx.vertx());
+        var factory = new DefaultConnectorFactory();
+        factory.setRegistry(registry);
+        var connector1 = factory.createConnector("vertx:http://localhost:80/[path1]?vertxBean=vertx");
+        var connector2 = factory.createConnector("vertx:http://localhost:80/[path2]?allowDuplicateConnection=true");
+        try {
+            connector1.start();
+            connector2.start();
+        } finally {
+            connector1.stop();
+            connector2.stop();
+        }
     }
 }
