@@ -112,9 +112,8 @@ public class HttpJdkUnitTest {
     }
 
     private Connector createConnector() {
-        var connector = new DefaultConnectorFactory().createConnector(
+        return new DefaultConnectorFactory().createConnector(
                 "https2://raw.githubusercontent.com/gridgo/gridgo-connector/dungba/developing/connectors/gridgo-http/src/test/resources/test.txt?format=string");
-        return connector;
     }
 
     private void printPace(String name, int numMessages, long elapsed) {
