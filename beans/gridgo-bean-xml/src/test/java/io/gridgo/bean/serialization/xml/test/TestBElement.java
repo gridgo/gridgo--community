@@ -79,7 +79,7 @@ public class TestBElement {
     @Test
     public void testXml() throws UnsupportedEncodingException {
         var val = BValue.of(new byte[] { 1, 2, 4, 8, 16, 32, 64 });
-        val = BElement.ofBytes(new String(val.toBytes("xml")).getBytes(), "xml").asValue();
+        val = BElement.ofBytes(val.toBytes("xml"), "xml").asValue();
         Assert.assertArrayEquals(new byte[] { 1, 2, 4, 8, 16, 32, 64 }, (byte[]) val.getData());
     }
 }
