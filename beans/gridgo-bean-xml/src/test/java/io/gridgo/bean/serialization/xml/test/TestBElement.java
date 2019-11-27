@@ -60,7 +60,7 @@ public class TestBElement {
                 .set("obj", BObject.ofEmpty().setAny("int", 2));
         var xml = "<object><string name=\"str\" value=\"hello\"/><array name=\"arr\"><integer value=\"1\"/><integer value=\"2\"/><integer value=\"3\"/></array><double name=\"double\" value=\"1.11\"/><byte name=\"byte\" value=\"1\"/><object name=\"obj\"><integer name=\"int\" value=\"2\"/></object><char name=\"char\" value=\"a\"/><integer name=\"int\" value=\"1\"/><long name=\"long\" value=\"1\"/></object>";
 
-        Assert.assertEquals(xml, obj.toXml());
+        Assert.assertEquals(xml, new String(obj.toBytes("xml")));
         obj = BElement.ofBytes(xml.getBytes("utf-8"), "xml");
         Assert.assertEquals(Integer.valueOf(1), obj.getInteger("int", -1));
         Assert.assertEquals("hello", obj.getString("str", null));
@@ -79,7 +79,7 @@ public class TestBElement {
     @Test
     public void testXml() throws UnsupportedEncodingException {
         var val = BValue.of(new byte[] { 1, 2, 4, 8, 16, 32, 64 });
-        val = BElement.ofBytes(val.toXml().getBytes("utf-8"), "xml").asValue();
+        val = BElement.ofBytes(val.toBytes("xml"), "xml").asValue();
         Assert.assertArrayEquals(new byte[] { 1, 2, 4, 8, 16, 32, 64 }, (byte[]) val.getData());
     }
 }

@@ -1,7 +1,7 @@
 package io.gridgo.connector.httpjdk;
 
-import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_PATH;
-import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS_CODE;
+import org.joo.promise4j.Promise;
+import org.joo.promise4j.impl.CompletableDeferredObject;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -14,8 +14,8 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
 
-import org.joo.promise4j.Promise;
-import org.joo.promise4j.impl.CompletableDeferredObject;
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_PATH;
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS_CODE;
 
 import io.gridgo.bean.BArray;
 import io.gridgo.bean.BElement;
@@ -71,10 +71,14 @@ public class HttpJdkProducer extends AbstractHttpProducer {
         var request = buildRequest(message);
         this.httpClient.sendAsync(request, BodyHandlers.ofByteArray()) //
                 .whenComplete((response, ex) -> {
-                    if (ex != null)
-                        ack(deferred, new ConnectionException(ex));
-                    else
-                        ack(deferred, buildMessage(response));
+                    try {
+                        if (ex != null)
+                            ack(deferred, new ConnectionException(ex));
+                        else
+                            ack(deferred, buildMessage(response));
+                    } catch (Exception any) {
+                        ack(deferred, any);
+                    }
                 });
         return deferred.promise();
     }
