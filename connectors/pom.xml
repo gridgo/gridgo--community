@@ -24,7 +24,7 @@
 		<module>gridgo-rocksdb</module>
 		<module>gridgo-mongodb</module>
 		<module>gridgo-http-common</module>
-		<module>gridgo-jetty-http</module>
+		<!-- <module>gridgo-jetty-http</module> -->
 		<module>gridgo-http</module>
 		<module>gridgo-http-jdk</module>
 		<module>gridgo-file</module>
