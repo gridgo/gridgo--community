@@ -1,10 +1,10 @@
 package io.gridgo.connector.http.test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.gridgo.connector.http.HttpConnector;
 import io.gridgo.connector.impl.factories.DefaultConnectorFactory;
@@ -19,7 +19,7 @@ public class HttpConnectorUnitTest {
 
     @Test
     public void testHttp() throws InterruptedException {
-        var url = "https://raw.githubusercontent.com/gridgo/gridgo-connector/dungba/developing/connectors/gridgo-http/src/test/resources/test.txt?nameResolverBean=nameResolver";
+        var url = "https://raw.githubusercontent.com/gridgo/gridgo-connector/dungba/developing/connectors/gridgo-http/src/test/resources/test.txt?nameResolverBean=nameResolver&format=string";
         var eventLoopGroup = new NioEventLoopGroup();
         var factory = new DefaultConnectorFactory();
         var nameResolver = new DnsNameResolverBuilder() //
@@ -62,7 +62,7 @@ public class HttpConnectorUnitTest {
 
     @Test
     public void testHttpNoNameResolver() throws InterruptedException {
-        var url = "https://raw.githubusercontent.com/gridgo/gridgo-connector/dungba/developing/connectors/gridgo-http/src/test/resources/test.txt";
+        var url = "https://raw.githubusercontent.com/gridgo/gridgo-connector/dungba/developing/connectors/gridgo-http/src/test/resources/test.txt?format=string";
         var factory = new DefaultConnectorFactory();
 
         var connector = factory.createConnector(url);
