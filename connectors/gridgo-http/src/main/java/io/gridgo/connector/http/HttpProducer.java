@@ -46,6 +46,8 @@ public class HttpProducer extends AbstractHttpProducer {
 
     private AsyncHttpClient asyncHttpClient;
 
+    private final boolean selfCreateHttpClient;
+
     private Builder config;
 
     private NameResolver<InetAddress> nameResolver;
@@ -53,17 +55,19 @@ public class HttpProducer extends AbstractHttpProducer {
     private String defaultMethod;
 
     public HttpProducer(ConnectorContext context, String endpointUri, Builder config, String format,
-            NameResolver<InetAddress> nameResolver, String defaultMethod) {
+            NameResolver<InetAddress> nameResolver, String defaultMethod, AsyncHttpClient asyncHttpClient) {
         super(context, format);
         this.endpointUri = endpointUri;
         this.config = config;
         this.nameResolver = nameResolver;
         this.defaultMethod = defaultMethod != null ? defaultMethod : DEFAULT_METHOD;
+        this.asyncHttpClient = asyncHttpClient;
+        this.selfCreateHttpClient = this.asyncHttpClient == null;
     }
 
     private Message buildMessage(Response response) {
         var headers = buildHeaders(response.getHeaders()).setAny(HEADER_STATUS, response.getStatusText())
-                                                         .setAny(HEADER_STATUS_CODE, response.getStatusCode());
+                .setAny(HEADER_STATUS_CODE, response.getStatusCode());
         var body = deserialize(response.getResponseBodyAsBytes());
         return createMessage(headers, body);
     }
@@ -81,9 +85,9 @@ public class HttpProducer extends AbstractHttpProducer {
 
     private List<Param> buildParams(BObject object) {
         return object.entrySet().stream() //
-                     .filter(e -> e.getValue().isValue()) //
-                     .map(e -> new Param(e.getKey(), e.getValue().asValue().getString())) //
-                     .collect(Collectors.toList());
+                .filter(e -> e.getValue().isValue()) //
+                .map(e -> new Param(e.getKey(), e.getValue().asValue().getString())) //
+                .collect(Collectors.toList());
     }
 
     private Request buildRequest(Message message) {
@@ -123,9 +127,9 @@ public class HttpProducer extends AbstractHttpProducer {
         var params = buildParams(getQueryParams(message));
         var body = serialize(message.body());
         return new RequestBuilder(method).setUrl(endpointUri) //
-                                         .setBody(body) //
-                                         .setHeaders(headers) //
-                                         .setQueryParams(params);
+                .setBody(body) //
+                .setHeaders(headers) //
+                .setQueryParams(params);
     }
 
     private Map<CharSequence, List<String>> getHeaders(Message message) {
@@ -160,16 +164,18 @@ public class HttpProducer extends AbstractHttpProducer {
 
     @Override
     protected void onStart() {
-        this.asyncHttpClient = Dsl.asyncHttpClient(config);
+        if (this.asyncHttpClient == null)
+            this.asyncHttpClient = Dsl.asyncHttpClient(config);
     }
 
     @Override
     protected void onStop() {
-        try {
-            asyncHttpClient.close();
-        } catch (IOException e) {
-            log.error("Error when closing AsyncHttpClient", e);
-        }
+        if (selfCreateHttpClient)
+            try {
+                asyncHttpClient.close();
+            } catch (IOException e) {
+                log.error("Error when closing AsyncHttpClient", e);
+            }
     }
 
     @Override
