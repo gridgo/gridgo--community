@@ -17,7 +17,9 @@ import io.gridgo.connector.Producer;
 import io.gridgo.connector.impl.resolvers.ClasspathConnectorResolver;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ZMQPushPullUnitTest {
 
     private final ConnectorResolver RESOLVER = new ClasspathConnectorResolver("io.gridgo.connector");
@@ -38,9 +40,8 @@ public class ZMQPushPullUnitTest {
         if (doneSignal.await(1, TimeUnit.MINUTES)) {
             double elapsed = Double.valueOf(System.nanoTime() - start);
             DecimalFormat df = new DecimalFormat("###,###.##");
-            System.out.println("ACK TRANSMITION DONE (*** not improved), " + numMessages
-                    + " messages were transmited in " + df.format(elapsed / 1e6) + "ms -> pace: "
-                    + df.format(1e9 * numMessages / elapsed) + "msg/s");
+            log.debug("ACK TRANSMITION DONE, {} messages were transmited in {} ms -> pace: {} msg/s", numMessages,
+                    df.format(elapsed / 1e6), df.format(1e9 * numMessages / elapsed));
 
             consumer.clearSubscribers();
         } else {
@@ -51,7 +52,7 @@ public class ZMQPushPullUnitTest {
     }
 
     private void doFnFSend(Consumer consumer, Producer producer) throws InterruptedException {
-        int numMessages = (int) 1e2;
+        int numMessages = (int) 1e3;
         CountDownLatch doneSignal = new CountDownLatch(numMessages);
 
         consumer.subscribe((message) -> {
@@ -65,9 +66,8 @@ public class ZMQPushPullUnitTest {
         if (doneSignal.await(1, TimeUnit.MINUTES)) {
             double elapsed = Double.valueOf(System.nanoTime() - start);
             DecimalFormat df = new DecimalFormat("###,###.##");
-            System.out.println("FnF TRANSMITION DONE (*** not improved), " + numMessages
-                    + " messages were transmited in " + df.format(elapsed / 1e6) + "ms -> pace: "
-                    + df.format(1e9 * numMessages / elapsed) + "msg/s");
+            log.debug("FnF TRANSMITION DONE, {} messages were transmited in {} ms -> pace: {} msg/s",
+                    df.format(elapsed / 1e6), df.format(1e9 * numMessages / elapsed), numMessages);
             consumer.clearSubscribers();
         } else {
             consumer.clearSubscribers();
@@ -83,14 +83,11 @@ public class ZMQPushPullUnitTest {
         if (osName != null && osName.contains("Windows"))
             return;
 
-        String queryString = "batchingEnabled=true&maxBatchSize=2000&ringBufferSize=2048";
+        var queryString = "batchingEnabled=true&maxBatchSize=2000&ringBufferSize=2048";
+        var pairs = new Pair[] { Pair.of("tcp", "localhost:8888"), Pair.of("ipc", "test.sock") };
 
-        var pairs = new Pair[] { //
-//                Pair.of("tcp", "localhost:8888") //
-//                , //
-                Pair.of("ipc", "test.sock") //
-        };
         for (var pair : pairs) {
+            log.debug("Test ZMQ push/pull with: {}", pair);
             var protocol = pair.getLeft();
             var address = pair.getRight();
 
@@ -100,11 +97,11 @@ public class ZMQPushPullUnitTest {
             try {
                 connector1.start();
                 assertTrue(connector1.getConsumer().isPresent());
-                Consumer consumer = connector1.getConsumer().get();
+                var consumer = connector1.getConsumer().get();
 
                 connector2.start();
                 assertTrue(connector2.getProducer().isPresent());
-                Producer producer = connector2.getProducer().get();
+                var producer = connector2.getProducer().get();
 
                 warmUp(consumer, producer);
 
@@ -123,7 +120,7 @@ public class ZMQPushPullUnitTest {
         producer.send(Message.of(Payload.of(BObject.ofSequence("cmd", "start"))));
         doneSignal.await();
 
-        System.out.println("Warmup done");
+        log.debug("Warmup done");
         consumer.clearSubscribers();
     }
 }
