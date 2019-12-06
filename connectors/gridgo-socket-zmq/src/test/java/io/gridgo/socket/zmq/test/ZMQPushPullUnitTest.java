@@ -26,11 +26,9 @@ public class ZMQPushPullUnitTest {
 
     private void doAckSend(Consumer consumer, Producer producer) throws InterruptedException, PromiseException {
         int numMessages = (int) 1e2;
-        CountDownLatch doneSignal = new CountDownLatch(numMessages);
+        var doneSignal = new CountDownLatch(numMessages);
 
-        consumer.subscribe((message) -> {
-            doneSignal.countDown();
-        });
+        consumer.subscribe((message) -> doneSignal.countDown());
 
         long start = System.nanoTime();
         for (int i = 0; i < numMessages; i++) {
@@ -39,7 +37,7 @@ public class ZMQPushPullUnitTest {
 
         if (doneSignal.await(1, TimeUnit.MINUTES)) {
             double elapsed = Double.valueOf(System.nanoTime() - start);
-            DecimalFormat df = new DecimalFormat("###,###.##");
+            var df = new DecimalFormat("###,###.##");
             log.debug("ACK TRANSMITION DONE, {} messages were transmited in {} ms -> pace: {} msg/s", numMessages,
                     df.format(elapsed / 1e6), df.format(1e9 * numMessages / elapsed));
 
@@ -53,19 +51,17 @@ public class ZMQPushPullUnitTest {
 
     private void doFnFSend(Consumer consumer, Producer producer) throws InterruptedException {
         int numMessages = (int) 1e3;
-        CountDownLatch doneSignal = new CountDownLatch(numMessages);
-
-        consumer.subscribe((message) -> {
-            doneSignal.countDown();
-        });
+        var doneSignal = new CountDownLatch(numMessages);
+        consumer.subscribe((message) -> doneSignal.countDown());
         long start = System.nanoTime();
+
         for (int i = 0; i < numMessages; i++) {
             producer.send(Message.of(Payload.of(BObject.ofSequence("index", i))));
         }
 
         if (doneSignal.await(1, TimeUnit.MINUTES)) {
             double elapsed = Double.valueOf(System.nanoTime() - start);
-            DecimalFormat df = new DecimalFormat("###,###.##");
+            var df = new DecimalFormat("###,###.##");
             log.debug("FnF TRANSMITION DONE, {} messages were transmited in {} ms -> pace: {} msg/s",
                     df.format(elapsed / 1e6), df.format(1e9 * numMessages / elapsed), numMessages);
             consumer.clearSubscribers();
