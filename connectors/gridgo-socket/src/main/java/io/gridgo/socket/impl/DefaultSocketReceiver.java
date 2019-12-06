@@ -1,7 +1,5 @@
 package io.gridgo.socket.impl;
 
-import static io.gridgo.socket.impl.SocketUtils.startPolling;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.CountDownLatch;
@@ -75,7 +73,7 @@ public class DefaultSocketReceiver extends AbstractConsumer
                     ? ByteBuffer.allocateDirect(bufferSize)
                     : ByteBuffer.allocate(bufferSize);
 
-            startPolling(socket, buffer, false, //
+            SocketUtils.startPolling(socket, buffer, false, //
                     this::handleSocketMessage, // message handler
                     this::increaseTotalRecvBytes, // callback to update total recv bytes
                     this::increaseTotalRecvMsgs, // callback to update total recv msg count

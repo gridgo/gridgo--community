@@ -5,9 +5,9 @@ import java.util.Arrays;
 
 import org.nanomsg.NanoLibrary;
 
-import io.gridgo.socket.helper.Endpoint;
 import io.gridgo.socket.impl.AbstractSocket;
 import io.gridgo.utils.PrimitiveUtils;
+import io.gridgo.utils.support.Endpoint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;

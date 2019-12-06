@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import io.gridgo.socket.helper.Endpoint;
+import io.gridgo.utils.support.Endpoint;
 import lombok.NonNull;
 
 public interface Socket extends Configurable, Bindable {

@@ -1,13 +1,13 @@
 package io.gridgo.socket.impl;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import org.joo.promise4j.Promise;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.function.Function;
+
+import org.joo.promise4j.Promise;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.gridgo.connector.Responder;
 import io.gridgo.connector.impl.SingleThreadSendingProducer;

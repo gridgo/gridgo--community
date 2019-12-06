@@ -6,11 +6,11 @@ import java.text.DecimalFormat;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.joo.promise4j.PromiseException;
 import org.junit.Test;
 
 import io.gridgo.bean.BObject;
-import io.gridgo.connector.Connector;
 import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
@@ -20,10 +20,6 @@ import io.gridgo.framework.support.Payload;
 
 public class ZMQPushPullUnitTest {
 
-    private static final int port = 8080;
-
-    private static final String host = "localhost";
-    private static final String address = host + ":" + port;
     private final ConnectorResolver RESOLVER = new ClasspathConnectorResolver("io.gridgo.connector");
 
     private void doAckSend(Consumer consumer, Producer producer) throws InterruptedException, PromiseException {
@@ -42,8 +38,9 @@ public class ZMQPushPullUnitTest {
         if (doneSignal.await(1, TimeUnit.MINUTES)) {
             double elapsed = Double.valueOf(System.nanoTime() - start);
             DecimalFormat df = new DecimalFormat("###,###.##");
-            System.out.println("ACK TRANSMITION DONE (*** not improved), " + numMessages + " messages were transmited in " + df.format(elapsed / 1e6)
-                    + "ms -> pace: " + df.format(1e9 * numMessages / elapsed) + "msg/s");
+            System.out.println("ACK TRANSMITION DONE (*** not improved), " + numMessages
+                    + " messages were transmited in " + df.format(elapsed / 1e6) + "ms -> pace: "
+                    + df.format(1e9 * numMessages / elapsed) + "msg/s");
 
             consumer.clearSubscribers();
         } else {
@@ -54,7 +51,7 @@ public class ZMQPushPullUnitTest {
     }
 
     private void doFnFSend(Consumer consumer, Producer producer) throws InterruptedException {
-        int numMessages = (int) 1e7;
+        int numMessages = (int) 1e2;
         CountDownLatch doneSignal = new CountDownLatch(numMessages);
 
         consumer.subscribe((message) -> {
@@ -68,8 +65,9 @@ public class ZMQPushPullUnitTest {
         if (doneSignal.await(1, TimeUnit.MINUTES)) {
             double elapsed = Double.valueOf(System.nanoTime() - start);
             DecimalFormat df = new DecimalFormat("###,###.##");
-            System.out.println("FnF TRANSMITION DONE (*** not improved), " + numMessages + " messages were transmited in " + df.format(elapsed / 1e6)
-                    + "ms -> pace: " + df.format(1e9 * numMessages / elapsed) + "msg/s");
+            System.out.println("FnF TRANSMITION DONE (*** not improved), " + numMessages
+                    + " messages were transmited in " + df.format(elapsed / 1e6) + "ms -> pace: "
+                    + df.format(1e9 * numMessages / elapsed) + "msg/s");
             consumer.clearSubscribers();
         } else {
             consumer.clearSubscribers();
@@ -85,40 +83,46 @@ public class ZMQPushPullUnitTest {
         if (osName != null && osName.contains("Windows"))
             return;
 
-        System.out.println("Test tcp monoplex...");
         String queryString = "batchingEnabled=true&maxBatchSize=2000&ringBufferSize=2048";
 
-        Connector connector1 = RESOLVER.resolve("zmq:pull:tcp://" + address);
-        Connector connector2 = RESOLVER.resolve("zmq:push:tcp://" + address + "?" + queryString);
+        var pairs = new Pair[] { //
+//                Pair.of("tcp", "localhost:8888") //
+//                , //
+                Pair.of("ipc", "test.sock") //
+        };
+        for (var pair : pairs) {
+            var protocol = pair.getLeft();
+            var address = pair.getRight();
 
-        try {
-            connector1.start();
-            assertTrue(connector1.getConsumer().isPresent());
-            Consumer consumer = connector1.getConsumer().get();
+            var connector1 = RESOLVER.resolve("zmq:pull:" + protocol + "://" + address);
+            var connector2 = RESOLVER.resolve("zmq:push:" + protocol + "://" + address + "?" + queryString);
 
-            connector2.start();
-            assertTrue(connector2.getProducer().isPresent());
-            Producer producer = connector2.getProducer().get();
+            try {
+                connector1.start();
+                assertTrue(connector1.getConsumer().isPresent());
+                Consumer consumer = connector1.getConsumer().get();
 
-            warmUp(consumer, producer);
+                connector2.start();
+                assertTrue(connector2.getProducer().isPresent());
+                Producer producer = connector2.getProducer().get();
 
-            this.doFnFSend(consumer, producer);
-            this.doAckSend(consumer, producer);
-        } finally {
-            connector1.stop();
-            connector2.stop();
+                warmUp(consumer, producer);
+
+                this.doFnFSend(consumer, producer);
+                this.doAckSend(consumer, producer);
+            } finally {
+                connector1.stop();
+                connector2.stop();
+            }
         }
     }
 
     private void warmUp(Consumer consumer, Producer producer) throws PromiseException, InterruptedException {
-        System.out.println("Started consumer and producer");
-        CountDownLatch doneSignal = new CountDownLatch(1);
-        consumer.subscribe((msg) -> {
-            System.out.println("Got message from source: " + msg.getMisc().get("source"));
-            doneSignal.countDown();
-        });
+        var doneSignal = new CountDownLatch(1);
+        consumer.subscribe((msg) -> doneSignal.countDown());
         producer.send(Message.of(Payload.of(BObject.ofSequence("cmd", "start"))));
         doneSignal.await();
+
         System.out.println("Warmup done");
         consumer.clearSubscribers();
     }

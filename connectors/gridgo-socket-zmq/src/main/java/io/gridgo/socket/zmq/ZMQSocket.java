@@ -6,11 +6,11 @@ import java.util.Map;
 
 import org.zeromq.ZMQ;
 
-import io.gridgo.socket.helper.Endpoint;
 import io.gridgo.socket.impl.AbstractSocket;
 import io.gridgo.utils.PrimitiveUtils;
 import io.gridgo.utils.pojo.PojoUtils;
 import io.gridgo.utils.pojo.setter.PojoSetterProxy;
+import io.gridgo.utils.support.Endpoint;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +70,7 @@ final class ZMQSocket extends AbstractSocket {
     @Override
     protected void doBind(Endpoint endpoint) {
         var resolvedAddress = endpoint.getResolvedAddress();
-        if (endpoint.getPort() <= 0) {
+        if (!endpoint.getProtocol().equalsIgnoreCase("ipc") && endpoint.getPort() <= 0) {
             bindingPort = this.socket.bindToRandomPort(resolvedAddress);
         } else {
             this.socket.bind(resolvedAddress);

@@ -4,8 +4,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import io.gridgo.socket.helper.Endpoint;
-import io.gridgo.socket.helper.EndpointParser;
+import io.gridgo.utils.support.Endpoint;
+import io.gridgo.utils.support.EndpointParser;
 
 public class TestEndpointParser {
 

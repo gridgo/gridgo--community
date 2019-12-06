@@ -1,6 +1,6 @@
 package io.gridgo.socket;
 
-import io.gridgo.socket.helper.Endpoint;
+import io.gridgo.utils.support.Endpoint;
 
 public interface HasEndpoint {
 
