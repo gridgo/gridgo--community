@@ -88,10 +88,9 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
         Message requestMessage = null;
         try {
             // parse http servlet request to message object
-            requestMessage = this.requestParser.parse(request, this.options);
-            var deferredAndRoutingId = getJettyResponder().registerRequest(request);
-            this.publish(requestMessage.setRoutingIdFromAny(deferredAndRoutingId.getRoutingId()),
-                    deferredAndRoutingId.getDeferred());
+            requestMessage = requestParser.parse(request, options);
+            var dnr = getJettyResponder().registerRequest(request);
+            publish(requestMessage.setRoutingIdFromAny(dnr.getRoutingId()), dnr.getDeferred());
         } catch (Exception e) {
             getLogger().error("error while handling http request", e);
             onUncaughtException(e, response);
@@ -99,15 +98,17 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
     }
 
     private void onUncaughtException(Throwable e, HttpServletResponse response) {
-        Message responseMessage = this.failureHandler != null ? this.failureHandler.apply(e)
-                : this.getJettyResponder().generateFailureMessage(e);
-        ((JettyResponder) this.getResponder()).writeResponse(response, responseMessage);
+        var responseMessage = failureHandler != null //
+                ? failureHandler.apply(e) //
+                : getJettyResponder().generateFailureMessage(e);
+
+        getJettyResponder().writeResponse(response, responseMessage);
     }
 
     @Override
     protected void onStart() {
-        this.httpServer.start();
-        this.httpServer.addPathHandler(this.path, this::onHttpRequest, this::onUncaughtException);
+        httpServer.start();
+        httpServer.addPathHandler(path, this::onHttpRequest);
     }
 
     @Override
@@ -121,5 +122,4 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
         getJettyResponder().setFailureHandler(failureHandler);
         return this;
     }
-
 }

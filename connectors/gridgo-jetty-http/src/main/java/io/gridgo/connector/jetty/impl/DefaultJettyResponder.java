@@ -5,6 +5,7 @@ import static io.gridgo.connector.httpcommon.HttpCommonConstants.CONTENT_LENGTH;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.CONTENT_TYPE;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS;
 import static io.gridgo.connector.httpcommon.HttpCommonConstants.HEADER_STATUS_CODE;
+import static io.gridgo.connector.httpcommon.HttpContentType.MULTIPART_FORM_DATA;
 import static io.gridgo.connector.httpcommon.HttpStatus.OK_200;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 
@@ -71,6 +72,7 @@ public class DefaultJettyResponder extends AbstractTraceableResponder implements
             boolean mmapEnabled, //
             String format, //
             String uniqueIdentifier) {
+
         super(context);
         this.format = format;
         this.uniqueIdentifier = uniqueIdentifier;
@@ -169,28 +171,39 @@ public class DefaultJettyResponder extends AbstractTraceableResponder implements
 
     private void sendResponse(HttpServletResponse response, BObject headers, BElement body,
             HttpContentType contentType) {
-        if (contentType != HttpContentType.MULTIPART_FORM_DATA || body == null) {
-            this.writeHeaders(headers, response);
+
+        if (contentType != MULTIPART_FORM_DATA || body == null) {
+            writeHeaders(headers, response);
         }
 
         /* ------------------------------------------ */
         /**
          * process body
          */
-        if (body != null) {
-            if (contentType.isJsonFormat()) {
-                this.writeBodyJson(body, response);
-            } else if (contentType.isBinaryFormat()) {
-                this.writeBodyBinary(body, response);
-            } else if (contentType.isMultipartFormat()) {
-                this.writeBodyMultipart(body, response, contentTypeWithBoundary -> {
-                    headers.setAny(CONTENT_TYPE, contentTypeWithBoundary);
-                    this.writeHeaders(headers, response);
-                });
-            } else {
-                this.writeBodyTextPlain(body, response);
-            }
+
+        if (body == null)
+            return;
+
+        if (contentType.isJsonFormat()) {
+            writeBodyJson(body, response);
+            return;
         }
+
+        if (contentType.isBinaryFormat()) {
+            writeBodyBinary(body, response);
+            return;
+        }
+
+        if (contentType.isMultipartFormat()) {
+            writeBodyMultipart(body, response, contentTypeWithBoundary -> {
+                headers.setAny(CONTENT_TYPE, contentTypeWithBoundary);
+                writeHeaders(headers, response);
+            });
+            return;
+        }
+
+        this.writeBodyTextPlain(body, response);
+
     }
 
     @Override
