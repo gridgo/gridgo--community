@@ -24,7 +24,7 @@ import io.gridgo.bean.BReference;
 
 public class HttpEntityHelper {
 
-    public static BArray readMultiPart(Collection<Part> parts) throws IOException {
+    public static BArray readMultipart(Collection<Part> parts) throws IOException {
         var results = BArray.ofEmpty();
         for (var part : parts) {
             var contentType = part.getContentType();
@@ -43,11 +43,11 @@ public class HttpEntityHelper {
     }
 
     public static final BArray readMultiPart(HttpEntity entity) throws IOException {
-        return readMultiPart(entity.getContent(), entity.getContentType().getValue());
+        return readMultipart(entity.getContent(), entity.getContentType().getValue());
     }
 
-    public static final BArray readMultiPart(InputStream input, String contentTypeWithBoundary) throws IOException {
-        return readMultiPart(new MultiPartFormInputStream(input, contentTypeWithBoundary, null, null).getParts());
+    public static final BArray readMultipart(InputStream input, String contentTypeWithBoundary) throws IOException {
+        return readMultipart(new MultiPartFormInputStream(input, contentTypeWithBoundary, null, null).getParts());
     }
 
     public static String readString(InputStream input) throws IOException {

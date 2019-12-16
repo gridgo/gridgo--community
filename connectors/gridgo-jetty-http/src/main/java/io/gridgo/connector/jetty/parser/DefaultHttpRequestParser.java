@@ -3,7 +3,6 @@ package io.gridgo.connector.jetty.parser;
 import static io.gridgo.connector.httpcommon.HttpContentType.APPLICATION_OCTET_STREAM;
 import static io.gridgo.connector.httpcommon.HttpContentType.DEFAULT_TEXT;
 import static io.gridgo.connector.httpcommon.HttpContentType.forValueOrDefault;
-import static io.gridgo.connector.jetty.support.HttpEntityHelper.readMultiPart;
 
 import java.io.StringWriter;
 
@@ -12,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BReference;
 import io.gridgo.bean.BValue;
+import io.gridgo.connector.jetty.support.HttpEntityHelper;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
@@ -32,7 +32,7 @@ public class DefaultHttpRequestParser extends AbstractHttpRequestParser {
             return BElement.ofBytes(request.getInputStream(), format);
 
         if (contentType.isMultipartFormat())
-            return readMultiPart(request.getParts());
+            return HttpEntityHelper.readMultipart(request.getParts());
 
         if (contentType.isJsonFormat())
             return BElement.ofJson(request.getInputStream());
