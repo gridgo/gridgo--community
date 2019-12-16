@@ -1,5 +1,6 @@
 package io.gridgo.connector.jetty.impl;
 
+import java.nio.charset.Charset;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -46,13 +47,19 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
             boolean mmapEnabled, //
             String format, //
             String path, //
+            String charsetName, //
+            Integer stringBufferSize, //
             Set<JettyServletContextHandlerOption> options) {
 
         super(context);
 
         this.options = options;
         this.address = address;
-        this.requestParser = HttpRequestParser.newDefault(format);
+        this.requestParser = HttpRequestParser.defaultBuilder() //
+                .charset(charsetName == null ? null : Charset.forName(charsetName)) //
+                .stringBufferSize(stringBufferSize) //
+                .format(format) //
+                .build();
 
         path = (path == null || path.isBlank()) ? "/*" : path.trim();
         this.path = path.startsWith("/") ? path : ("/" + path);

@@ -4,7 +4,8 @@ import static io.gridgo.connector.httpcommon.HttpContentType.APPLICATION_OCTET_S
 import static io.gridgo.connector.httpcommon.HttpContentType.DEFAULT_TEXT;
 import static io.gridgo.connector.httpcommon.HttpContentType.forValueOrDefault;
 
-import java.io.StringWriter;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -12,14 +13,32 @@ import io.gridgo.bean.BElement;
 import io.gridgo.bean.BReference;
 import io.gridgo.bean.BValue;
 import io.gridgo.connector.jetty.support.HttpEntityHelper;
-import lombok.AllArgsConstructor;
+import io.gridgo.utils.wrapper.ByteBufferOutputStream;
+import lombok.Builder;
+import lombok.NonNull;
 
-@AllArgsConstructor
 public class DefaultHttpRequestParser extends AbstractHttpRequestParser {
+
+    private static final int DEFAULT_STRING_BUFFER_SIZE = 65536;
 
     private static final BElement EMPTY = BValue.of("");
 
+    @NonNull
+    private final ThreadLocal<ByteBuffer> bufferThreadLocal;
+
     private final String format;
+
+    @NonNull
+    private final Charset charset;
+
+    @Builder
+    private DefaultHttpRequestParser(String format, Charset charset, Integer stringBufferSize) {
+        this.format = format;
+        this.charset = charset == null ? Charset.forName("UTF-8") : charset;
+
+        final int bufferSize = stringBufferSize == null ? DEFAULT_STRING_BUFFER_SIZE : stringBufferSize;
+        this.bufferThreadLocal = ThreadLocal.withInitial(() -> ByteBuffer.allocate(bufferSize));
+    }
 
     @Override
     protected BElement extractBody(HttpServletRequest request) throws Exception {
@@ -40,8 +59,10 @@ public class DefaultHttpRequestParser extends AbstractHttpRequestParser {
         if (contentType.isBinaryFormat())
             return BReference.of(request.getInputStream());
 
-        var out = new StringWriter();
-        request.getReader().transferTo(out);
-        return BValue.of(out.toString());
+        var bb = bufferThreadLocal.get().clear();
+        try (var out = new ByteBufferOutputStream(bb)) {
+            request.getInputStream().transferTo(out);
+            return BValue.of(new String(bb.array(), 0, bb.position(), charset));
+        }
     }
 }

@@ -27,13 +27,15 @@ public class JettyConnector extends AbstractConnector {
             path = "/*";
 
         var jettyConsumer = DefaultJettyConsumer.builder() //
-                .context(getContext()) //
-                .address(HostAndPort.newInstance(host, port)) //
                 .http2Enabled(Boolean.valueOf(getParam("http2Enabled", TRUE))) //
                 .mmapEnabled(Boolean.valueOf(getParam("mmapEnabled", TRUE))) //
+                .address(HostAndPort.newInstance(host, port)) //
                 .options(readJettyOptions()) //
-                .format(getParam("format", null)) //
+                .context(getContext()) //
                 .path(path) //
+                .format(getParam("format", null)) //
+                .charsetName(getParam("charset", "UTF-8")) //
+                .stringBufferSize(Integer.valueOf(getParam("stringBufferSize", "65536"))) //
                 .build();
 
         this.consumer = Optional.of(jettyConsumer);
@@ -41,7 +43,7 @@ public class JettyConnector extends AbstractConnector {
     }
 
     private Set<JettyServletContextHandlerOption> readJettyOptions() {
-        Set<JettyServletContextHandlerOption> options = new HashSet<>();
+        var options = new HashSet<JettyServletContextHandlerOption>();
 
         if (Boolean.parseBoolean(getParam("session", FALSE))) {
             options.add(JettyServletContextHandlerOption.SESSIONS);
