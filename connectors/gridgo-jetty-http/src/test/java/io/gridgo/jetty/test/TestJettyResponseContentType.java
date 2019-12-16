@@ -1,6 +1,5 @@
 package io.gridgo.jetty.test;
 
-import static io.gridgo.connector.jetty.support.HttpEntityHelper.parseAsMultiPart;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -61,11 +60,11 @@ public class TestJettyResponseContentType {
 
     private Connector createConnector(String endpoint) {
         ConnectorContext connectorContext = new DefaultConnectorContextBuilder() //
-                                                                                .setCallbackInvokerStrategy(new ExecutorExecutionStrategy(executor)) //
-                                                                                .setExceptionHandler((ex) -> {
-                                                                                    ex.printStackTrace();
-                                                                                }) //
-                                                                                .build();
+                .setCallbackInvokerStrategy(new ExecutorExecutionStrategy(executor)) //
+                .setExceptionHandler((ex) -> {
+                    ex.printStackTrace();
+                }) //
+                .build();
 
         Connector connector = resolver.resolve(endpoint, connectorContext);
 
@@ -94,7 +93,8 @@ public class TestJettyResponseContentType {
             Producer responder = connector.getProducer().get();
 
             consumer.subscribe(msg -> {
-                Payload payload = Payload.of(BReference.of(getClass().getClassLoader().getResourceAsStream("test.txt")));
+                Payload payload = Payload
+                        .of(BReference.of(getClass().getClassLoader().getResourceAsStream("test.txt")));
 
                 payload.addHeader(HttpCommonConstants.CONTENT_TYPE, HttpContentType.APPLICATION_OCTET_STREAM.getMime());
                 Message message = Message.of(payload).setRoutingId(msg.getRoutingId().get());
@@ -107,8 +107,9 @@ public class TestJettyResponseContentType {
             String contentType = response.getEntity().getContentType().getValue();
             assertThat(contentType, Matchers.startsWith(HttpContentType.APPLICATION_OCTET_STREAM.getMime()));
 
-            String content = HttpEntityHelper.parseAsString(response.getEntity().getContent());
-            String fileContent = HttpEntityHelper.parseAsString(getClass().getClassLoader().getResourceAsStream("test.txt"));
+            String content = HttpEntityHelper.readString(response.getEntity().getContent());
+            String fileContent = HttpEntityHelper
+                    .readString(getClass().getClassLoader().getResourceAsStream("test.txt"));
 
             assertEquals(fileContent, content);
         } finally {
@@ -166,10 +167,11 @@ public class TestJettyResponseContentType {
             consumer.subscribe(msg -> {
                 Payload payload = Payload.of( //
                         BObject.ofEmpty() //
-                               .setAny("testText", TEST_TEXT) //
-                               .setAny("testFile", getClass().getClassLoader().getResourceAsStream("test.txt")) //
-                               .setAny("testJsonObject", BObject.ofSequence("keyString", "valueString", "keyNumber", 100)) //
-                               .setAny("testJsonArray", BArray.ofSequence("string", 100, true)) //
+                                .setAny("testText", TEST_TEXT) //
+                                .setAny("testFile", getClass().getClassLoader().getResourceAsStream("test.txt")) //
+                                .setAny("testJsonObject",
+                                        BObject.ofSequence("keyString", "valueString", "keyNumber", 100)) //
+                                .setAny("testJsonArray", BArray.ofSequence("string", 100, true)) //
                 );
 
                 payload.addHeader(HttpCommonConstants.CONTENT_TYPE, HttpContentType.MULTIPART_FORM_DATA.getMime());
@@ -183,7 +185,7 @@ public class TestJettyResponseContentType {
             String contentType = response.getEntity().getContentType().getValue();
             assertThat(contentType, Matchers.startsWith(HttpContentType.MULTIPART_FORM_DATA.getMime()));
 
-            BArray responseMultiPart = parseAsMultiPart(response.getEntity());
+            BArray responseMultiPart = HttpEntityHelper.readMultiPart(response.getEntity());
             assertEquals(4, responseMultiPart.size());
 
         } finally {
