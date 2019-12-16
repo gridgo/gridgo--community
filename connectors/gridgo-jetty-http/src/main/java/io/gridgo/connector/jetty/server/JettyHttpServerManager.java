@@ -29,35 +29,39 @@ public class JettyHttpServerManager {
         return getOrCreateJettyServer(originAddress, http2Enabled, null);
     }
 
-    public JettyHttpServer getOrCreateJettyServer(@NonNull HostAndPort originAddress, boolean http2Enabled, Set<JettyServletContextHandlerOption> options) {
+    public JettyHttpServer getOrCreateJettyServer(@NonNull HostAndPort originAddress, boolean http2Enabled,
+            Set<JettyServletContextHandlerOption> options) {
+
         var address = originAddress.makeCopy();
-        if (!address.isResolvable()) {
+        if (!address.isResolvable())
             throw new RuntimeException("Host '" + originAddress.getHost() + "' cannot be resolved");
-        }
 
-        if (address.getPort() <= 0) {
+        if (address.getPort() <= 0)
             address.setPort(80);
-        }
 
-        if (address.getHost() == null) {
+        if (address.getHost() == null)
             address.setHost("localhost");
-        }
 
         var jettyHttpServer = servers.get(address);
         if (jettyHttpServer != null)
             return jettyHttpServer;
+
         var allInterface = HostAndPort.newInstance(ALL_INTERFACE_HOST, address.getPort());
         jettyHttpServer = servers.get(allInterface);
+
         if (jettyHttpServer != null)
             return jettyHttpServer;
-        return this.servers.computeIfAbsent(address, key -> new JettyHttpServer(address, http2Enabled, options, this::onServerStop));
+
+        return this.servers.computeIfAbsent(address,
+                key -> new JettyHttpServer(address, http2Enabled, options, this::onServerStop));
     }
 
     public JettyHttpServer getOrCreateJettyServer(String address, boolean http2Enabled) {
         return this.getOrCreateJettyServer(HostAndPort.fromString(address), http2Enabled, null);
     }
 
-    public JettyHttpServer getOrCreateJettyServer(String address, boolean http2Enabled, Set<JettyServletContextHandlerOption> options) {
+    public JettyHttpServer getOrCreateJettyServer(String address, boolean http2Enabled,
+            Set<JettyServletContextHandlerOption> options) {
         return this.getOrCreateJettyServer(HostAndPort.fromString(address), http2Enabled, options);
     }
 

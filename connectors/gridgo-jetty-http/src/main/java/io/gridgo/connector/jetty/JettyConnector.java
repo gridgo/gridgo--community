@@ -18,22 +18,23 @@ public class JettyConnector extends AbstractConnector {
 
     @Override
     protected void onInit() {
-        String host = getPlaceholder("host");
-
-        String portStr = getPlaceholder("port");
+        var host = getPlaceholder("host");
+        var portStr = getPlaceholder("port");
         int port = portStr == null ? 80 : Integer.parseInt(portStr);
 
-        String path = getPlaceholder("path");
-        if (path == null || path.isBlank()) {
+        var path = getPlaceholder("path");
+        if (path == null || path.isBlank())
             path = "/*";
-        }
 
-        Set<JettyServletContextHandlerOption> options = readJettyOptions();
-        final boolean http2Enabled = Boolean.valueOf(getParam("http2Enabled", TRUE));
-        final boolean mmapEnabled = Boolean.valueOf(getParam("mmapEnabled", TRUE));
-        final String format = getParam("format", null);
-
-        var jettyConsumer = new DefaultJettyConsumer(getContext(), HostAndPort.newInstance(host, port), http2Enabled, mmapEnabled, format, path, options);
+        var jettyConsumer = DefaultJettyConsumer.builder() //
+                .context(getContext()) //
+                .address(HostAndPort.newInstance(host, port)) //
+                .http2Enabled(Boolean.valueOf(getParam("http2Enabled", TRUE))) //
+                .mmapEnabled(Boolean.valueOf(getParam("mmapEnabled", TRUE))) //
+                .options(readJettyOptions()) //
+                .format(getParam("format", null)) //
+                .path(path) //
+                .build();
 
         this.consumer = Optional.of(jettyConsumer);
         this.producer = Optional.of(jettyConsumer.getResponder());
