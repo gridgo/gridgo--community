@@ -86,10 +86,8 @@ class BlockingReferenceCounter implements ReferenceCounter {
             try {
                 if (success) {
                     latch.await();
-                    synchronized (counter) {
-                        if (!lockHolder.compareAndSet(latch, null))
-                            throw new IllegalStateException("Cannot unlock");
-                    }
+                    if (!lockHolder.compareAndSet(latch, null))
+                        throw new IllegalStateException("Cannot unlock");
                     return;
                 }
 
