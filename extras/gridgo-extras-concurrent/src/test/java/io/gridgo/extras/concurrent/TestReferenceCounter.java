@@ -39,7 +39,7 @@ public class TestReferenceCounter {
         var counter = ReferenceCounter.newBlocking(1);
 
         run(() -> {
-            ThreadUtils.sleep(100);
+            ThreadUtils.sleep(50);
             ref1.set(TEST_TEXT);
             counter.decrement();
         });
@@ -66,7 +66,7 @@ public class TestReferenceCounter {
         var counter = ReferenceCounter.newBlocking(0);
 
         run(() -> {
-            ThreadUtils.sleep(100);
+            ThreadUtils.sleep(50);
             ref1.set(TEST_TEXT);
             counter.increment();
         });
@@ -83,5 +83,17 @@ public class TestReferenceCounter {
 
         assertEquals(TEST_TEXT, ref1.get());
         assertEquals(TEST_TEXT, ref2.get());
+    }
+
+    @Test
+    public void testLockOnCurrentValue() {
+        var counter = ReferenceCounter.newBlocking(0);
+        counter.lockDecrementAndWaitFor(0);
+    }
+
+    @Test
+    public void testWaitOnCurrentValue() {
+        var counter = ReferenceCounter.newBlocking(0);
+        counter.waitFor(0);
     }
 }

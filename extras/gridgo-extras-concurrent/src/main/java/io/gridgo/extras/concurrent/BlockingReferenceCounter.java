@@ -27,7 +27,13 @@ class BlockingReferenceCounter implements ReferenceCounter {
 
     @Override
     public void waitFor(int value) {
-        var latch = getWaitingLatch(value);
+        CountDownLatch latch = null;
+        synchronized (counter) {
+            if (counter.get() == value)
+                return;
+            latch = getWaitingLatch(value);
+        }
+
         try {
             latch.await();
         } catch (InterruptedException e) {
@@ -81,6 +87,8 @@ class BlockingReferenceCounter implements ReferenceCounter {
             var success = false;
             synchronized (counter) {
                 success = lockHolder.compareAndSet(null, latch);
+                if (counter.get() == value)
+                    triggerValue(value);
             }
 
             try {
