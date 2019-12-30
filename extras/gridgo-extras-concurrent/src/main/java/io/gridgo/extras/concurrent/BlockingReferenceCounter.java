@@ -87,7 +87,7 @@ class BlockingReferenceCounter implements ReferenceCounter {
             var success = false;
             synchronized (counter) {
                 success = lockHolder.compareAndSet(null, latch);
-                if (counter.get() == value)
+                if (success && counter.get() == value)
                     triggerValue(value);
             }
 
