@@ -14,9 +14,9 @@ import lombok.Builder;
 
 class BlockingReferenceCounter implements ReferenceCounter {
 
-    private int upperBound;
+    private final int upperBound;
 
-    private int lowerBound;
+    private final int lowerBound;
 
     private volatile int counter;
 
