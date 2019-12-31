@@ -1,9 +1,11 @@
 package io.gridgo.extras.concurrent;
 
+import io.gridgo.extras.concurrent.BlockingReferenceCounter.ReferenceCounterBuilder;
+
 public interface ReferenceCounter {
 
-    static ReferenceCounter newBlocking(int initValue) {
-        return new BlockingReferenceCounter(initValue);
+    static ReferenceCounterBuilder builder() {
+        return BlockingReferenceCounter.builder();
     }
 
     /**
@@ -15,13 +17,15 @@ public interface ReferenceCounter {
 
     /**
      * increment this counter
+     * @return TODO
      */
-    void increment();
+    boolean increment();
 
     /**
      * decrement this counter
+     * @return TODO
      */
-    void decrement();
+    boolean decrement();
 
     /**
      * Lock incrementing and stop current thread. Wait until counter reach value.

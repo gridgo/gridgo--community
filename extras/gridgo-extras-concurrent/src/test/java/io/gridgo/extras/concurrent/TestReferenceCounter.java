@@ -20,7 +20,7 @@ public class TestReferenceCounter {
     @Test
     public void testWaitFor() {
         var val = new AtomicReference<String>(null);
-        var counter = ReferenceCounter.newBlocking(1);
+        var counter = ReferenceCounter.builder().initValue(1).build();
 
         run(() -> {
             ThreadUtils.sleep(5);
@@ -37,7 +37,7 @@ public class TestReferenceCounter {
         var ref1 = new AtomicReference<String>(null);
         var ref2 = new AtomicReference<String>(null);
 
-        var counter = ReferenceCounter.newBlocking(1);
+        var counter = ReferenceCounter.builder().initValue(1).build();
 
         run(() -> {
             ThreadUtils.sleep(5);
@@ -66,7 +66,7 @@ public class TestReferenceCounter {
         var ref1 = new AtomicReference<String>(null);
         var ref2 = new AtomicReference<String>(null);
 
-        var counter = ReferenceCounter.newBlocking(0);
+        var counter = ReferenceCounter.builder().initValue(0).build();
 
         run(() -> {
             ThreadUtils.sleep(5);
@@ -93,13 +93,13 @@ public class TestReferenceCounter {
 
     @Test
     public void testLockOnCurrentValue() {
-        var counter = ReferenceCounter.newBlocking(0);
+        var counter = ReferenceCounter.builder().initValue(0).build();
         counter.lockDecrementAndWaitFor(0);
     }
 
     @Test
     public void testWaitOnCurrentValue() {
-        var counter = ReferenceCounter.newBlocking(0);
+        var counter = ReferenceCounter.builder().initValue(0).build();
         counter.waitFor(0);
     }
 }

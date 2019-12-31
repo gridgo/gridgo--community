@@ -3,16 +3,22 @@ package io.gridgo.extras.concurrent;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
+import lombok.Builder;
+
 class BlockingReferenceCounter implements ReferenceCounter {
 
-    private final AtomicInteger counter;
+    private int upperBound;
+
+    private int lowerBound;
+
+    private volatile int counter;
 
     private final AtomicReference<CountDownLatch> incrementLock = new AtomicReference<>();
 
@@ -22,12 +28,28 @@ class BlockingReferenceCounter implements ReferenceCounter {
 
     private final Lock _lock = new ReentrantLock();
 
-    BlockingReferenceCounter(int initValue) {
-        this.counter = new AtomicInteger(initValue);
-    }
+    @Builder(builderClassName = "ReferenceCounterBuilder")
+    BlockingReferenceCounter(Integer initValue, Integer lowerBound, Integer upperBound) {
+        if (initValue == null)
+            initValue = 0;
 
-    BlockingReferenceCounter() {
-        this(0);
+        if (lowerBound == null)
+            lowerBound = Integer.MIN_VALUE;
+
+        if (upperBound == null)
+            upperBound = Integer.MAX_VALUE;
+
+        if (initValue > upperBound)
+            throw new IllegalArgumentException(
+                    "initValue (" + initValue + ") cannot be greater than upperBound (" + upperBound + ")");
+
+        if (initValue < lowerBound)
+            throw new IllegalArgumentException(
+                    "initValue (" + initValue + ") cannot be lower than lowerBound (" + lowerBound + ")");
+
+        this.upperBound = upperBound;
+        this.lowerBound = lowerBound;
+        this.counter = initValue;
     }
 
     private <V> V accessCounter(Callable<V> runner) {
@@ -47,7 +69,7 @@ class BlockingReferenceCounter implements ReferenceCounter {
     @Override
     public void waitFor(int value) {
         var latch = accessCounter(() -> {
-            if (counter.get() == value)
+            if (counter == value)
                 return null;
             return getWaitingLatch(value);
         });
@@ -72,17 +94,27 @@ class BlockingReferenceCounter implements ReferenceCounter {
             latch.countDown();
     }
 
-    private void change(int delta, AtomicReference<CountDownLatch> lockHolder) {
+    private boolean change(int delta, AtomicReference<CountDownLatch> lockHolder) {
+        if (delta == 0)
+            return false;
+
+        var changed = new AtomicBoolean(false);
         while (true) {
             var theLock = accessCounter(() -> {
                 var lock = lockHolder.get();
-                if (lock == null)
-                    triggerValue(counter.addAndGet(delta));
+                if (lock == null) {
+                    int newValue = counter + delta;
+                    if (newValue <= upperBound && newValue >= lowerBound) {
+                        counter = newValue;
+                        changed.set(true);
+                        triggerValue(newValue);
+                    }
+                }
                 return lock;
             });
 
             if (theLock == null)
-                return;
+                return changed.get();
 
             try {
                 theLock.await();
@@ -93,13 +125,13 @@ class BlockingReferenceCounter implements ReferenceCounter {
     }
 
     @Override
-    public void increment() {
-        change(1, incrementLock);
+    public boolean increment() {
+        return change(1, incrementLock);
     }
 
     @Override
-    public void decrement() {
-        change(-1, decrementLock);
+    public boolean decrement() {
+        return change(-1, decrementLock);
     }
 
     private void doNothing() {
@@ -110,7 +142,7 @@ class BlockingReferenceCounter implements ReferenceCounter {
         while (true) {
             var lock = new CountDownLatch(1);
             Boolean success = accessCounter(() -> {
-                if (counter.get() == value) {
+                if (counter == value) {
                     triggerValue(value);
                     return null;
                 }
