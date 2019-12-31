@@ -22,7 +22,7 @@ public class TestReferenceCounter {
         var counter = ReferenceCounter.newBlocking(1);
 
         run(() -> {
-            ThreadUtils.sleep(10);
+            ThreadUtils.sleep(5);
             val.set(TEST_TEXT);
             counter.decrement();
         });
@@ -39,13 +39,13 @@ public class TestReferenceCounter {
         var counter = ReferenceCounter.newBlocking(1);
 
         run(() -> {
-            ThreadUtils.sleep(50);
+            ThreadUtils.sleep(5);
             ref1.set(TEST_TEXT);
             counter.decrement();
         });
 
         run(() -> {
-            ThreadUtils.sleep(10);
+            ThreadUtils.sleep(5);
             counter.increment();
             ref2.set(ref1.get());
         });
@@ -66,20 +66,20 @@ public class TestReferenceCounter {
         var counter = ReferenceCounter.newBlocking(0);
 
         run(() -> {
-            ThreadUtils.sleep(50);
+            ThreadUtils.sleep(5);
             ref1.set(TEST_TEXT);
             counter.increment();
         });
 
         run(() -> {
-            ThreadUtils.sleep(10);
+            ThreadUtils.sleep(5);
             counter.decrement();
             ref2.set(ref1.get());
         });
 
         counter.lockDecrementAndWaitFor(1);
 
-        ThreadUtils.sleep(10);
+        ThreadUtils.sleep(100);
 
         assertEquals(TEST_TEXT, ref1.get());
         assertEquals(TEST_TEXT, ref2.get());

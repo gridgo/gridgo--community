@@ -1,9 +1,12 @@
 package io.gridgo.extras.concurrent;
 
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
@@ -17,6 +20,8 @@ class BlockingReferenceCounter implements ReferenceCounter {
 
     private final Map<Integer, CountDownLatch> waiting = new NonBlockingHashMap<>();
 
+    private final Lock _lock = new ReentrantLock();
+
     BlockingReferenceCounter(int initValue) {
         this.counter = new AtomicInteger(initValue);
     }
@@ -25,14 +30,30 @@ class BlockingReferenceCounter implements ReferenceCounter {
         this(0);
     }
 
+    private <V> V accessCounter(Callable<V> runner) {
+        var hasLock = false;
+        try {
+            _lock.lockInterruptibly();
+            hasLock = true;
+            return runner.call();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (hasLock)
+                _lock.unlock();
+        }
+    }
+
     @Override
     public void waitFor(int value) {
-        CountDownLatch latch = null;
-        synchronized (counter) {
+        var latch = accessCounter(() -> {
             if (counter.get() == value)
-                return;
-            latch = getWaitingLatch(value);
-        }
+                return null;
+            return getWaitingLatch(value);
+        });
+
+        if (latch == null)
+            return;
 
         try {
             latch.await();
@@ -53,21 +74,21 @@ class BlockingReferenceCounter implements ReferenceCounter {
 
     private void change(int delta, AtomicReference<CountDownLatch> latchHolder) {
         while (true) {
-            CountDownLatch latch = null;
-            synchronized (counter) {
-                latch = latchHolder.get();
-                if (latch == null) {
+            var latch = accessCounter(() -> {
+                var _latch = latchHolder.get();
+                if (_latch == null)
                     triggerValue(counter.addAndGet(delta));
-                    return;
-                }
-            }
+                return _latch;
+            });
 
-            if (latch != null)
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+            if (latch == null)
+                return;
+
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -84,14 +105,16 @@ class BlockingReferenceCounter implements ReferenceCounter {
     private void lockAndWaitFor(int value, AtomicReference<CountDownLatch> lockHolder) {
         while (true) {
             var latch = getWaitingLatch(value);
-            var success = false;
-            synchronized (counter) {
+            Boolean success = accessCounter(() -> {
                 if (counter.get() == value) {
                     triggerValue(value);
-                    return;
+                    return null;
                 }
-                success = lockHolder.compareAndSet(null, latch);
-            }
+                return lockHolder.compareAndSet(null, latch);
+            });
+
+            if (success == null)
+                return;
 
             try {
                 if (success) {
