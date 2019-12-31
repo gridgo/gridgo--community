@@ -72,20 +72,20 @@ class BlockingReferenceCounter implements ReferenceCounter {
             latch.countDown();
     }
 
-    private void change(int delta, AtomicReference<CountDownLatch> latchHolder) {
+    private void change(int delta, AtomicReference<CountDownLatch> lockHolder) {
         while (true) {
-            var latch = accessCounter(() -> {
-                var _latch = latchHolder.get();
-                if (_latch == null)
+            var theLock = accessCounter(() -> {
+                var lock = lockHolder.get();
+                if (lock == null)
                     triggerValue(counter.addAndGet(delta));
-                return _latch;
+                return lock;
             });
 
-            if (latch == null)
+            if (theLock == null)
                 return;
 
             try {
-                latch.await();
+                theLock.await();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -102,26 +102,32 @@ class BlockingReferenceCounter implements ReferenceCounter {
         change(-1, decrementLock);
     }
 
-    private void lockAndWaitFor(int value, AtomicReference<CountDownLatch> lockHolder) {
+    private void doNothing() {
+        // do nothing
+    }
+
+    private Unlockable lockAndWaitFor(int value, AtomicReference<CountDownLatch> lockHolder) {
         while (true) {
-            var latch = getWaitingLatch(value);
+            var lock = new CountDownLatch(1);
             Boolean success = accessCounter(() -> {
                 if (counter.get() == value) {
                     triggerValue(value);
                     return null;
                 }
-                return lockHolder.compareAndSet(null, latch);
+                return lockHolder.compareAndSet(null, lock);
             });
 
             if (success == null)
-                return;
+                return this::doNothing;
 
             try {
                 if (success) {
-                    latch.await();
-                    if (!lockHolder.compareAndSet(latch, null))
-                        throw new IllegalStateException("Cannot unlock");
-                    return;
+                    getWaitingLatch(value).await();
+                    return () -> {
+                        lock.countDown();
+                        if (!lockHolder.compareAndSet(lock, null))
+                            throw new IllegalStateException("Cannot unlock");
+                    };
                 }
 
                 var currLatch = lockHolder.get();
@@ -134,12 +140,12 @@ class BlockingReferenceCounter implements ReferenceCounter {
     }
 
     @Override
-    public void lockIncrementAndWaitFor(int value) {
-        lockAndWaitFor(value, incrementLock);
+    public Unlockable lockIncrementAndWaitFor(int value) {
+        return lockAndWaitFor(value, incrementLock);
     }
 
     @Override
-    public void lockDecrementAndWaitFor(int value) {
-        lockAndWaitFor(value, decrementLock);
+    public Unlockable lockDecrementAndWaitFor(int value) {
+        return lockAndWaitFor(value, decrementLock);
     }
 }

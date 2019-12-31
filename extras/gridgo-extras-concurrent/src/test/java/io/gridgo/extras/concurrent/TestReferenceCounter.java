@@ -10,7 +10,8 @@ import io.gridgo.utils.ThreadUtils;
 
 public class TestReferenceCounter {
 
-    private static String TEST_TEXT = "this is test text";
+    private static final String TEST_TEXT_1 = "this is test text 1";
+    private static final String TEST_TEXT = "this is test text";
 
     private void run(Runnable runner) {
         new Thread(runner).start();
@@ -50,12 +51,14 @@ public class TestReferenceCounter {
             ref2.set(ref1.get());
         });
 
-        counter.lockIncrementAndWaitFor(0);
+        var unlockable = counter.lockIncrementAndWaitFor(0);
+        assertEquals(TEST_TEXT, ref1.get());
+
+        ref1.set(TEST_TEXT_1);
+        unlockable.unlock();
 
         ThreadUtils.sleep(10);
-
-        assertEquals(TEST_TEXT, ref1.get());
-        assertEquals(TEST_TEXT, ref2.get());
+        assertEquals(TEST_TEXT_1, ref2.get());
     }
 
     @Test
@@ -77,12 +80,15 @@ public class TestReferenceCounter {
             ref2.set(ref1.get());
         });
 
-        counter.lockDecrementAndWaitFor(1);
-
-        ThreadUtils.sleep(100);
-
+        var unlockable = counter.lockDecrementAndWaitFor(1);
         assertEquals(TEST_TEXT, ref1.get());
-        assertEquals(TEST_TEXT, ref2.get());
+
+        ref1.set(TEST_TEXT_1);
+        unlockable.unlock();
+
+        ThreadUtils.sleep(10);
+
+        assertEquals(TEST_TEXT_1, ref2.get());
     }
 
     @Test
