@@ -9,6 +9,13 @@ public interface ReferenceCounter {
     }
 
     /**
+     * get counter value
+     * 
+     * @return current counter value
+     */
+    int count();
+
+    /**
      * wait for counter to reach value
      * 
      * @param value value to wait
@@ -17,13 +24,15 @@ public interface ReferenceCounter {
 
     /**
      * increment this counter
-     * @return TODO
+     * 
+     * @return true if value incremented successful, false otherwise
      */
     boolean increment();
 
     /**
      * decrement this counter
-     * @return TODO
+     * 
+     * @return true if value decremented successful, false otherwise
      */
     boolean decrement();
 

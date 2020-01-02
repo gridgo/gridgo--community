@@ -52,6 +52,11 @@ class BlockingReferenceCounter implements ReferenceCounter {
         this.counter = initValue;
     }
 
+    @Override
+    public int count() {
+        return counter;
+    }
+
     private <V> V accessCounter(Callable<V> runner) {
         var hasLock = false;
         try {
