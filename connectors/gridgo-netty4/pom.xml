@@ -19,5 +19,11 @@
 			<artifactId>netty-all</artifactId>
 			<version>${netty.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>io.gridgo</groupId>
+			<artifactId>gridgo-bean-json</artifactId>
+			<version>${gridgo.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>

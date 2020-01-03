@@ -9,7 +9,7 @@ import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.connector.Producer;
 import io.gridgo.connector.impl.factories.DefaultConnectorFactory;
 import io.gridgo.connector.support.config.ConnectorContext;
-import io.gridgo.core.support.exceptions.NoProducerException;
+import io.gridgo.extras.config.exceptions.NoProducerException;
 import io.gridgo.framework.support.Message;
 
 public class ProducerConfigurator extends AbstractConnectorConfigurator {

@@ -16,6 +16,11 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>io.gridgo</groupId>
+			<artifactId>gridgo-config-core</artifactId>
+			<version>${gridgo.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>com.typesafe</groupId>
 			<artifactId>config</artifactId>
 			<version>${config.version}</version>
