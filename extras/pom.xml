@@ -12,6 +12,7 @@
 	<artifactId>gridgo-community-extras</artifactId>
 
 	<modules>
+		<module>gridgo-configuration</module>
 		<module>gridgo-extras-prometheus</module>
 		<module>gridgo-extras-spring</module>
 		<module>gridgo-extras-typesafe</module>
