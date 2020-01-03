@@ -10,7 +10,7 @@ import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.impl.factories.DefaultConnectorFactory;
 import io.gridgo.connector.support.config.ConnectorContext;
-import io.gridgo.core.support.exceptions.NoConsumerException;
+import io.gridgo.extras.config.exceptions.NoConsumerException;
 import io.gridgo.framework.support.Message;
 
 public class ConsumerConfigurator extends AbstractConnectorConfigurator {
