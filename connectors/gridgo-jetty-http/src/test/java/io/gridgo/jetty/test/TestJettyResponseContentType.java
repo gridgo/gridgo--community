@@ -42,6 +42,10 @@ import io.gridgo.framework.support.Payload;
 
 public class TestJettyResponseContentType {
 
+    static {
+        System.setProperty("gridgo.bean.json.strict", "false");
+    }
+
     private static final String TEST_TEXT = "this is test text";
 
     private static final String URI = "http://localhost:8888/";
