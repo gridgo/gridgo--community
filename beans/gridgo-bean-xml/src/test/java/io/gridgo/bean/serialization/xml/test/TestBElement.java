@@ -28,10 +28,6 @@ public class TestBElement {
 
             BObject obj = BElement.ofBytes(xml.getBytes("utf-8"), "xml");
             assertObject(obj);
-
-            byte[] bytes = obj.toBytes();
-            BObject fromRaw = BElement.ofBytes(bytes);
-            assertObject(fromRaw);
         }
     }
 
