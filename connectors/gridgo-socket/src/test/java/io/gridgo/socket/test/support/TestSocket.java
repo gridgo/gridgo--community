@@ -7,8 +7,8 @@ import java.nio.ByteBuffer;
 
 import org.apache.commons.io.IOUtils;
 
-import io.gridgo.socket.helper.Endpoint;
 import io.gridgo.socket.impl.AbstractSocket;
+import io.gridgo.utils.support.Endpoint;
 import lombok.Getter;
 
 public class TestSocket extends AbstractSocket {

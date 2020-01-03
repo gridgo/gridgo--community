@@ -4,7 +4,7 @@ import io.gridgo.socket.helper.AbstractEmbeddedLibraryTools;
 
 public class EmbeddedLibraryTools extends AbstractEmbeddedLibraryTools {
 
-    public static final boolean LOADED_EMBEDDED_LIBRARY;
+    public static final boolean LOADED_EMBEDDED_LIBRARY; 
 
     static {
         LOADED_EMBEDDED_LIBRARY = new EmbeddedLibraryTools().loadEmbeddedLibrary();

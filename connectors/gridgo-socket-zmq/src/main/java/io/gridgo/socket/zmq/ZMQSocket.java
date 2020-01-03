@@ -1,14 +1,16 @@
 package io.gridgo.socket.zmq;
 
-import org.zeromq.ZMQ;
-
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
-import io.gridgo.socket.helper.Endpoint;
+import org.zeromq.ZMQ;
+
 import io.gridgo.socket.impl.AbstractSocket;
+import io.gridgo.utils.PrimitiveUtils;
+import io.gridgo.utils.pojo.PojoUtils;
+import io.gridgo.utils.pojo.setter.PojoSetterProxy;
+import io.gridgo.utils.support.Endpoint;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -16,44 +18,64 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 final class ZMQSocket extends AbstractSocket {
 
+    private static final PojoSetterProxy SETTER_PROXY = PojoUtils.getSetterProxy(ZMQ.Socket.class);;
+    private static final Map<String, Class<?>> SIGNATURES = new HashMap<>();
+    private static final Map<String, String> LOWERCASE_FIELD_NAMES = new HashMap<>();
+
+    static {
+        try {
+            SETTER_PROXY.getSignatures().forEach(sig -> {
+                var fieldName = sig.getFieldName();
+                SIGNATURES.put(fieldName, sig.getFieldType());
+                LOWERCASE_FIELD_NAMES.put(fieldName.toLowerCase(), fieldName);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
     private final ZMQ.Socket socket;
 
     @Getter
     private Integer bindingPort = null;
 
-    private Map<String, Consumer<String>> setters = new HashMap<>();
-
     ZMQSocket(@NonNull ZMQ.Socket socket) {
         this.socket = socket;
-        this.initializeSetters();
-    }
-
-    private void initializeSetters() {
-        setters.put("receivetimeout", arg -> socket.setReceiveTimeOut(Integer.parseInt(arg.toString())));
-        setters.put("sendtimeout", arg -> socket.setSendTimeOut(Integer.parseInt(arg.toString())));
-        setters.put("sndhwm", arg -> socket.setSndHWM(Long.parseLong(arg.toString())));
     }
 
     @Override
     public void applyConfig(@NonNull String name, Object value) {
-        var consumer = setters.get(name.toLowerCase());
-        if (consumer == null) {
-            log.warn("No setter found for {}", name);
+        var fieldName = LOWERCASE_FIELD_NAMES.get(name.toLowerCase());
+
+        if (fieldName != null) {
+            doApplyConfig(fieldName, value);
             return;
         }
-        consumer.accept(value != null ? value.toString() : null);
+
+        if ("buffersize".equalsIgnoreCase(name)) {
+            doApplyConfig("sendBufferSize", value);
+            doApplyConfig("receiveBufferSize", value);
+        }
+    }
+
+    private void doApplyConfig(String fieldName, Object value) {
+        var realValue = PrimitiveUtils.getValueFrom(SIGNATURES.get(fieldName), value);
+        SETTER_PROXY.applyValue(socket, fieldName, realValue);
+
+        if (log.isDebugEnabled())
+            log.debug("Applied zmq socket config: {}={}", fieldName, realValue);
     }
 
     @Override
     protected void doBind(Endpoint endpoint) {
         var resolvedAddress = endpoint.getResolvedAddress();
-        if (endpoint.getPort() <= 0) {
+        if (!endpoint.getProtocol().equalsIgnoreCase("ipc") && endpoint.getPort() <= 0) {
             bindingPort = this.socket.bindToRandomPort(resolvedAddress);
         } else {
             this.socket.bind(resolvedAddress);
             this.bindingPort = endpoint.getPort();
         }
-        log.debug("success bind to: {}", resolvedAddress);
     }
 
     @Override
@@ -70,24 +92,29 @@ final class ZMQSocket extends AbstractSocket {
 
     @Override
     protected int doReveive(ByteBuffer buffer, boolean block) {
-        if (buffer.isDirect()) {
-            return this.socket.recvZeroCopy(buffer, buffer.capacity(), block ? 0 : ZMQ.NOBLOCK);
-        }
-        return this.socket.recvByteBuffer(buffer, ZMQ.NOBLOCK);
+        int flags = block ? 0 : ZMQ.NOBLOCK;
+        if (buffer.isDirect())
+            return socket.recvByteBuffer(buffer, flags);
+
+        int offset = buffer.position();
+        int maxLength = buffer.capacity() - offset;
+        int rc = socket.recv(buffer.array(), offset, maxLength, flags);
+        if (rc >= 0)
+            buffer.position(offset + rc);
+
+        return rc;
     }
 
     @Override
     protected int doSend(ByteBuffer buffer, boolean block) {
         int flags = block ? 0 : ZMQ.NOBLOCK;
-        if (!buffer.isDirect()) {
-            int pos = buffer.position();
-            int len = buffer.limit() - pos;
-            if (this.socket.send(buffer.array(), pos, len, flags)) {
-                return len;
-            }
-            return -1;
-        }
-        return this.socket.sendByteBuffer(buffer, flags);
+
+        if (buffer.isDirect())
+            return socket.sendByteBuffer(buffer, flags);
+
+        int pos = buffer.position();
+        int len = buffer.limit() - pos;
+        return socket.send(buffer.array(), pos, len, flags) ? len : -1;
     }
 
     @Override

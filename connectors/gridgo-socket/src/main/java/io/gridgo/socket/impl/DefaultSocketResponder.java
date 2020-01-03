@@ -1,12 +1,13 @@
 package io.gridgo.socket.impl;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Collection;
+import java.util.function.Function;
 
 import org.joo.promise4j.Promise;
 
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.function.Function;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.gridgo.connector.Responder;
 import io.gridgo.connector.impl.SingleThreadSendingProducer;
@@ -16,10 +17,12 @@ import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
 import io.gridgo.socket.Socket;
 import io.gridgo.socket.exceptions.SendMessageException;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 
-public class DefaultSocketResponder extends SingleThreadSendingProducer implements FailureHandlerAware<DefaultSocketResponder>, Responder {
+public class DefaultSocketResponder extends SingleThreadSendingProducer
+        implements FailureHandlerAware<DefaultSocketResponder>, Responder {
 
     private final ByteBuffer buffer;
 
@@ -35,19 +38,31 @@ public class DefaultSocketResponder extends SingleThreadSendingProducer implemen
     @Getter
     private long totalSentMessages;
 
-    public DefaultSocketResponder(ConnectorContext context, //
+    private boolean useDirectBuffer = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+
+    @Builder
+    private DefaultSocketResponder(ConnectorContext context, //
             Socket socket, //
             int bufferSize, //
             int ringBufferSize, //
             boolean batchingEnabled, //
-            int maxBatchingSize, //
-            String uniqueIdentifier) {
+            int maxBatchSize, //
+            String uniqueIdentifier, //
+            Boolean useDirectBuffer) {
 
         super(context, 1024, new ThreadFactoryBuilder().build(), true, 100);
+
+        if (useDirectBuffer != null)
+            this.useDirectBuffer = useDirectBuffer.booleanValue();
+
         this.socket = socket;
         this.uniqueIdentifier = uniqueIdentifier;
-        this.buffer = ByteBuffer.allocateDirect(bufferSize);
         this.setFailureHandler(context.getExceptionHandler());
+
+        this.buffer = (socket.forceUsingDirectBuffer() || this.useDirectBuffer) //
+                ? ByteBuffer.allocateDirect(bufferSize)//
+                : ByteBuffer.allocate(bufferSize);
+
     }
 
     @Override
@@ -72,11 +87,9 @@ public class DefaultSocketResponder extends SingleThreadSendingProducer implemen
             buffer.flip();
 
             int sentBytes = this.socket.send(buffer);
-            if (sentBytes == -1) {
-                if (this.failureHandler != null) {
+            if (sentBytes == -1)
+                if (this.failureHandler != null)
                     this.failureHandler.apply(new SendMessageException());
-                }
-            }
 
             totalSentBytes += sentBytes;
             totalSentMessages++;

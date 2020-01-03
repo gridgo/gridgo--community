@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
+import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig.Builder;
 import org.asynchttpclient.Dsl;
 import org.asynchttpclient.Realm;
@@ -151,6 +152,17 @@ public class HttpConnector extends AbstractConnector {
         var format = getParam(PARAM_FORMAT);
         var method = getParam(PARAM_METHOD);
         var nameResolver = getNameResolver();
-        this.producer = Optional.of(new HttpProducer(getContext(), endpoint, config, format, nameResolver, method));
+
+        var httpClient = getSharedHttpClientBean();
+
+        var httpProducer = new HttpProducer(getContext(), endpoint, config, format, nameResolver, method, httpClient);
+        this.producer = Optional.of(httpProducer);
+    }
+
+    private AsyncHttpClient getSharedHttpClientBean() {
+        var httpClientName = getParam("sharedHttpClient", null);
+        if (httpClientName != null)
+            return getContext().getRegistry().lookupMandatory(httpClientName, AsyncHttpClient.class);
+        return null;
     }
 }

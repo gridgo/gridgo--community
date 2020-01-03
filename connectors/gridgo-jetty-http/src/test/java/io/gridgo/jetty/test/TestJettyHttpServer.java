@@ -16,15 +16,12 @@ import java.nio.charset.Charset;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.junit.Test;
 
 import io.gridgo.connector.jetty.server.JettyHttpServer;
 import io.gridgo.connector.jetty.server.JettyHttpServerManager;
+import io.gridgo.connector.jetty.server.JettyRequestHandler;
 
 public class TestJettyHttpServer {
 
@@ -109,7 +106,7 @@ public class TestJettyHttpServer {
 
         final AtomicReference<Throwable> exception = new AtomicReference<Throwable>(null);
 
-        BiConsumer<HttpServletRequest, HttpServletResponse> handler = (req, res) -> {
+        JettyRequestHandler handler = (req, res) -> {
             try {
                 res.getWriter().write("");
                 res.getWriter().flush();
@@ -121,8 +118,8 @@ public class TestJettyHttpServer {
         };
 
         httpServer.addPathHandler("/*", handler) //
-                  .addPathHandler("/path1/*", handler) //
-                  .addPathHandler("/path2/*", handler);
+                .addPathHandler("/path1/*", handler) //
+                .addPathHandler("/path2/*", handler);
 
         final String encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
 

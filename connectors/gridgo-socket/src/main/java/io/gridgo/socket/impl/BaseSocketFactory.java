@@ -1,6 +1,5 @@
 package io.gridgo.socket.impl;
 
-import io.gridgo.socket.Configurable;
 import io.gridgo.socket.Socket;
 import io.gridgo.socket.SocketOptions;
 import lombok.NonNull;
@@ -55,9 +54,7 @@ public abstract class BaseSocketFactory extends AbstractSocketFactory {
         }
 
         if (socket != null) {
-            if (socket instanceof Configurable) {
-                ((Configurable) socket).applyConfig(options.getConfig());
-            }
+            socket.applyConfig(options.getConfig());
             return (T) socket;
         }
 

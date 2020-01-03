@@ -5,10 +5,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.gridgo.socket.Socket;
-import io.gridgo.socket.helper.Endpoint;
-import io.gridgo.socket.helper.EndpointParser;
 import io.gridgo.utils.ThreadUtils;
 import io.gridgo.utils.helper.Loggable;
+import io.gridgo.utils.support.Endpoint;
+import io.gridgo.utils.support.EndpointParser;
 import lombok.Getter;
 import lombok.NonNull;
 

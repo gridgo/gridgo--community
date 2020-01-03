@@ -3,47 +3,48 @@ package io.gridgo.socket.zmq.test;
 import static org.junit.Assert.assertTrue;
 
 import java.text.DecimalFormat;
+import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.joo.promise4j.Promise;
 import org.joo.promise4j.PromiseException;
 import org.junit.Test;
 
 import io.gridgo.bean.BObject;
-import io.gridgo.connector.Connector;
 import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
 import io.gridgo.connector.impl.resolvers.ClasspathConnectorResolver;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ZMQPushPullUnitTest {
 
-    private static final int port = 8080;
-
-    private static final String host = "localhost";
-    private static final String address = host + ":" + port;
     private final ConnectorResolver RESOLVER = new ClasspathConnectorResolver("io.gridgo.connector");
 
     private void doAckSend(Consumer consumer, Producer producer) throws InterruptedException, PromiseException {
-        int numMessages = (int) 1e2;
-        CountDownLatch doneSignal = new CountDownLatch(numMessages);
+        int numMessages = (int) 1e6;
+        var doneSignal = new CountDownLatch(numMessages);
 
-        consumer.subscribe((message) -> {
-            doneSignal.countDown();
-        });
+        consumer.subscribe((message) -> doneSignal.countDown());
+
+        var list = new LinkedList<Promise<Message, Exception>>();
 
         long start = System.nanoTime();
-        for (int i = 0; i < numMessages; i++) {
-            producer.sendWithAck(Message.of(Payload.of(BObject.ofSequence("index", i)))).get();
-        }
+        for (int i = 0; i < numMessages; i++)
+            list.add(producer.sendWithAck(Message.of(Payload.of(BObject.ofSequence("index", i)))));
+
+        Promise.all(list).get();
 
         if (doneSignal.await(1, TimeUnit.MINUTES)) {
             double elapsed = Double.valueOf(System.nanoTime() - start);
-            DecimalFormat df = new DecimalFormat("###,###.##");
-            System.out.println("ACK TRANSMITION DONE (*** not improved), " + numMessages + " messages were transmited in " + df.format(elapsed / 1e6)
-                    + "ms -> pace: " + df.format(1e9 * numMessages / elapsed) + "msg/s");
+            var df = new DecimalFormat("###,###.##");
+            log.debug("ACK TRANSMITION DONE, {} messages were transmited in {} ms -> pace: {} msg/s",
+                    df.format(numMessages), df.format(elapsed / 1e6), df.format(1e9 * numMessages / elapsed));
 
             consumer.clearSubscribers();
         } else {
@@ -54,22 +55,20 @@ public class ZMQPushPullUnitTest {
     }
 
     private void doFnFSend(Consumer consumer, Producer producer) throws InterruptedException {
-        int numMessages = (int) 1e2;
-        CountDownLatch doneSignal = new CountDownLatch(numMessages);
-
-        consumer.subscribe((message) -> {
-            doneSignal.countDown();
-        });
+        int numMessages = (int) 1e6;
+        var doneSignal = new CountDownLatch(numMessages);
+        consumer.subscribe((message) -> doneSignal.countDown());
         long start = System.nanoTime();
+
         for (int i = 0; i < numMessages; i++) {
             producer.send(Message.of(Payload.of(BObject.ofSequence("index", i))));
         }
 
         if (doneSignal.await(1, TimeUnit.MINUTES)) {
             double elapsed = Double.valueOf(System.nanoTime() - start);
-            DecimalFormat df = new DecimalFormat("###,###.##");
-            System.out.println("FnF TRANSMITION DONE (*** not improved), " + numMessages + " messages were transmited in " + df.format(elapsed / 1e6)
-                    + "ms -> pace: " + df.format(1e9 * numMessages / elapsed) + "msg/s");
+            var df = new DecimalFormat("###,###.##");
+            log.debug("FnF TRANSMITION DONE, {} messages were transmited in {} ms -> pace: {} msg/s",
+                    df.format(numMessages), df.format(elapsed / 1e6), df.format(1e9 * numMessages / elapsed));
             consumer.clearSubscribers();
         } else {
             consumer.clearSubscribers();
@@ -85,41 +84,43 @@ public class ZMQPushPullUnitTest {
         if (osName != null && osName.contains("Windows"))
             return;
 
-        System.out.println("Test tcp monoplex...");
-        String queryString = "batchingEnabled=true&maxBatchSize=2000&ringBufferSize=2048";
+        var queryString = "batchingEnabled=true&maxBatchSize=2000&ringBufferSize=2048";
+        var pairs = new Pair[] { Pair.of("tcp", "localhost:8888"), Pair.of("ipc", "test.sock") };
 
-        Connector connector1 = RESOLVER.resolve("zmq:pull:tcp://" + address);
-        Connector connector2 = RESOLVER.resolve("zmq:push:tcp://" + address + "?" + queryString);
+        for (var pair : pairs) {
+            var protocol = pair.getLeft();
+            var address = pair.getRight();
 
-        try {
-            connector1.start();
-            assertTrue(connector1.getConsumer().isPresent());
-            Consumer consumer = connector1.getConsumer().get();
+            var connector1 = RESOLVER.resolve("zmq:pull:" + protocol + "://" + address);
+            var connector2 = RESOLVER.resolve("zmq:push:" + protocol + "://" + address + "?" + queryString);
 
-            connector2.start();
-            assertTrue(connector2.getProducer().isPresent());
-            Producer producer = connector2.getProducer().get();
+            try {
+                connector1.start();
+                assertTrue(connector1.getConsumer().isPresent());
+                var consumer = connector1.getConsumer().get();
 
-            warmUp(consumer, producer);
+                connector2.start();
+                assertTrue(connector2.getProducer().isPresent());
+                var producer = connector2.getProducer().get();
 
-            this.doFnFSend(consumer, producer);
-            this.doAckSend(consumer, producer);
-        } finally {
-            connector1.stop();
-            connector2.stop();
+                log.debug("Test ZMQ push/pull with: {}", pair);
+                warmUp(consumer, producer);
+                doFnFSend(consumer, producer);
+                doAckSend(consumer, producer);
+            } finally {
+                connector1.stop();
+                connector2.stop();
+            }
         }
     }
 
     private void warmUp(Consumer consumer, Producer producer) throws PromiseException, InterruptedException {
-        System.out.println("Started consumer and producer");
-        CountDownLatch doneSignal = new CountDownLatch(1);
-        consumer.subscribe((msg) -> {
-            System.out.println("Got message from source: " + msg.getMisc().get("source"));
-            doneSignal.countDown();
-        });
+        var doneSignal = new CountDownLatch(1);
+        consumer.subscribe((msg) -> doneSignal.countDown());
         producer.send(Message.of(Payload.of(BObject.ofSequence("cmd", "start"))));
         doneSignal.await();
-        System.out.println("Warmup done");
+
+        log.debug("Warmup done");
         consumer.clearSubscribers();
     }
 }

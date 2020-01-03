@@ -1,16 +1,18 @@
 package io.gridgo.socket.impl;
 
+import static io.gridgo.socket.SocketConstants.BATCH_SIZE;
+import static io.gridgo.socket.SocketConstants.IS_BATCH;
+
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Consumer;
 
 import io.gridgo.bean.BArray;
-import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
 import io.gridgo.socket.Socket;
-import io.gridgo.socket.SocketConstants;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,25 +20,33 @@ import lombok.extern.slf4j.Slf4j;
 public class SocketUtils {
 
     public static Message accumulateBatch(@NonNull Collection<Message> messages) {
-        if (messages.size() == 1) {
-            return messages.iterator().next();
-        }
+        int numMsgs = messages.size();
+        if (numMsgs == 0)
+            return null;
 
-        BArray body = BArray.ofEmpty();
-        for (Message mess : messages) {
-            Payload payload = mess.getPayload();
-            body.add(BArray.ofSequence(payload.getId().orElse(null), payload.getHeaders(), payload.getBody()));
-        }
-        Payload payload = Payload.of(body)//
-                .addHeader(SocketConstants.IS_BATCH, true) //
-                .addHeader(SocketConstants.BATCH_SIZE, messages.size());
+        if (numMsgs == 1)
+            return messages.iterator().next();
+
+        int i = 0;
+        var payloadCask = new BArray[numMsgs];
+        for (var msg : messages)
+            payloadCask[i++] = msg.getPayload().toBArray();
+
+        var body = BArray.wrap(Arrays.asList(payloadCask));
+        var payload = Payload.of(body) //
+                .addHeader(IS_BATCH, true) //
+                .addHeader(BATCH_SIZE, numMsgs);
 
         return Message.of(payload);
     }
 
-    private static void process(ByteBuffer buffer, boolean skipTopicHeader, Consumer<Message> receiver,
-            Consumer<Integer> recvByteCounter, Consumer<Integer> recvMsgCounter, Consumer<Throwable> exceptionHandler,
-            int rc) {
+    private static void process(ByteBuffer buffer, //
+            boolean skipTopicHeader, //
+            Consumer<Message> receiver, //
+            Consumer<Integer> recvByteCounter, //
+            Consumer<Integer> recvMsgCounter, //
+            Consumer<Throwable> exceptionHandler, int rc) {
+
         recvByteCounter.accept(rc);
 
         try {
@@ -49,30 +59,34 @@ public class SocketUtils {
             }
 
             var message = Message.parse(buffer);
-            BObject headers = message.headers();
-            if (headers != null && headers.getBoolean(SocketConstants.IS_BATCH, false)) {
+            var headers = message.headers();
+
+            if (headers != null && headers.getBoolean(IS_BATCH, false)) {
                 processBatch(receiver, recvMsgCounter, message, headers);
             } else {
                 recvMsgCounter.accept(1);
                 receiver.accept(message);
             }
+
         } catch (Exception e) {
-            if (exceptionHandler != null) {
+            if (log.isTraceEnabled())
+                log.trace("Error while parse buffer to message", e);
+
+            if (exceptionHandler != null)
                 exceptionHandler.accept(e);
-            } else {
-                log.error("Error while parse buffer to message", e);
-            }
         }
     }
 
-    private static void processBatch(Consumer<Message> receiver, Consumer<Integer> recvMsgCounter, Message message,
+    private static void processBatch(Consumer<Message> receiver, //
+            Consumer<Integer> recvMsgCounter, //
+            Message message, //
             BObject headers) {
-        var subMessages = message.body().asArray();
-        recvMsgCounter.accept(headers.getInteger(SocketConstants.BATCH_SIZE, subMessages.size()));
-        for (BElement payload : subMessages) {
-            var subMessage = Message.parse(payload);
-            receiver.accept(subMessage);
-        }
+
+        var batch = message.body().asArray();
+        recvMsgCounter.accept(headers.getInteger(BATCH_SIZE, batch.size()));
+
+        for (var msg : batch)
+            receiver.accept(Message.parse(msg));
     }
 
     public static void startPolling( //
