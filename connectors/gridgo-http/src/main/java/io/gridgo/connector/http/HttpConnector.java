@@ -22,7 +22,6 @@ import static io.gridgo.connector.httpcommon.HttpCommonProducerConstants.PROXY_T
 import static io.gridgo.connector.httpcommon.HttpCommonProducerConstants.REQUEST_TIMEOUT;
 import static io.gridgo.connector.httpcommon.HttpCommonProducerConstants.USE_PROXY;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collections;
@@ -111,7 +110,7 @@ public class HttpConnector extends AbstractConnector {
         var realmBean = getParam(PROXY_REALM_BEAN);
         return new ProxyServer( //
                 host, //
-                port != null ? Integer.parseInt(port) : DEFAULT_PROXY_PORT,
+                port != null ? Integer.parseInt(port) : DEFAULT_PROXY_PORT, //
                 securedPort != null ? Integer.parseInt(securedPort) : DEFAULT_PROXY_PORT, //
                 realmBean != null ? getContext().getRegistry().lookupMandatory(realmBean, Realm.class) : null, //
                 nonProxyHosts != null ? Arrays.asList(nonProxyHosts.split(",")) : Collections.emptyList(),
@@ -138,10 +137,10 @@ public class HttpConnector extends AbstractConnector {
         var nameResolverClass = getParam(NAME_RESOLVER_CLASS);
         if (nameResolverClass == null)
             return null;
+
         try {
             return (NameResolver<InetAddress>) Class.forName(nameResolverClass).getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IllegalArgumentException
-                | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -152,15 +151,21 @@ public class HttpConnector extends AbstractConnector {
         var format = getParam(PARAM_FORMAT);
         var method = getParam(PARAM_METHOD);
         var nameResolver = getNameResolver();
-
         var httpClient = getSharedHttpClientBean();
 
-        var httpProducer = new HttpProducer(getContext(), endpoint, config, format, nameResolver, method, httpClient);
-        this.producer = Optional.of(httpProducer);
+        this.producer = Optional.of(HttpProducer.builder() //
+                .context(getContext()) //
+                .endpointUri(endpoint) //
+                .config(config) //
+                .format(format) //
+                .nameResolver(nameResolver) //
+                .defaultMethod(method) //
+                .asyncHttpClient(httpClient) //
+                .build());
     }
 
     private AsyncHttpClient getSharedHttpClientBean() {
-        var httpClientName = getParam("sharedHttpClient", null);
+        var httpClientName = getParam("sharedHttpClientBean", getParam("sharedHttpClient", null));
         if (httpClientName != null)
             return getContext().getRegistry().lookupMandatory(httpClientName, AsyncHttpClient.class);
         return null;

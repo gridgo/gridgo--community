@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig.Builder;
@@ -54,8 +53,16 @@ public class HttpProducer extends AbstractHttpProducer {
 
     private String defaultMethod;
 
-    public HttpProducer(ConnectorContext context, String endpointUri, Builder config, String format,
-            NameResolver<InetAddress> nameResolver, String defaultMethod, AsyncHttpClient asyncHttpClient) {
+    @lombok.Builder
+    private HttpProducer( //
+            ConnectorContext context, //
+            String endpointUri, //
+            Builder config, //
+            String format, //
+            NameResolver<InetAddress> nameResolver, //
+            String defaultMethod, //
+            AsyncHttpClient asyncHttpClient) {
+
         super(context, format);
         this.endpointUri = endpointUri;
         this.config = config;
@@ -99,34 +106,30 @@ public class HttpProducer extends AbstractHttpProducer {
 
     @Override
     public Promise<Message, Exception> call(Message message) {
-        var deferred = new CompletableDeferredObject<Message, Exception>();
         var request = buildRequest(message);
-        asyncHttpClient.executeRequest(request, new AsyncCompletionHandler<Object>() {
 
-            @Override
-            public Object onCompleted(Response response) throws Exception {
-                var message = buildMessage(response);
-                ack(deferred, message);
-                return response;
-            }
+        var future = asyncHttpClient //
+                .executeRequest(request) //
+                .toCompletableFuture() //
+                .thenApply(this::buildMessage);
 
-            @Override
-            public void onThrowable(Throwable t) {
-                ack(deferred, new ConnectionException(t));
-            }
-        });
-        return deferred.promise();
+        return new CompletableDeferredObject<>(future) //
+                .filterFail(ConnectionException::new);
     }
 
     private RequestBuilder createBuilder(Message message) {
+
         if (message == null)
             return new RequestBuilder().setUrl(endpointUri);
+
         var endpointUri = this.endpointUri + message.headers().getString(HEADER_PATH, "");
         var method = getMethod(message, defaultMethod);
         var headers = getHeaders(message);
         var params = buildParams(getQueryParams(message));
         var body = serialize(message.body());
-        return new RequestBuilder(method).setUrl(endpointUri) //
+
+        return new RequestBuilder(method) //
+                .setUrl(endpointUri) //
                 .setBody(body) //
                 .setHeaders(headers) //
                 .setQueryParams(params);

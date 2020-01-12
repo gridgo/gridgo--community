@@ -30,11 +30,25 @@ public interface ReferenceCounter {
     boolean increment();
 
     /**
+     * check if increment is being blocked
+     * 
+     * @return
+     */
+    boolean isIncrementBlocked();
+
+    /**
      * decrement this counter
      * 
      * @return true if value decremented successful, false otherwise
      */
     boolean decrement();
+
+    /**
+     * check if decrement is being blocked
+     * 
+     * @return
+     */
+    boolean isDecrementBlocked();
 
     /**
      * Lock incrementing and stop current thread. Wait until counter reach value.

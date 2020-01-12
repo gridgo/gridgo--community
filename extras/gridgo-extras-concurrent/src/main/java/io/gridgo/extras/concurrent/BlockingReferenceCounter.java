@@ -139,27 +139,20 @@ class BlockingReferenceCounter implements ReferenceCounter {
         return change(-1, decrementLock);
     }
 
-    private void doNothing() {
-        // do nothing
-    }
-
     private Unlockable lockAndWaitFor(int value, AtomicReference<CountDownLatch> lockHolder) {
+
+        var lock = new CountDownLatch(1);
         while (true) {
-            var lock = new CountDownLatch(1);
-            Boolean success = accessCounter(() -> {
-                if (counter == value) {
+            var latch = getWaitingLatch(value);
+            var success = accessCounter(() -> {
+                if (counter == value)
                     triggerValue(value);
-                    return null;
-                }
                 return lockHolder.compareAndSet(null, lock);
             });
 
-            if (success == null)
-                return this::doNothing;
-
             try {
                 if (success) {
-                    getWaitingLatch(value).await();
+                    latch.await();
                     return () -> {
                         lock.countDown();
                         if (!lockHolder.compareAndSet(lock, null))
@@ -184,5 +177,15 @@ class BlockingReferenceCounter implements ReferenceCounter {
     @Override
     public Unlockable lockDecrementAndWaitFor(int value) {
         return lockAndWaitFor(value, decrementLock);
+    }
+
+    @Override
+    public boolean isIncrementBlocked() {
+        return this.incrementLock.get() != null;
+    }
+    
+    @Override
+    public boolean isDecrementBlocked() {
+        return this.decrementLock.get() != null;
     }
 }
