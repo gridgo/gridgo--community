@@ -1,8 +1,12 @@
 package io.gridgo.jetty.test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -17,11 +21,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.junit.Test;
 
 import io.gridgo.connector.jetty.server.JettyHttpServer;
 import io.gridgo.connector.jetty.server.JettyHttpServerManager;
 import io.gridgo.connector.jetty.server.JettyRequestHandler;
+import io.gridgo.utils.ThreadUtils;
+import io.prometheus.client.CollectorRegistry;
 
 public class TestJettyHttpServer {
 
@@ -36,9 +45,9 @@ public class TestJettyHttpServer {
     public void testAllInterfaceThenLocalhost() {
         System.out.println("Test create server binding on all interface (0.0.0.0) then localhost");
 
-        JettyHttpServer httpServer1 = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true);
-        JettyHttpServer httpServer2 = serverManager.getOrCreateJettyServer("localhost:8889", true);
-        JettyHttpServer httpServer3 = serverManager.getOrCreateJettyServer("*:8889", true);
+        var httpServer1 = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true);
+        var httpServer2 = serverManager.getOrCreateJettyServer("localhost:8889", true);
+        var httpServer3 = serverManager.getOrCreateJettyServer("*:8889", true);
 
         assertTrue(httpServer1 == httpServer2);
         assertTrue(httpServer1 == httpServer3);
@@ -58,13 +67,11 @@ public class TestJettyHttpServer {
         String osName = System.getProperty("os.name");
         System.out.println("os name: " + osName);
 
-        JettyHttpServer localhostServer = serverManager.getOrCreateJettyServer("localhost:8889", true);
+        var localhostServer = serverManager.getOrCreateJettyServer("localhost:8889", true);
         localhostServer.start();
 
-        final AtomicReference<String> localhostReceived = new AtomicReference<String>(null);
-        localhostServer.addPathHandler("/*", (req, res) -> {
-            localhostReceived.set(req.getParameter("key"));
-        });
+        var localhostReceived = new AtomicReference<String>(null);
+        localhostServer.addPathHandler("/*", (req, res) -> localhostReceived.set(req.getParameter("key")));
 
         AtomicReference<Exception> errorRef = new AtomicReference<Exception>(null);
         JettyHttpServer allInterfaceServer = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true);
@@ -184,5 +191,65 @@ public class TestJettyHttpServer {
 
         httpServer.stop();
         System.out.println("*** DONE ***");
+    }
+
+    private void echo(HttpServletRequest req, HttpServletResponse res) {
+        try {
+            var writer = res.getWriter();
+            writer.write(req.getParameter("key"));
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Double getSampleValue(String name) {
+        return CollectorRegistry.defaultRegistry.getSampleValue(name);
+    }
+
+    private Double getSampleValue(String name, String[] labelNames, String[] labelValues) {
+        return CollectorRegistry.defaultRegistry.getSampleValue(name, labelNames, labelValues);
+    }
+
+    @Test
+    public void testPrometheus() throws IOException, InterruptedException, URISyntaxException {
+        var httpServer = serverManager.getOrCreateJettyServer(address, true, true);
+        httpServer.addPathHandler("/prometheus", this::echo).start();
+
+        var encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
+        var uri = new URI("http://" + address + "/prometheus?key=" + encodedText);
+        var request = HttpRequest.newBuilder().GET().uri(uri).build();
+        var httpClient = HttpClient.newHttpClient();
+        httpClient.send(request, BodyHandlers.ofString());
+
+        ThreadUtils.sleep(100);
+
+        assertThat(getSampleValue("jetty_requests_total"), is(1.0));
+        assertThat(getSampleValue("jetty_requests_active"), is(0.0));
+        assertThat(getSampleValue("jetty_requests_active_max"), is(1.0));
+        assertThat(getSampleValue("jetty_request_time_max_seconds"), is(notNullValue()));
+        assertThat(getSampleValue("jetty_request_time_seconds_total"), is(notNullValue()));
+        assertThat(getSampleValue("jetty_dispatched_total"), is(1.0));
+        assertThat(getSampleValue("jetty_dispatched_active"), is(0.0));
+        assertThat(getSampleValue("jetty_dispatched_active_max"), is(greaterThan(0.0)));
+        assertThat(getSampleValue("jetty_dispatched_time_max"), is(notNullValue()));
+        assertThat(getSampleValue("jetty_dispatched_time_seconds_total"), is(notNullValue()));
+        assertThat(getSampleValue("jetty_async_requests_total"), is(0.0));
+        assertThat(getSampleValue("jetty_async_requests_waiting"), is(0.0));
+        assertThat(getSampleValue("jetty_async_requests_waiting_max"), is(0.0));
+        assertThat(getSampleValue("jetty_async_dispatches_total"), is(0.0));
+        assertThat(getSampleValue("jetty_expires_total"), is(0.0));
+
+        var labelNames = new String[] { "code" };
+        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "1xx" }), is(0.0));
+        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "2xx" }), is(1.0));
+        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "3xx" }), is(0.0));
+        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "4xx" }), is(0.0));
+        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "5xx" }), is(0.0));
+
+        assertThat(getSampleValue("jetty_stats_seconds"), is(notNullValue()));
+        assertThat(getSampleValue("jetty_responses_bytes_total"), is(notNullValue()));
+
+        httpServer.stop();
     }
 }

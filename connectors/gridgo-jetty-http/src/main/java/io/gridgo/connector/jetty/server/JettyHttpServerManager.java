@@ -28,12 +28,13 @@ public class JettyHttpServerManager {
         servers.values().forEach(JettyHttpServer::stop);
     }
 
-    public JettyHttpServer getOrCreateJettyServer(@NonNull HostAndPort originAddress, boolean http2Enabled) {
-        return getOrCreateJettyServer(originAddress, http2Enabled, null);
+    public JettyHttpServer getOrCreateJettyServer(@NonNull HostAndPort originAddress, boolean http2Enabled,
+            boolean enablePrometheus) {
+        return getOrCreateJettyServer(originAddress, http2Enabled, null, enablePrometheus);
     }
 
     public JettyHttpServer getOrCreateJettyServer(@NonNull HostAndPort originAddress, boolean http2Enabled,
-            Set<JettyServletContextHandlerOption> options) {
+            Set<JettyServletContextHandlerOption> options, boolean enablePrometheus) {
 
         var address = originAddress.makeCopy();
         if (!address.isResolvable())
@@ -59,17 +60,22 @@ public class JettyHttpServerManager {
                 .address(addr) //
                 .options(options) //
                 .http2Enabled(http2Enabled) //
+                .enablePrometheus(enablePrometheus) //
                 .onStopCallback(servers::remove) //
                 .build());
     }
 
+    public JettyHttpServer getOrCreateJettyServer(String address, boolean http2Enabled, boolean enablePrometheus) {
+        return getOrCreateJettyServer(HostAndPort.fromString(address), http2Enabled, null, enablePrometheus);
+    }
+
     public JettyHttpServer getOrCreateJettyServer(String address, boolean http2Enabled) {
-        return getOrCreateJettyServer(HostAndPort.fromString(address), http2Enabled, null);
+        return getOrCreateJettyServer(HostAndPort.fromString(address), http2Enabled, null, false);
     }
 
     public JettyHttpServer getOrCreateJettyServer(String address, boolean http2Enabled,
-            Set<JettyServletContextHandlerOption> options) {
-        return getOrCreateJettyServer(HostAndPort.fromString(address), http2Enabled, options);
+            Set<JettyServletContextHandlerOption> options, boolean enablePrometheus) {
+        return getOrCreateJettyServer(HostAndPort.fromString(address), http2Enabled, options, enablePrometheus);
     }
 
 }

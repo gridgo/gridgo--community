@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
@@ -11,10 +12,17 @@
 	<artifactId>gridgo-jetty-http</artifactId>
 
 	<properties>
-		<jetty.version>9.4.15.v20190215</jetty.version>
+		<jetty.version>9.4.25.v20191220</jetty.version>
+		<prometheus.version>0.8.0</prometheus.version>
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>io.prometheus</groupId>
+			<artifactId>simpleclient</artifactId>
+			<version>${prometheus.version}</version>
+			<scope>provided</scope>
+		</dependency>
 		<dependency>
 			<groupId>io.gridgo</groupId>
 			<artifactId>gridgo-http-common</artifactId>
@@ -27,12 +35,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-servlet</artifactId>
+			<artifactId>jetty-servlets</artifactId>
 			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-servlets</artifactId>
+			<artifactId>jetty-servlet</artifactId>
 			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
