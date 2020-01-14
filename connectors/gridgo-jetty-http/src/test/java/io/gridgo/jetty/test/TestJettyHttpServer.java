@@ -45,9 +45,9 @@ public class TestJettyHttpServer {
     public void testAllInterfaceThenLocalhost() {
         System.out.println("Test create server binding on all interface (0.0.0.0) then localhost");
 
-        var httpServer1 = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true, null, true, null);
-        var httpServer2 = serverManager.getOrCreateJettyServer("localhost:8889", true, null, true, null);
-        var httpServer3 = serverManager.getOrCreateJettyServer("*:8889", true, null, true, null);
+        var httpServer1 = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true, null, false, null);
+        var httpServer2 = serverManager.getOrCreateJettyServer("localhost:8889", true, null, false, null);
+        var httpServer3 = serverManager.getOrCreateJettyServer("*:8889", true, null, false, null);
 
         assertTrue(httpServer1 == httpServer2);
         assertTrue(httpServer1 == httpServer3);
