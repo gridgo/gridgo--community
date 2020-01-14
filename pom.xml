@@ -25,7 +25,7 @@
 	</scm>
 
 	<properties>
-		<gridgo.version>${project.version}</gridgo.version>
+		<gridgo.version>0.8.0</gridgo.version>
 		<junit.version>4.12</junit.version>
 	</properties>
 
