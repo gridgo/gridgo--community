@@ -18,7 +18,7 @@
 		<dependency>
 			<groupId>io.gridgo</groupId>
 			<artifactId>gridgo-config-core</artifactId>
-			<version>${gridgo.version}</version>
+			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.yaml</groupId>
