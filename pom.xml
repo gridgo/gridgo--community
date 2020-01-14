@@ -4,6 +4,7 @@
 
 	<packaging>pom</packaging>
 	<artifactId>gridgo-community</artifactId>
+	<version>0.8.0-SNAPSHOT</version>
 
 	<parent>
 		<groupId>io.gridgo</groupId>
