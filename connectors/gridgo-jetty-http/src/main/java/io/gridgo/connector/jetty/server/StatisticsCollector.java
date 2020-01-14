@@ -1,7 +1,5 @@
 package io.gridgo.connector.jetty.server;
 
-import static java.util.Collections.singletonList;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -42,13 +40,17 @@ import lombok.NonNull;
  * }
  * </pre>
  */
-@AllArgsConstructor(access = AccessLevel.PACKAGE, staticName = "newStatisticsCollector")
-class StatisticsCollector extends Collector {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class StatisticsCollector extends Collector {
 
     private static final List<String> EMPTY_LIST = Collections.emptyList();
 
     private final @NonNull StatisticsHandler statisticsHandler;
     private final String prefix;
+
+    public static StatisticsCollector newStatisticsCollector(StatisticsHandler statisticsHandler, String prefix) {
+        return new StatisticsCollector(statisticsHandler, prefix);
+    }
 
     @Override
     public List<MetricFamilySamples> collect() {
@@ -91,12 +93,12 @@ class StatisticsCollector extends Collector {
 
     private static MetricFamilySamples buildGauge(String name, String help, double value) {
         return new MetricFamilySamples(name, Type.GAUGE, help,
-                singletonList(new MetricFamilySamples.Sample(name, EMPTY_LIST, EMPTY_LIST, value)));
+                Collections.singletonList(new MetricFamilySamples.Sample(name, EMPTY_LIST, EMPTY_LIST, value)));
     }
 
     private static MetricFamilySamples buildCounter(String name, String help, double value) {
         return new MetricFamilySamples(name, Type.COUNTER, help,
-                singletonList(new MetricFamilySamples.Sample(name, EMPTY_LIST, EMPTY_LIST, value)));
+                Collections.singletonList(new MetricFamilySamples.Sample(name, EMPTY_LIST, EMPTY_LIST, value)));
     }
 
     private MetricFamilySamples buildStatusCounter() {
@@ -110,6 +112,7 @@ class StatisticsCollector extends Collector {
     }
 
     private static MetricFamilySamples.Sample buildStatusSample(String name, String status, double value) {
-        return new MetricFamilySamples.Sample(name, singletonList("code"), singletonList(status), value);
+        return new MetricFamilySamples.Sample(name, Collections.singletonList("code"),
+                Collections.singletonList(status), value);
     }
 }

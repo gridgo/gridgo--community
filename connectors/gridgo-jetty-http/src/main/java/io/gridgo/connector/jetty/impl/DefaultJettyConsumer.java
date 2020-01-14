@@ -13,6 +13,7 @@ import org.joo.promise4j.impl.CompletableDeferredObject;
 import io.gridgo.connector.impl.AbstractHasResponderConsumer;
 import io.gridgo.connector.jetty.JettyConsumer;
 import io.gridgo.connector.jetty.JettyResponder;
+import io.gridgo.connector.jetty.parser.DefaultHttpRequestParser;
 import io.gridgo.connector.jetty.parser.HttpRequestParser;
 import io.gridgo.connector.jetty.server.JettyHttpServer;
 import io.gridgo.connector.jetty.server.JettyHttpServerManager;
@@ -50,14 +51,13 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
             String charsetName, //
             Integer stringBufferSize, //
             Set<JettyServletContextHandlerOption> options, //
-            Boolean enablePrometheus,
-            String prometheusPrefix) {
+            Boolean enablePrometheus, String prometheusPrefix) {
 
         super(context);
 
         this.options = options;
         this.address = address;
-        this.requestParser = HttpRequestParser.defaultBuilder() //
+        this.requestParser = DefaultHttpRequestParser.builder() //
                 .charset(charsetName == null ? null : Charset.forName(charsetName)) //
                 .stringBufferSize(stringBufferSize) //
                 .format(format) //
