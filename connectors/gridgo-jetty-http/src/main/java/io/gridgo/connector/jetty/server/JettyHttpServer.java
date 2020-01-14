@@ -1,5 +1,7 @@
 package io.gridgo.connector.jetty.server;
 
+import static io.gridgo.connector.jetty.server.StatisticsCollector.newStatisticsCollector;
+
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -10,6 +12,7 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -27,7 +30,7 @@ public class JettyHttpServer extends NonameComponentLifecycle {
     @Getter
     private final HostAndPort address;
 
-    private ServletContextHandler handler;
+    private final ServletContextHandler handler;
 
     private final Consumer<HostAndPort> onStopCallback;
 
@@ -35,28 +38,30 @@ public class JettyHttpServer extends NonameComponentLifecycle {
 
     private final boolean http2Enabled;
 
+    private boolean enablePrometheus = false;
+
+    private String prometheusPrefix = null;
+
     @Builder
     private JettyHttpServer( //
             @NonNull HostAndPort address, //
             boolean http2Enabled, //
             Set<JettyServletContextHandlerOption> options, //
-            Consumer<HostAndPort> onStopCallback) {
+            Consumer<HostAndPort> onStopCallback, //
+            Boolean enablePrometheus, //
+            String prometheusPrefix) {
 
         this.address = address;
         this.options = options;
         this.http2Enabled = http2Enabled;
         this.onStopCallback = onStopCallback;
-    }
 
-    public JettyHttpServer addPathHandler( //
-            @NonNull String path, //
-            @NonNull JettyRequestHandler handler) {
+        if (enablePrometheus != null) {
+            this.enablePrometheus = enablePrometheus.booleanValue();
+            this.prometheusPrefix = prometheusPrefix == null ? "jetty" : prometheusPrefix;
+        }
 
-        var servletHolder = new ServletHolder(new DelegatingServlet(handler));
-        servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(path));
-
-        this.handler.addServlet(servletHolder, path);
-        return this;
+        this.handler = createServletContextHandler();
     }
 
     private ServletContextHandler createServletContextHandler() {
@@ -68,6 +73,17 @@ public class JettyHttpServer extends NonameComponentLifecycle {
             accumulateOptions = accumulateOptions | option.getCode();
 
         return new ServletContextHandler(accumulateOptions);
+    }
+
+    public JettyHttpServer addPathHandler( //
+            @NonNull String path, //
+            @NonNull JettyRequestHandler handler) {
+
+        var servletHolder = new ServletHolder(new DelegatingServlet(handler));
+        servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(path));
+
+        this.handler.addServlet(servletHolder, path);
+        return this;
     }
 
     @Override
@@ -90,8 +106,15 @@ public class JettyHttpServer extends NonameComponentLifecycle {
 
         server.addConnector(connector);
 
-        handler = createServletContextHandler();
-        server.setHandler(handler);
+        if (enablePrometheus) {
+            var statsHandler = new StatisticsHandler();
+            statsHandler.setHandler(handler);
+            // register collector
+            newStatisticsCollector(statsHandler, prometheusPrefix).register();
+            server.setHandler(statsHandler);
+        } else {
+            server.setHandler(handler);
+        }
 
         ((QueuedThreadPool) server.getThreadPool()).setName(this.getName());
 
@@ -112,8 +135,6 @@ public class JettyHttpServer extends NonameComponentLifecycle {
             if (this.onStopCallback != null) {
                 this.onStopCallback.accept(this.address);
             }
-            this.server = null;
-            this.handler = null;
         }
     }
 

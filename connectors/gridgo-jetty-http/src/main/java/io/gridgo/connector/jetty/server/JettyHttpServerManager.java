@@ -28,12 +28,14 @@ public class JettyHttpServerManager {
         servers.values().forEach(JettyHttpServer::stop);
     }
 
-    public JettyHttpServer getOrCreateJettyServer(@NonNull HostAndPort originAddress, boolean http2Enabled) {
-        return getOrCreateJettyServer(originAddress, http2Enabled, null);
+    public JettyHttpServer getOrCreateJettyServer(@NonNull String originAddress, boolean http2Enabled,
+            Set<JettyServletContextHandlerOption> options, boolean enablePrometheus, String prometheusPrefix) {
+        return getOrCreateJettyServer(HostAndPort.fromString(originAddress), http2Enabled, options, enablePrometheus,
+                prometheusPrefix);
     }
 
     public JettyHttpServer getOrCreateJettyServer(@NonNull HostAndPort originAddress, boolean http2Enabled,
-            Set<JettyServletContextHandlerOption> options) {
+            Set<JettyServletContextHandlerOption> options, boolean enablePrometheus, String prometheusPrefix) {
 
         var address = originAddress.makeCopy();
         if (!address.isResolvable())
@@ -59,17 +61,9 @@ public class JettyHttpServerManager {
                 .address(addr) //
                 .options(options) //
                 .http2Enabled(http2Enabled) //
+                .enablePrometheus(enablePrometheus) //
+                .prometheusPrefix(prometheusPrefix) //
                 .onStopCallback(servers::remove) //
                 .build());
     }
-
-    public JettyHttpServer getOrCreateJettyServer(String address, boolean http2Enabled) {
-        return getOrCreateJettyServer(HostAndPort.fromString(address), http2Enabled, null);
-    }
-
-    public JettyHttpServer getOrCreateJettyServer(String address, boolean http2Enabled,
-            Set<JettyServletContextHandlerOption> options) {
-        return getOrCreateJettyServer(HostAndPort.fromString(address), http2Enabled, options);
-    }
-
 }

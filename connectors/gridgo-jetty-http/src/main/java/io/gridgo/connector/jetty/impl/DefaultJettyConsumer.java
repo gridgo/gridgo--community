@@ -13,6 +13,7 @@ import org.joo.promise4j.impl.CompletableDeferredObject;
 import io.gridgo.connector.impl.AbstractHasResponderConsumer;
 import io.gridgo.connector.jetty.JettyConsumer;
 import io.gridgo.connector.jetty.JettyResponder;
+import io.gridgo.connector.jetty.parser.DefaultHttpRequestParser;
 import io.gridgo.connector.jetty.parser.HttpRequestParser;
 import io.gridgo.connector.jetty.server.JettyHttpServer;
 import io.gridgo.connector.jetty.server.JettyHttpServerManager;
@@ -49,13 +50,14 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
             String path, //
             String charsetName, //
             Integer stringBufferSize, //
-            Set<JettyServletContextHandlerOption> options) {
+            Set<JettyServletContextHandlerOption> options, //
+            Boolean enablePrometheus, String prometheusPrefix) {
 
         super(context);
 
         this.options = options;
         this.address = address;
-        this.requestParser = HttpRequestParser.defaultBuilder() //
+        this.requestParser = DefaultHttpRequestParser.builder() //
                 .charset(charsetName == null ? null : Charset.forName(charsetName)) //
                 .stringBufferSize(stringBufferSize) //
                 .format(format) //
@@ -64,7 +66,8 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
         path = (path == null || path.isBlank()) ? "/*" : path.trim();
         this.path = path.startsWith("/") ? path : ("/" + path);
 
-        httpServer = SERVER_MANAGER.getOrCreateJettyServer(address, http2Enabled, options);
+        httpServer = SERVER_MANAGER.getOrCreateJettyServer(address, http2Enabled, options,
+                enablePrometheus == null ? false : enablePrometheus, prometheusPrefix);
         if (httpServer == null)
             throw new RuntimeException("Cannot create http server for address: " + this.address);
 

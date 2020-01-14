@@ -35,6 +35,8 @@ public class JettyConnector extends AbstractConnector {
                 .path(path) //
                 .format(getParam("format", null)) //
                 .charsetName(getParam("charset", "UTF-8")) //
+                .enablePrometheus(Boolean.valueOf(getParam("enablePrometheus", "false"))) //
+                .prometheusPrefix(getParam("prometheusPrefix", "jetty")) //
                 .stringBufferSize(Integer.valueOf(getParam("stringBufferSize", "65536"))) //
                 .build();
 
