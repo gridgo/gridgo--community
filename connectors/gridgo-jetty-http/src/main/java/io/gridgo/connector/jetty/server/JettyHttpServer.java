@@ -1,5 +1,7 @@
 package io.gridgo.connector.jetty.server;
 
+import static io.gridgo.connector.jetty.server.StatisticsCollector.newStatisticsCollector;
+
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -15,7 +17,6 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
-import io.gridgo.connector.jetty.prometheus.StatisticsCollector;
 import io.gridgo.framework.impl.NonameComponentLifecycle;
 import io.gridgo.utils.support.HostAndPort;
 import lombok.Builder;
@@ -39,21 +40,26 @@ public class JettyHttpServer extends NonameComponentLifecycle {
 
     private boolean enablePrometheus = false;
 
+    private String prometheusPrefix = null;
+
     @Builder
     private JettyHttpServer( //
             @NonNull HostAndPort address, //
             boolean http2Enabled, //
             Set<JettyServletContextHandlerOption> options, //
             Consumer<HostAndPort> onStopCallback, //
-            Boolean enablePrometheus) {
+            Boolean enablePrometheus, //
+            String prometheusPrefix) {
 
         this.address = address;
         this.options = options;
         this.http2Enabled = http2Enabled;
         this.onStopCallback = onStopCallback;
 
-        if (enablePrometheus != null)
+        if (enablePrometheus != null) {
             this.enablePrometheus = enablePrometheus.booleanValue();
+            this.prometheusPrefix = prometheusPrefix == null ? "jetty" : prometheusPrefix;
+        }
 
         this.handler = createServletContextHandler();
     }
@@ -104,7 +110,7 @@ public class JettyHttpServer extends NonameComponentLifecycle {
             var statsHandler = new StatisticsHandler();
             statsHandler.setHandler(handler);
             // register collector
-            new StatisticsCollector(statsHandler).register();
+            newStatisticsCollector(statsHandler, prometheusPrefix).register();
             server.setHandler(statsHandler);
         } else {
             server.setHandler(handler);

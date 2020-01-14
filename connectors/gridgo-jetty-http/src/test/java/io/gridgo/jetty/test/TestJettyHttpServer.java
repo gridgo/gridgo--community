@@ -45,9 +45,9 @@ public class TestJettyHttpServer {
     public void testAllInterfaceThenLocalhost() {
         System.out.println("Test create server binding on all interface (0.0.0.0) then localhost");
 
-        var httpServer1 = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true);
-        var httpServer2 = serverManager.getOrCreateJettyServer("localhost:8889", true);
-        var httpServer3 = serverManager.getOrCreateJettyServer("*:8889", true);
+        var httpServer1 = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true, null, true, null);
+        var httpServer2 = serverManager.getOrCreateJettyServer("localhost:8889", true, null, true, null);
+        var httpServer3 = serverManager.getOrCreateJettyServer("*:8889", true, null, true, null);
 
         assertTrue(httpServer1 == httpServer2);
         assertTrue(httpServer1 == httpServer3);
@@ -67,14 +67,15 @@ public class TestJettyHttpServer {
         String osName = System.getProperty("os.name");
         System.out.println("os name: " + osName);
 
-        var localhostServer = serverManager.getOrCreateJettyServer("localhost:8889", true);
+        var localhostServer = serverManager.getOrCreateJettyServer("localhost:8889", true, null, false, null);
         localhostServer.start();
 
         var localhostReceived = new AtomicReference<String>(null);
         localhostServer.addPathHandler("/*", (req, res) -> localhostReceived.set(req.getParameter("key")));
 
         AtomicReference<Exception> errorRef = new AtomicReference<Exception>(null);
-        JettyHttpServer allInterfaceServer = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true);
+        JettyHttpServer allInterfaceServer = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true, null, false,
+                null);
         try {
             allInterfaceServer.start();
         } catch (Exception e) {
@@ -106,7 +107,7 @@ public class TestJettyHttpServer {
     @Test
     public void testMultiPath() throws IOException, InterruptedException, URISyntaxException {
         System.out.println("Test handling on multi path");
-        JettyHttpServer httpServer = serverManager.getOrCreateJettyServer(address, true);
+        JettyHttpServer httpServer = serverManager.getOrCreateJettyServer(address, true, null, false, null);
         httpServer.start();
 
         final CountDownLatch doneSignal = new CountDownLatch(3);
@@ -153,7 +154,7 @@ public class TestJettyHttpServer {
     @Test
     public void testPingPong() throws IOException, InterruptedException, URISyntaxException {
         System.out.println("Test ping pong");
-        JettyHttpServer httpServer = serverManager.getOrCreateJettyServer(address, true);
+        JettyHttpServer httpServer = serverManager.getOrCreateJettyServer(address, true, null, false, null);
         httpServer.start();
 
         final CountDownLatch doneSignal = new CountDownLatch(1);
@@ -213,7 +214,8 @@ public class TestJettyHttpServer {
 
     @Test
     public void testPrometheus() throws IOException, InterruptedException, URISyntaxException {
-        var httpServer = serverManager.getOrCreateJettyServer(address, true, true);
+        var prometheusPrefix = "myCustomPrefix";
+        var httpServer = serverManager.getOrCreateJettyServer(address, true, null, true, prometheusPrefix);
         httpServer.addPathHandler("/prometheus", this::echo).start();
 
         var encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
@@ -224,31 +226,31 @@ public class TestJettyHttpServer {
 
         ThreadUtils.sleep(100);
 
-        assertThat(getSampleValue("jetty_requests_total"), is(1.0));
-        assertThat(getSampleValue("jetty_requests_active"), is(0.0));
-        assertThat(getSampleValue("jetty_requests_active_max"), is(1.0));
-        assertThat(getSampleValue("jetty_request_time_max_seconds"), is(notNullValue()));
-        assertThat(getSampleValue("jetty_request_time_seconds_total"), is(notNullValue()));
-        assertThat(getSampleValue("jetty_dispatched_total"), is(1.0));
-        assertThat(getSampleValue("jetty_dispatched_active"), is(0.0));
-        assertThat(getSampleValue("jetty_dispatched_active_max"), is(greaterThan(0.0)));
-        assertThat(getSampleValue("jetty_dispatched_time_max"), is(notNullValue()));
-        assertThat(getSampleValue("jetty_dispatched_time_seconds_total"), is(notNullValue()));
-        assertThat(getSampleValue("jetty_async_requests_total"), is(0.0));
-        assertThat(getSampleValue("jetty_async_requests_waiting"), is(0.0));
-        assertThat(getSampleValue("jetty_async_requests_waiting_max"), is(0.0));
-        assertThat(getSampleValue("jetty_async_dispatches_total"), is(0.0));
-        assertThat(getSampleValue("jetty_expires_total"), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_requests_total"), is(1.0));
+        assertThat(getSampleValue(prometheusPrefix + "_requests_active"), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_requests_active_max"), is(1.0));
+        assertThat(getSampleValue(prometheusPrefix + "_request_time_max_seconds"), is(notNullValue()));
+        assertThat(getSampleValue(prometheusPrefix + "_request_time_seconds_total"), is(notNullValue()));
+        assertThat(getSampleValue(prometheusPrefix + "_dispatched_total"), is(1.0));
+        assertThat(getSampleValue(prometheusPrefix + "_dispatched_active"), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_dispatched_active_max"), is(greaterThan(0.0)));
+        assertThat(getSampleValue(prometheusPrefix + "_dispatched_time_max"), is(notNullValue()));
+        assertThat(getSampleValue(prometheusPrefix + "_dispatched_time_seconds_total"), is(notNullValue()));
+        assertThat(getSampleValue(prometheusPrefix + "_async_requests_total"), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_async_requests_waiting"), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_async_requests_waiting_max"), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_async_dispatches_total"), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_expires_total"), is(0.0));
 
         var labelNames = new String[] { "code" };
-        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "1xx" }), is(0.0));
-        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "2xx" }), is(1.0));
-        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "3xx" }), is(0.0));
-        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "4xx" }), is(0.0));
-        assertThat(getSampleValue("jetty_responses_total", labelNames, new String[] { "5xx" }), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "1xx" }), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "2xx" }), is(1.0));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "3xx" }), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "4xx" }), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "5xx" }), is(0.0));
 
-        assertThat(getSampleValue("jetty_stats_seconds"), is(notNullValue()));
-        assertThat(getSampleValue("jetty_responses_bytes_total"), is(notNullValue()));
+        assertThat(getSampleValue(prometheusPrefix + "_stats_seconds"), is(notNullValue()));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_bytes_total"), is(notNullValue()));
 
         httpServer.stop();
     }

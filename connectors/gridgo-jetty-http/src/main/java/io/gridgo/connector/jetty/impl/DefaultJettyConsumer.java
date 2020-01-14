@@ -50,7 +50,8 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
             String charsetName, //
             Integer stringBufferSize, //
             Set<JettyServletContextHandlerOption> options, //
-            Boolean enablePrometheus) {
+            Boolean enablePrometheus,
+            String prometheusPrefix) {
 
         super(context);
 
@@ -66,7 +67,7 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
         this.path = path.startsWith("/") ? path : ("/" + path);
 
         httpServer = SERVER_MANAGER.getOrCreateJettyServer(address, http2Enabled, options,
-                enablePrometheus == null ? false : enablePrometheus);
+                enablePrometheus == null ? false : enablePrometheus, prometheusPrefix);
         if (httpServer == null)
             throw new RuntimeException("Cannot create http server for address: " + this.address);
 
