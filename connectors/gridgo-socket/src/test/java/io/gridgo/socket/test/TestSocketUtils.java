@@ -27,7 +27,7 @@ public class TestSocketUtils {
         });
         thread.start();
         thread.interrupt();
-        ThreadUtils.sleep(100);
+        ThreadUtils.sleep(500);
         assertTrue(interupted.get());
     }
 }
