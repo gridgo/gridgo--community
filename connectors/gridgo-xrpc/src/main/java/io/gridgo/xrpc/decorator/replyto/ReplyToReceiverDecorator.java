@@ -20,7 +20,9 @@ public class ReplyToReceiverDecorator extends ReplyToDecorator implements XrpcRe
             throw new XrpcException("Reply to header (by key '" + getFieldName() + "') cannot be found in request");
 
         request.headers().remove(getFieldName());
-        log.trace("[Receiver] receive replyTo from request: {}", replyTo);
+        if (log.isDebugEnabled())
+            log.debug("[Receiver] receive replyTo from request: {}", replyTo);
+
         context.setReplyTo(replyTo);
         return true;
     }

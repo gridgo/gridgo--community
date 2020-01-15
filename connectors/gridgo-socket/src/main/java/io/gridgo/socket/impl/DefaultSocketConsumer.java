@@ -1,8 +1,12 @@
 package io.gridgo.socket.impl;
 
 import static io.gridgo.socket.impl.SocketUtils.startPolling;
+import static io.gridgo.utils.ThreadUtils.isShuttingDown;
+import static io.gridgo.utils.ThreadUtils.sleepSilence;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.text.DecimalFormat;
 import java.util.concurrent.CountDownLatch;
 
 import io.gridgo.connector.impl.AbstractHasResponderConsumer;
@@ -13,6 +17,7 @@ import io.gridgo.socket.SocketConnector;
 import io.gridgo.socket.SocketConsumer;
 import io.gridgo.socket.SocketFactory;
 import io.gridgo.socket.SocketOptions;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,16 +44,57 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
     private boolean autoSkipTopicHeader = false;
 
+    private boolean useDirectBuffer = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+
     @Getter
     private Integer bindingPort;
 
-    public DefaultSocketConsumer(ConnectorContext context, SocketFactory factory, SocketOptions options, String address,
-            int bufferSize) {
+    private final Thread monitorThread;
+
+    @Builder(builderClassName = "SocketConsumerBuidler")
+    private DefaultSocketConsumer(ConnectorContext context, //
+            SocketFactory factory, //
+            SocketOptions options, //
+            String address, //
+            int bufferSize, //
+            Boolean useDirectBuffer, //
+            Boolean monitorEnabled) {
         super(context);
         this.factory = factory;
         this.options = options;
         this.address = address;
         this.bufferSize = bufferSize;
+
+        if (useDirectBuffer != null)
+            this.useDirectBuffer = useDirectBuffer.booleanValue();
+
+        if (monitorEnabled != null && monitorEnabled.booleanValue()) {
+            monitorThread = new Thread(this::monitor);
+        } else {
+            monitorThread = null;
+        }
+    }
+
+    private void monitor() {
+        String name = this.generateName();
+        Thread.currentThread().setName(name + ".monitor");
+        log.info("start monitoring socket consumer: {}", name);
+        long last = 0;
+        var df = new DecimalFormat("###,###.##");
+        while (!isShuttingDown()) {
+            if (!sleepSilence(1000))
+                return;
+
+            long deltaMsgCount = totalRecvMessages - last;
+            if (deltaMsgCount > 0) {
+                log.debug("total received bytes: {}, total received msg: {} -> pace: {}", //
+                        df.format(totalRecvBytes), //
+                        df.format(totalRecvMessages), //
+                        df.format(deltaMsgCount));
+
+                last = totalRecvMessages;
+            }
+        }
     }
 
     @Override
@@ -92,8 +138,19 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
                 maxBatchSize = Integer.valueOf((String) this.options.getConfig().getOrDefault("maxBatchingSize",
                         SocketConnector.DEFAULT_MAX_BATCH_SIZE));
             }
-            this.setResponder(new DefaultSocketResponder(getContext(), socket, bufferSize, 1024, batchingEnabled,
-                    maxBatchSize, this.getUniqueIdentifier()));
+            this.setResponder(DefaultSocketResponder.builder() //
+                    .context(getContext()) //
+                    .socket(socket) //
+                    .bufferSize(bufferSize) //
+                    .ringBufferSize(2048) //
+                    .batchingEnabled(batchingEnabled) //
+                    .maxBatchSize(maxBatchSize) //
+                    .uniqueIdentifier(getUniqueIdentifier()) //
+                    .useDirectBuffer(useDirectBuffer) //
+                    .build());
+            // new DefaultSocketResponder(getContext(), socket, bufferSize, 1024,
+            // batchingEnabled,
+            // maxBatchSize, this.getUniqueIdentifier())
             break;
         default:
         }
@@ -109,7 +166,13 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
         this.doneSignal = new CountDownLatch(1);
         this.poller = new Thread(() -> {
-            startPolling(socket, ByteBuffer.allocateDirect(bufferSize), autoSkipTopicHeader, //
+            var buffer = socket.forceUsingDirectBuffer() || useDirectBuffer //
+                    ? ByteBuffer.allocateDirect(bufferSize) //
+                    : ByteBuffer.allocate(bufferSize);
+
+            log.debug("****** Using {} byte buffer", useDirectBuffer ? "direct" : "heap");
+
+            startPolling(socket, buffer, autoSkipTopicHeader, //
                     this::handleSocketMessage, //
                     this::increaseTotalRecvBytes, //
                     this::increaseTotalRecvMsgs, //
@@ -118,9 +181,11 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
             socket.close(); // close socket right after poll method escaped
             doneSignal.countDown();
-        }, this.getName() + " POLLER");
+        }, this.getName() + ".poller");
 
         this.poller.start();
+        if (this.monitorThread != null)
+            this.monitorThread.start();
     }
 
     private void handleSocketMessage(Message message) {
@@ -138,6 +203,9 @@ public class DefaultSocketConsumer extends AbstractHasResponderConsumer implemen
 
     @Override
     protected final void onStop() {
+        if (this.monitorThread != null)
+            this.monitorThread.interrupt();
+
         if (this.poller == null || this.poller.isInterrupted())
             return;
 

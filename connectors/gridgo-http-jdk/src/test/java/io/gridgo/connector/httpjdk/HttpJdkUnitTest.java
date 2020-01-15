@@ -1,12 +1,12 @@
 package io.gridgo.connector.httpjdk;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.text.DecimalFormat;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 import io.gridgo.connector.Connector;
 import io.gridgo.connector.Producer;
@@ -17,8 +17,26 @@ public class HttpJdkUnitTest {
     private static final int NUM_MESSAGES = 1;
 
     @Test
+    public void testWrongFormat() throws InterruptedException {
+        var connector = createConnector("xml");
+        connector.start();
+
+        var exRef = new AtomicReference<Exception>();
+        var latch = new CountDownLatch(1);
+        var producer = connector.getProducer().orElseThrow();
+        producer.call(null)
+                .always((s, r, e) -> {
+                    exRef.set(e);
+                    latch.countDown();
+                });
+        connector.stop();
+        latch.await();
+        Assert.assertNotNull(exRef.get());
+    }
+
+    @Test
     public void testSend() throws InterruptedException {
-        var connector = createConnector();
+        var connector = createConnector("string");
         connector.start();
         var producer = connector.getProducer().orElseThrow();
 
@@ -37,7 +55,7 @@ public class HttpJdkUnitTest {
 
     @Test
     public void testSendWithAck() throws InterruptedException {
-        var connector = createConnector();
+        var connector = createConnector("string");
         connector.start();
         var producer = connector.getProducer().orElseThrow();
         var latch = new CountDownLatch(NUM_MESSAGES);
@@ -75,7 +93,7 @@ public class HttpJdkUnitTest {
 
     @Test
     public void testCall() throws InterruptedException {
-        var connector = createConnector();
+        var connector = createConnector("string");
         connector.start();
         var producer = connector.getProducer().orElseThrow();
         var latch = new CountDownLatch(NUM_MESSAGES);
@@ -111,10 +129,9 @@ public class HttpJdkUnitTest {
         Assert.assertEquals(0, atomic.get());
     }
 
-    private Connector createConnector() {
-        var connector = new DefaultConnectorFactory().createConnector(
-                "https2://raw.githubusercontent.com/gridgo/gridgo-connector/dungba/developing/connectors/gridgo-http/src/test/resources/test.txt");
-        return connector;
+    private Connector createConnector(String format) {
+        return new DefaultConnectorFactory().createConnector(
+                "https2://raw.githubusercontent.com/gridgo/gridgo-connector/dungba/developing/connectors/gridgo-http/src/test/resources/test.txt?format="+format);
     }
 
     private void printPace(String name, int numMessages, long elapsed) {

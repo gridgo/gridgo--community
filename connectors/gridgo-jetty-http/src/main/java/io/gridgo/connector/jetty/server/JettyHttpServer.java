@@ -1,24 +1,25 @@
 package io.gridgo.connector.jetty.server;
 
+import static io.gridgo.connector.jetty.server.StatisticsCollector.newStatisticsCollector;
+
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import javax.servlet.MultipartConfigElement;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import io.gridgo.framework.impl.NonameComponentLifecycle;
 import io.gridgo.utils.support.HostAndPort;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -29,7 +30,7 @@ public class JettyHttpServer extends NonameComponentLifecycle {
     @Getter
     private final HostAndPort address;
 
-    private ServletContextHandler handler;
+    private final ServletContextHandler handler;
 
     private final Consumer<HostAndPort> onStopCallback;
 
@@ -37,35 +38,52 @@ public class JettyHttpServer extends NonameComponentLifecycle {
 
     private final boolean http2Enabled;
 
-    JettyHttpServer(@NonNull HostAndPort address, boolean http2Enabled, Set<JettyServletContextHandlerOption> options, Consumer<HostAndPort> onStopCallback) {
+    private boolean enablePrometheus = false;
+
+    private String prometheusPrefix = null;
+
+    @Builder
+    private JettyHttpServer( //
+            @NonNull HostAndPort address, //
+            boolean http2Enabled, //
+            Set<JettyServletContextHandlerOption> options, //
+            Consumer<HostAndPort> onStopCallback, //
+            Boolean enablePrometheus, //
+            String prometheusPrefix) {
+
         this.address = address;
-        this.onStopCallback = onStopCallback;
         this.options = options;
         this.http2Enabled = http2Enabled;
-    }
+        this.onStopCallback = onStopCallback;
 
-    public JettyHttpServer addPathHandler(@NonNull String path, @NonNull BiConsumer<HttpServletRequest, HttpServletResponse> handler,
-            BiConsumer<Throwable, HttpServletResponse> failureFallback) {
-        ServletHolder servletHolder = new ServletHolder(new DelegateServlet(handler, failureFallback));
-        servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(path));
-        this.handler.addServlet(servletHolder, path);
-        return this;
-    }
+        if (enablePrometheus != null) {
+            this.enablePrometheus = enablePrometheus.booleanValue();
+            this.prometheusPrefix = prometheusPrefix == null ? "jetty" : prometheusPrefix;
+        }
 
-    public JettyHttpServer addPathHandler(@NonNull String path, @NonNull BiConsumer<HttpServletRequest, HttpServletResponse> handler) {
-        return this.addPathHandler(path, handler, null);
+        this.handler = createServletContextHandler();
     }
 
     private ServletContextHandler createServletContextHandler() {
-        if (this.options == null || this.options.size() == 0) {
+        if (options == null || options.size() == 0)
             return new ServletContextHandler();
-        } else {
-            int options = 0;
-            for (JettyServletContextHandlerOption option : this.options) {
-                options = options | option.getCode();
-            }
-            return new ServletContextHandler(options);
-        }
+
+        int accumulateOptions = 0;
+        for (var option : options)
+            accumulateOptions = accumulateOptions | option.getCode();
+
+        return new ServletContextHandler(accumulateOptions);
+    }
+
+    public JettyHttpServer addPathHandler( //
+            @NonNull String path, //
+            @NonNull JettyRequestHandler handler) {
+
+        var servletHolder = new ServletHolder(new DelegatingServlet(handler));
+        servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(path));
+
+        this.handler.addServlet(servletHolder, path);
+        return this;
     }
 
     @Override
@@ -73,11 +91,11 @@ public class JettyHttpServer extends NonameComponentLifecycle {
         server = new Server();
         ServerConnector connector;
 
-        HttpConfiguration config = new HttpConfiguration();
-        HttpConnectionFactory http1 = new HttpConnectionFactory(config);
+        var config = new HttpConfiguration();
+        var http1 = new HttpConnectionFactory(config);
 
         if (http2Enabled) {
-            HTTP2CServerConnectionFactory http2c = new HTTP2CServerConnectionFactory(config);
+            var http2c = new HTTP2CServerConnectionFactory(config);
             connector = new ServerConnector(server, http1, http2c);
         } else {
             connector = new ServerConnector(server, http1);
@@ -88,8 +106,15 @@ public class JettyHttpServer extends NonameComponentLifecycle {
 
         server.addConnector(connector);
 
-        handler = createServletContextHandler();
-        server.setHandler(handler);
+        if (enablePrometheus) {
+            var statsHandler = new StatisticsHandler();
+            statsHandler.setHandler(handler);
+            // register collector
+            newStatisticsCollector(statsHandler, prometheusPrefix).register();
+            server.setHandler(statsHandler);
+        } else {
+            server.setHandler(handler);
+        }
 
         ((QueuedThreadPool) server.getThreadPool()).setName(this.getName());
 
@@ -105,13 +130,11 @@ public class JettyHttpServer extends NonameComponentLifecycle {
         try {
             this.server.stop();
         } catch (Exception e) {
-            getLogger().error("Error while stop jetty server", e);
+            getLogger().error("Error while stop jetty server: " + getName(), e);
         } finally {
             if (this.onStopCallback != null) {
                 this.onStopCallback.accept(this.address);
             }
-            this.server = null;
-            this.handler = null;
         }
     }
 

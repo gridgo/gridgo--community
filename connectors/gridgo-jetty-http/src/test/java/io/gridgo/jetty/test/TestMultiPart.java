@@ -45,6 +45,10 @@ import io.gridgo.framework.support.Payload;
 
 public class TestMultiPart {
 
+    static {
+        System.setProperty("gridgo.bean.json.strict", "false");
+    }
+    
     private static final String TEST_TEXT = "this is test text";
 
     private final String HTTP_LOCALHOST_8888 = "http://localhost:8888";

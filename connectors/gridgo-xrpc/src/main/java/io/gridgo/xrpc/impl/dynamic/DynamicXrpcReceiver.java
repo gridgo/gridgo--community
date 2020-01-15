@@ -13,9 +13,7 @@ import io.gridgo.xrpc.registry.XrpcReceiverRegistry;
 import io.gridgo.xrpc.responder.XrpcResponderLookupable;
 import lombok.NonNull;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class DynamicXrpcReceiver extends AbstractXrpcReceiver {
 
     @Setter(PACKAGE)
@@ -42,7 +40,6 @@ public class DynamicXrpcReceiver extends AbstractXrpcReceiver {
     }
 
     private boolean onLookupResponder(XrpcRequestContext context, Message response) {
-        log.trace("[Receiver] lookup responder: {}", context.getReplyTo());
         if (context.getReplyTo() != null) {
             var responder = responderRegistry.lookup(context.getReplyTo());
             context.setResponder(responder);

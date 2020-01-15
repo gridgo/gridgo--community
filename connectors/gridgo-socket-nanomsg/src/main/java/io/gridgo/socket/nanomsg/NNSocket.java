@@ -5,9 +5,9 @@ import java.util.Arrays;
 
 import org.nanomsg.NanoLibrary;
 
-import io.gridgo.socket.helper.Endpoint;
 import io.gridgo.socket.impl.AbstractSocket;
 import io.gridgo.utils.PrimitiveUtils;
+import io.gridgo.utils.support.Endpoint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -103,6 +103,11 @@ public class NNSocket extends AbstractSocket {
     @Override
     protected int doReveive(ByteBuffer buffer, boolean block) {
         return nanomsg.nn_recv(id, buffer, block ? 0 : nanomsg.NN_DONTWAIT);
+    }
+
+    @Override
+    public boolean forceUsingDirectBuffer() {
+        return true;
     }
 
     @Override

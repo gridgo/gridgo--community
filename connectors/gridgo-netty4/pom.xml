@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>io.gridgo</groupId>
 		<artifactId>gridgo-connector-base</artifactId>
-		<version>0.7.0</version>
+		<version>0.8.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -18,6 +18,12 @@
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
 			<version>${netty.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.gridgo</groupId>
+			<artifactId>gridgo-bean-json</artifactId>
+			<version>${gridgo.version}</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 </project>

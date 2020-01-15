@@ -30,7 +30,8 @@ public class FileConsumer extends AbstractConsumer {
     @Getter
     private FileLimitStrategy limitStrategy;
 
-    public FileConsumer(ConnectorContext context, String path, String format, int bufferSize, boolean lengthPrepend, FileLimitStrategy limitStrategy) {
+    public FileConsumer(ConnectorContext context, String path, String format, int bufferSize, boolean lengthPrepend,
+            FileLimitStrategy limitStrategy) {
         super(context);
         this.path = path;
         this.format = format;
@@ -60,6 +61,7 @@ public class FileConsumer extends AbstractConsumer {
 
     private void readAndPublish() {
         var engine = lengthPrepend ? new LengthPrependedFileConsumerEngine(this) : new SimpleFileConsumerEngine(this);
-        getContext().getConsumerExecutionStrategy().ifPresentOrElse(strategy -> strategy.execute(engine::readAndPublish), engine::readAndPublish);
+        getContext().getConsumerExecutionStrategy() //
+                .ifPresentOrElse(strategy -> strategy.execute(engine::readAndPublish), engine::readAndPublish);
     }
 }

@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import io.gridgo.socket.helper.Endpoint;
+import io.gridgo.utils.support.Endpoint;
 import lombok.NonNull;
 
 public interface Socket extends Configurable, Bindable {
@@ -13,6 +13,10 @@ public interface Socket extends Configurable, Bindable {
         for (Entry<String, Object> entry : options.entrySet()) {
             this.applyConfig(entry.getKey(), entry.getValue());
         }
+    }
+
+    default boolean forceUsingDirectBuffer() {
+        return false;
     }
 
     void applyConfig(String name, Object value);

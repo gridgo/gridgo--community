@@ -47,8 +47,10 @@ public class VertxHttpConstants extends HttpCommonConsumerConstants {
     public static final String PEM_KEY_PATH = "keyPath";
 
     public static final String HEADER_CONTENT_TYPE = "Content-Type";
-    
+
     public static final String HEADER_OUTPUT_STREAM = "Gridgo-OutputStream";
 
-    public static final Object WRAP_RESPONSE = "wrap";
+    public static final String WRAP_RESPONSE = "wrap";
+
+    public static final String ALLOW_DUPLICATE_CONN = "allowDuplicateConnection";
 }

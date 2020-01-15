@@ -13,9 +13,5 @@ public interface HttpRequestParser {
 
     static final Set<String> NO_BODY_METHODS = new HashSet<>(Arrays.asList("get", "delete", "options"));
 
-    static HttpRequestParser newDefault(String format) {
-        return new DefaultHttpRequestParser(format);
-    }
-
     Message parse(HttpServletRequest request, Set<JettyServletContextHandlerOption> options);
 }

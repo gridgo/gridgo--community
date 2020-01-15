@@ -4,17 +4,24 @@
 	<parent>
 		<groupId>io.gridgo</groupId>
 		<artifactId>gridgo-connector-base</artifactId>
-		<version>0.7.0</version>
+		<version>0.8.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>gridgo-jetty-http</artifactId>
 
 	<properties>
-		<jetty.version>9.4.15.v20190215</jetty.version>
+		<jetty.version>9.4.25.v20191220</jetty.version>
+		<prometheus.version>0.8.0</prometheus.version>
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>io.prometheus</groupId>
+			<artifactId>simpleclient</artifactId>
+			<version>${prometheus.version}</version>
+			<scope>provided</scope>
+		</dependency>
 		<dependency>
 			<groupId>io.gridgo</groupId>
 			<artifactId>gridgo-http-common</artifactId>
@@ -27,12 +34,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-servlet</artifactId>
+			<artifactId>jetty-servlets</artifactId>
 			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-servlets</artifactId>
+			<artifactId>jetty-servlet</artifactId>
 			<version>${jetty.version}</version>
 		</dependency>
 		<dependency>

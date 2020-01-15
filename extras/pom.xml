@@ -5,13 +5,14 @@
 	<parent>
 		<groupId>io.gridgo</groupId>
 		<artifactId>gridgo-community</artifactId>
-		<version>0.7.0</version>
+		<version>0.8.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>gridgo-community-extras</artifactId>
 
 	<modules>
+		<module>gridgo-configuration</module>
 		<module>gridgo-extras-prometheus</module>
 		<module>gridgo-extras-spring</module>
 		<module>gridgo-extras-typesafe</module>

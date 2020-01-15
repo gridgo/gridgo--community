@@ -40,7 +40,6 @@ public class SpringRegistry implements Registry {
         return this;
     }
 
-    @Override
     public Object lookupByType(Class<?> type) {
         try {
             return applicationContext.getBean(type);

@@ -29,9 +29,13 @@ public class DynamicXrpcSender extends AbstractXrpcSender {
 
     @Override
     public Promise<Message, Exception> call(Message message) {
-        var deferred = messageRegistry.registerRequest(message, new XrpcRequestContext());
-        this.producer.send(message);
-        return deferred.promise();
+        try {
+            var deferred = messageRegistry.registerRequest(message, new XrpcRequestContext());
+            producer.sendWithAck(message).fail(deferred::reject);
+            return deferred.promise();
+        } catch (Exception e) {
+            return Promise.ofCause(e);
+        }
     }
 
     private void onReplyConsumer(Consumer replyConsumer) {
@@ -45,9 +49,6 @@ public class DynamicXrpcSender extends AbstractXrpcSender {
     @Override
     protected void onConsumer(Consumer consumer) {
         replyConnector = resolveConnector(replyEndpoint);
-        if (replyConnector == null)
-            throw new XrpcException("Reply connector cannot be resolved from endpoint: " + replyEndpoint);
-
         replyConnector.start();
         replyConnector.getConsumer().ifPresentOrElse(this::onReplyConsumer, this::onReplyConsumerUnavailable);
     }

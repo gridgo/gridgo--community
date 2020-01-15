@@ -1,5 +1,11 @@
 package io.gridgo.connector.jetty.support;
 
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.BODY;
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.CONTENT_TYPE;
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.NAME;
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.SUBMITTED_FILE_NAME;
+import static io.gridgo.connector.httpcommon.HttpContentType.isBinaryType;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,48 +21,43 @@ import io.gridgo.bean.BArray;
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.bean.BReference;
-import io.gridgo.connector.httpcommon.HttpCommonConstants;
-import io.gridgo.connector.httpcommon.HttpContentType;
 
 public class HttpEntityHelper {
 
-    public static BArray parseAsMultiPart(Collection<Part> parts) throws IOException {
-        BArray results = BArray.ofEmpty();
-        for (Part part : parts) {
-            final String contentType = part.getContentType();
-            if (contentType != null && HttpContentType.isBinaryType(contentType)) {
-                results.add(BObject.ofEmpty() //
-                                   .setAny(HttpCommonConstants.NAME, part.getName()) //
-                                   .setAny(HttpCommonConstants.CONTENT_TYPE, contentType) //
-                                   .setAny(HttpCommonConstants.SUBMITTED_FILE_NAME, part.getSubmittedFileName()) //
-                                   .setAny(HttpCommonConstants.BODY, BReference.of(part.getInputStream())) //
-                );
-            } else {
-                results.add(BObject.ofEmpty() //
-                                   .setAny(HttpCommonConstants.NAME, part.getName()) //
-                                   .setAny(HttpCommonConstants.CONTENT_TYPE, contentType)//
-                                   .setAny(HttpCommonConstants.BODY, BElement.ofJson(part.getInputStream())) //
-                );
-            }
+    public static BArray readMultipart(Collection<Part> parts) throws IOException {
+        var results = BArray.ofEmpty();
+        for (var part : parts) {
+            var contentType = part.getContentType();
+            results.add(contentType != null && isBinaryType(contentType) //
+                    ? BObject.ofEmpty() //
+                            .setAny(NAME, part.getName()) //
+                            .setAny(CONTENT_TYPE, contentType) //
+                            .setAny(SUBMITTED_FILE_NAME, part.getSubmittedFileName()) //
+                            .setAny(BODY, BReference.of(part.getInputStream())) //
+                    : BObject.ofEmpty() //
+                            .setAny(NAME, part.getName()) //
+                            .setAny(CONTENT_TYPE, contentType)//
+                            .setAny(BODY, BElement.ofJson(part.getInputStream())));
         }
         return results;
     }
 
-    public static final BArray parseAsMultiPart(HttpEntity entity) throws IOException {
-        return parseAsMultiPart(entity.getContent(), entity.getContentType().getValue());
+    public static final BArray readMultiPart(HttpEntity entity) throws IOException {
+        return readMultipart(entity.getContent(), entity.getContentType().getValue());
     }
 
-    public static final BArray parseAsMultiPart(InputStream input, String contentTypeWithBoundary) throws IOException {
-        return parseAsMultiPart(new MultiPartFormInputStream(input, contentTypeWithBoundary, null, null).getParts());
+    public static final BArray readMultipart(InputStream input, String contentTypeWithBoundary) throws IOException {
+        return readMultipart(new MultiPartFormInputStream(input, contentTypeWithBoundary, null, null).getParts());
     }
 
-    public static String parseAsString(InputStream input) throws IOException {
-        return parseAsString(input, Charset.forName("UTF-8"));
+    public static String readString(InputStream input) throws IOException {
+        return readString(input, Charset.forName("UTF-8"));
     }
 
-    public static String parseAsString(InputStream input, Charset charset) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        input.transferTo(output);
-        return output.toString(charset);
+    public static String readString(InputStream input, Charset charset) throws IOException {
+        try (var output = new ByteArrayOutputStream(input.available())) {
+            input.transferTo(output);
+            return output.toString(charset);
+        }
     }
 }

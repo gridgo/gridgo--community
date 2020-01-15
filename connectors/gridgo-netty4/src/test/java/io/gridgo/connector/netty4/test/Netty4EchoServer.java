@@ -1,5 +1,7 @@
 package io.gridgo.connector.netty4.test;
 
+import static org.junit.Assert.assertTrue;
+
 import io.gridgo.bean.BObject;
 import io.gridgo.connector.Connector;
 import io.gridgo.connector.ConnectorResolver;
@@ -34,6 +36,9 @@ public class Netty4EchoServer {
         // server side
         final Consumer serverConsumer = serverConnector.getConsumer().get();
         final Producer serverResponder = serverConnector.getProducer().get();
+
+        assertTrue(serverConsumer.isStarted());
+        assertTrue(serverResponder.isStarted());
 
         serverConsumer.subscribe((msg) -> {
             String socketMessageType = (String) msg.getMisc().get("socketMessageType");

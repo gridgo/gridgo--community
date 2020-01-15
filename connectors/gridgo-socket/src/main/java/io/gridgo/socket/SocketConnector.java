@@ -1,5 +1,13 @@
 package io.gridgo.socket;
 
+import static io.gridgo.socket.SocketConstants.BATCHING_ENABLED;
+import static io.gridgo.socket.SocketConstants.BUFFER_SIZE;
+import static io.gridgo.socket.SocketConstants.MAX_BATCH_SIZE;
+import static io.gridgo.socket.SocketConstants.MONITOR_ENABLED;
+import static io.gridgo.socket.SocketConstants.RING_BUFFER_SIZE;
+import static io.gridgo.socket.SocketConstants.USE_DIRECT_BUFFER;
+
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -12,7 +20,6 @@ import io.gridgo.connector.HasReceiver;
 import io.gridgo.connector.HasResponder;
 import io.gridgo.connector.Producer;
 import io.gridgo.connector.impl.AbstractConnector;
-import io.gridgo.connector.support.config.ConnectorConfig;
 import io.gridgo.connector.support.exceptions.InvalidPlaceholderException;
 import io.gridgo.connector.support.exceptions.MalformedEndpointException;
 
@@ -58,6 +65,10 @@ public class SocketConnector extends AbstractConnector implements Connector {
 
     private int ringBufferSize = DEFAULT_RINGBUFFER_SIZE;
 
+    private boolean useDirectBuffer = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+
+    private boolean monitorEnabled = false;
+
     protected SocketConnector(SocketFactory factory) {
         this.factory = factory;
     }
@@ -68,12 +79,29 @@ public class SocketConnector extends AbstractConnector implements Connector {
         switch (this.options.getType().toLowerCase()) {
         case "push":
         case "pub":
-            p = SocketProducer.of(getContext(), factory, options, address, bufferSize, ringBufferSize, batchingEnabled,
-                    maxBatchSize);
+            p = SocketProducer.builder() //
+                    .context(getContext()) //
+                    .factory(factory) //
+                    .options(options) //
+                    .address(address) //
+                    .bufferSize(bufferSize) //
+                    .ringBufferSize(ringBufferSize) //
+                    .batchingEnabled(batchingEnabled) //
+                    .maxBatchSize(maxBatchSize) //
+                    .monitorEnabled(monitorEnabled) //
+                    .build();
             break;
         case "pull":
         case "sub":
-            c = SocketConsumer.of(getContext(), factory, options, address, bufferSize);
+            c = SocketConsumer.builder() //
+                    .context(getContext()) //
+                    .factory(factory) //
+                    .options(options) //
+                    .address(address) //
+                    .bufferSize(bufferSize) //
+                    .useDirectBuffer(useDirectBuffer) //
+                    .monitorEnabled(monitorEnabled) //
+                    .build();
             break;
         case "pair":
             String role = this.getPlaceholder("role");
@@ -82,13 +110,30 @@ public class SocketConnector extends AbstractConnector implements Connector {
             }
             switch (role.trim().toLowerCase()) {
             case "connect":
-                p = SocketProducer.of(getContext(), factory, options, address, bufferSize, ringBufferSize,
-                        batchingEnabled, maxBatchSize);
+                p = SocketProducer.builder() //
+                        .context(getContext()) //
+                        .factory(factory) //
+                        .options(options) //
+                        .address(address) //
+                        .bufferSize(bufferSize) //
+                        .ringBufferSize(ringBufferSize) //
+                        .batchingEnabled(batchingEnabled) //
+                        .maxBatchSize(maxBatchSize) //
+                        .monitorEnabled(monitorEnabled) //
+                        .build();
                 p.start();
                 c = ((HasReceiver) p).getReceiver();
                 break;
             case "bind":
-                c = SocketConsumer.of(getContext(), factory, options, address, bufferSize);
+                c = SocketConsumer.builder() //
+                        .context(getContext()) //
+                        .factory(factory) //
+                        .options(options) //
+                        .address(address) //
+                        .bufferSize(bufferSize) //
+                        .useDirectBuffer(useDirectBuffer) //
+                        .monitorEnabled(monitorEnabled) //
+                        .build();
                 c.start();
                 p = ((HasResponder) c).getResponder();
                 break;
@@ -104,36 +149,31 @@ public class SocketConnector extends AbstractConnector implements Connector {
 
     @Override
     public void onInit() {
-        ConnectorConfig config = getConnectorConfig();
-        String type = config.getPlaceholders().getProperty(SocketConstants.TYPE);
-        String transport = config.getPlaceholders().getProperty(SocketConstants.TRANSPORT);
-        String host = config.getPlaceholders().getProperty(SocketConstants.HOST);
-        String portPlaceholder = config.getPlaceholders().getProperty(SocketConstants.PORT);
-        int port = portPlaceholder != null ? Integer.parseInt(portPlaceholder) : 0;
+        var config = getConnectorConfig();
+        var type = config.getPlaceholders().getProperty(SocketConstants.TYPE);
+        var transport = config.getPlaceholders().getProperty(SocketConstants.TRANSPORT);
+        var host = config.getPlaceholders().getProperty(SocketConstants.HOST);
+        var portPlaceholder = config.getPlaceholders().getProperty(SocketConstants.PORT);
+        var port = portPlaceholder != null ? Integer.parseInt(portPlaceholder) : 0;
 
         String nic = null;
-        if (MULTICAST_TRANSPORTS.contains(transport.trim().toLowerCase())) {
+        if (MULTICAST_TRANSPORTS.contains(transport.trim().toLowerCase()))
             nic = getPlaceholder("interface");
-        }
 
-        this.address = transport + "://" + ((nic == null || nic.isBlank()) ? "" : (nic + ";")) + host
+        address = transport + "://" + ((nic == null || nic.isBlank()) ? "" : (nic + ";")) + host
                 + (port > 0 ? (":" + port) : "");
 
-        this.batchingEnabled = Boolean.valueOf(
-                config.getParameters().getOrDefault(SocketConstants.BATCHING_ENABLED, this.batchingEnabled).toString());
+        var params = config.getParameters();
+        ringBufferSize = Integer.valueOf(params.getOrDefault(RING_BUFFER_SIZE, ringBufferSize).toString());
+        batchingEnabled = Boolean.valueOf(params.getOrDefault(BATCHING_ENABLED, batchingEnabled).toString());
+        maxBatchSize = Integer.valueOf(params.getOrDefault(MAX_BATCH_SIZE, maxBatchSize).toString());
+        bufferSize = Integer.valueOf(params.getOrDefault(BUFFER_SIZE, bufferSize).toString());
+        useDirectBuffer = Boolean.valueOf(params.getOrDefault(USE_DIRECT_BUFFER, useDirectBuffer).toString());
+        monitorEnabled = Boolean.valueOf(params.getOrDefault(MONITOR_ENABLED, monitorEnabled).toString());
 
-        this.maxBatchSize = Integer.valueOf(
-                config.getParameters().getOrDefault(SocketConstants.MAX_BATCH_SIZE, this.maxBatchSize).toString());
+        options = new SocketOptions(type);
+        options.getConfig().putAll(params);
 
-        this.bufferSize = Integer
-                .valueOf(config.getParameters().getOrDefault(SocketConstants.BUFFER_SIZE, this.bufferSize).toString());
-
-        this.ringBufferSize = Integer.valueOf(
-                config.getParameters().getOrDefault(SocketConstants.RING_BUFFER_SIZE, this.ringBufferSize).toString());
-
-        this.options = new SocketOptions(type);
-        this.options.getConfig().putAll(config.getParameters());
-
-        this.initConsumerAndProducer();
+        initConsumerAndProducer();
     }
 }
