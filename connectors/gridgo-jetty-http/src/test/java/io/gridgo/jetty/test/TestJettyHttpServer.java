@@ -4,10 +4,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,12 +44,12 @@ public class TestJettyHttpServer {
     public void testAllInterfaceThenLocalhost() {
         System.out.println("Test create server binding on all interface (0.0.0.0) then localhost");
 
-        var httpServer1 = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true, null, false, null);
-        var httpServer2 = serverManager.getOrCreateJettyServer("localhost:8889", true, null, false, null);
-        var httpServer3 = serverManager.getOrCreateJettyServer("*:8889", true, null, false, null);
+        var httpServer1 = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true);
+        var httpServer2 = serverManager.getOrCreateJettyServer("localhost:8889", true);
+        var httpServer3 = serverManager.getOrCreateJettyServer("*:8889", true);
 
-        assertTrue(httpServer1 == httpServer2);
-        assertTrue(httpServer1 == httpServer3);
+        assertEquals(httpServer1, httpServer2);
+        assertEquals(httpServer1, httpServer3);
 
         // start then stop to remove current http server from manager, make sure other
         // test case run properly
@@ -67,38 +66,49 @@ public class TestJettyHttpServer {
         String osName = System.getProperty("os.name");
         System.out.println("os name: " + osName);
 
-        var localhostServer = serverManager.getOrCreateJettyServer("localhost:8889", true, null, false, null);
-        localhostServer.start();
+        var errRef = new AtomicReference<Throwable>(null);
 
         var localhostReceived = new AtomicReference<String>(null);
-        localhostServer.addPathHandler("/*", (req, res) -> localhostReceived.set(req.getParameter("key")));
 
-        AtomicReference<Exception> errorRef = new AtomicReference<Exception>(null);
-        JettyHttpServer allInterfaceServer = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true, null, false,
-                null);
-        try {
-            allInterfaceServer.start();
-        } catch (Exception e) {
-            errorRef.set(e);
-        }
+        var localhostServer = serverManager.getOrCreateJettyServer("localhost:8889", true);
+        localhostServer.start();
+
+        localhostServer.addPathHandler("/*", (req, res) -> {
+            localhostReceived.set(req.getParameter("key"));
+            try (var writer = res.getWriter()) {
+                writer.append("");
+            } catch (IOException e) {
+                errRef.set(e);
+            }
+        });
 
         if (osName.equalsIgnoreCase("Mac OS X")) {
-            final AtomicReference<String> allInterfaceReceived = new AtomicReference<String>(null);
+            var allInterfaceServer = serverManager.getOrCreateJettyServer("0.0.0.0:8889", true);
+            assertNotEquals(localhostServer, allInterfaceServer);
+            allInterfaceServer.start();
+
+            final var allInterfaceReceived = new AtomicReference<String>(null);
             allInterfaceServer.addPathHandler("/*", (req, res) -> {
                 allInterfaceReceived.set(req.getParameter("key"));
+                try (var writer = res.getWriter()) {
+                    writer.append("");
+                } catch (IOException e) {
+                    errRef.set(e);
+                }
             });
 
             final String encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
             URI uri = new URI("http://localhost:8889/?key=" + encodedText);
             HttpRequest request = HttpRequest.newBuilder().GET().uri(uri).build();
-            httpClient.send(request, BodyHandlers.ofString());
+            httpClient.send(request, BodyHandlers.ofString()).body();
 
             assertNull(allInterfaceReceived.get());
             assertEquals(TEST_TEXT, localhostReceived.get());
+
             allInterfaceServer.stop();
-        } else {
-            assertNotNull(errorRef.get());
         }
+
+        assertNull(errRef.get());
 
         localhostServer.stop();
         System.out.println("*** DONE ***");
@@ -107,7 +117,7 @@ public class TestJettyHttpServer {
     @Test
     public void testMultiPath() throws IOException, InterruptedException, URISyntaxException {
         System.out.println("Test handling on multi path");
-        JettyHttpServer httpServer = serverManager.getOrCreateJettyServer(address, true, null, false, null);
+        JettyHttpServer httpServer = serverManager.getOrCreateJettyServer(address, true);
         httpServer.start();
 
         final CountDownLatch doneSignal = new CountDownLatch(3);
@@ -154,24 +164,23 @@ public class TestJettyHttpServer {
     @Test
     public void testPingPong() throws IOException, InterruptedException, URISyntaxException {
         System.out.println("Test ping pong");
-        JettyHttpServer httpServer = serverManager.getOrCreateJettyServer(address, true, null, false, null);
+        var httpServer = serverManager.getOrCreateJettyServer(address, true);
         httpServer.start();
 
-        final CountDownLatch doneSignal = new CountDownLatch(1);
-        final AtomicReference<Throwable> exception = new AtomicReference<Throwable>(null);
+        final var doneSignal = new CountDownLatch(1);
+        final var exception = new AtomicReference<Throwable>(null);
 
         httpServer.addPathHandler("/*", (req, res) -> {
-            String value = req.getParameter("key");
-            try {
-                res.getWriter().write(value);
-                res.getWriter().flush();
-            } catch (IOException e) {
+            try (var writer = res.getWriter()) {
+                var value = req.getParameter("key");
+                writer.write(value);
+            } catch (Exception e) {
                 exception.set(e);
                 doneSignal.countDown();
             }
         });
 
-        final AtomicReference<String> responseText = new AtomicReference<>(null);
+        final var responseText = new AtomicReference<>(null);
 
         String encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
         URI uri = new URI("http://" + address + "/?key=" + encodedText);
@@ -215,8 +224,10 @@ public class TestJettyHttpServer {
     @Test
     public void testPrometheus() throws IOException, InterruptedException, URISyntaxException {
         var prometheusPrefix = "myCustomPrefix";
-        var httpServer = serverManager.getOrCreateJettyServer(address, true, null, true, prometheusPrefix);
-        httpServer.addPathHandler("/prometheus", this::echo).start();
+        var httpServer = serverManager.getOrCreateJettyServer(address, true);
+        httpServer.start();
+
+        httpServer.addPathHandler("/prometheus", this::echo, false, true, prometheusPrefix);
 
         var encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
         var uri = new URI("http://" + address + "/prometheus?key=" + encodedText);

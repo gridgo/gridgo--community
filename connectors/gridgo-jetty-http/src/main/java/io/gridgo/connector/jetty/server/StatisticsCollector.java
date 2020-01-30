@@ -45,7 +45,7 @@ public class StatisticsCollector extends Collector {
 
     private static final List<String> EMPTY_LIST = Collections.emptyList();
 
-    private final @NonNull StatisticsHandler statisticsHandler;
+    private final @NonNull StatisticsHandler sHandler;
     private final String prefix;
 
     public static StatisticsCollector newStatisticsCollector(StatisticsHandler statisticsHandler, String prefix) {
@@ -54,41 +54,39 @@ public class StatisticsCollector extends Collector {
 
     @Override
     public List<MetricFamilySamples> collect() {
-        return Arrays.asList(
-                buildCounter(prefix + "_requests_total", "Number of requests", statisticsHandler.getRequests()),
+        return Arrays.asList(buildCounter(prefix + "_requests_total", "Number of requests", sHandler.getRequests()),
                 buildGauge(prefix + "_requests_active", "Number of requests currently active",
-                        statisticsHandler.getRequestsActive()),
+                        sHandler.getRequestsActive()),
                 buildGauge(prefix + "_requests_active_max", "Maximum number of requests that have been active at once",
-                        statisticsHandler.getRequestsActiveMax()),
+                        sHandler.getRequestsActiveMax()),
                 buildGauge(prefix + "_request_time_max_seconds", "Maximum time spent handling requests",
-                        statisticsHandler.getRequestTimeMax() / 1000.0),
+                        sHandler.getRequestTimeMax() / 1000.0),
                 buildCounter(prefix + "_request_time_seconds_total", "Total time spent in all request handling",
-                        statisticsHandler.getRequestTimeTotal() / 1000.0),
-                buildCounter(prefix + "_dispatched_total", "Number of dispatches", statisticsHandler.getDispatched()),
+                        sHandler.getRequestTimeTotal() / 1000.0),
+                buildCounter(prefix + "_dispatched_total", "Number of dispatches", sHandler.getDispatched()),
                 buildGauge(prefix + "_dispatched_active", "Number of dispatches currently active",
-                        statisticsHandler.getDispatchedActive()),
+                        sHandler.getDispatchedActive()),
                 buildGauge(prefix + "_dispatched_active_max", "Maximum number of active dispatches being handled",
-                        statisticsHandler.getDispatchedActiveMax()),
+                        sHandler.getDispatchedActiveMax()),
                 buildGauge(prefix + "_dispatched_time_max", "Maximum time spent in dispatch handling",
-                        statisticsHandler.getDispatchedTimeMax()),
+                        sHandler.getDispatchedTimeMax()),
                 buildCounter(prefix + "_dispatched_time_seconds_total", "Total time spent in dispatch handling",
-                        statisticsHandler.getDispatchedTimeTotal() / 1000.0),
+                        sHandler.getDispatchedTimeTotal() / 1000.0),
                 buildCounter(prefix + "_async_requests_total", "Total number of async requests",
-                        statisticsHandler.getAsyncRequests()),
+                        sHandler.getAsyncRequests()),
                 buildGauge(prefix + "_async_requests_waiting", "Currently waiting async requests",
-                        statisticsHandler.getAsyncRequestsWaiting()),
+                        sHandler.getAsyncRequestsWaiting()),
                 buildGauge(prefix + "_async_requests_waiting_max", "Maximum number of waiting async requests",
-                        statisticsHandler.getAsyncRequestsWaitingMax()),
+                        sHandler.getAsyncRequestsWaitingMax()),
                 buildCounter(prefix + "_async_dispatches_total",
-                        "Number of requested that have been asynchronously dispatched",
-                        statisticsHandler.getAsyncDispatches()),
+                        "Number of requested that have been asynchronously dispatched", sHandler.getAsyncDispatches()),
                 buildCounter(prefix + "_expires_total", "Number of async requests requests that have expired",
-                        statisticsHandler.getExpires()),
+                        sHandler.getExpires()),
                 buildStatusCounter(),
                 buildGauge(prefix + "_stats_seconds", "Time in seconds stats have been collected for",
-                        statisticsHandler.getStatsOnMs() / 1000.0),
+                        sHandler.getStatsOnMs() / 1000.0),
                 buildCounter(prefix + "_responses_bytes_total", "Total number of bytes across all responses",
-                        statisticsHandler.getResponsesBytesTotal()));
+                        sHandler.getResponsesBytesTotal()));
     }
 
     private static MetricFamilySamples buildGauge(String name, String help, double value) {
@@ -104,11 +102,11 @@ public class StatisticsCollector extends Collector {
     private MetricFamilySamples buildStatusCounter() {
         String name = prefix + "_responses_total";
         return new MetricFamilySamples(name, Type.COUNTER, "Number of requests with response status",
-                Arrays.asList(buildStatusSample(name, "1xx", statisticsHandler.getResponses1xx()),
-                        buildStatusSample(name, "2xx", statisticsHandler.getResponses2xx()),
-                        buildStatusSample(name, "3xx", statisticsHandler.getResponses3xx()),
-                        buildStatusSample(name, "4xx", statisticsHandler.getResponses4xx()),
-                        buildStatusSample(name, "5xx", statisticsHandler.getResponses5xx())));
+                Arrays.asList(buildStatusSample(name, "1xx", sHandler.getResponses1xx()),
+                        buildStatusSample(name, "2xx", sHandler.getResponses2xx()),
+                        buildStatusSample(name, "3xx", sHandler.getResponses3xx()),
+                        buildStatusSample(name, "4xx", sHandler.getResponses4xx()),
+                        buildStatusSample(name, "5xx", sHandler.getResponses5xx())));
     }
 
     private static MetricFamilySamples.Sample buildStatusSample(String name, String status, double value) {

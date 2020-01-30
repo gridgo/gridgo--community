@@ -11,13 +11,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 
-@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@AllArgsConstructor(access = AccessLevel.PACKAGE, staticName = "of")
 class DelegatingServlet extends GenericServlet {
 
     private static final long serialVersionUID = 2512710354394670721L;
 
-    private transient final JettyRequestHandler handler;
+    private transient final @NonNull JettyRequestHandler handler;
 
     @Override
     public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {

@@ -1,12 +1,9 @@
 package io.gridgo.connector.jetty;
 
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 
 import io.gridgo.connector.impl.AbstractConnector;
 import io.gridgo.connector.jetty.impl.DefaultJettyConsumer;
-import io.gridgo.connector.jetty.server.JettyServletContextHandlerOption;
 import io.gridgo.connector.support.annotations.ConnectorEndpoint;
 import io.gridgo.utils.support.HostAndPort;
 
@@ -27,14 +24,14 @@ public class JettyConnector extends AbstractConnector {
             path = "/*";
 
         var jettyConsumer = DefaultJettyConsumer.builder() //
-                .http2Enabled(Boolean.valueOf(getParam("http2Enabled", TRUE))) //
-                .mmapEnabled(Boolean.valueOf(getParam("mmapEnabled", TRUE))) //
-                .address(HostAndPort.newInstance(host, port)) //
-                .options(readJettyOptions()) //
-                .context(getContext()) //
                 .path(path) //
+                .context(getContext()) //
                 .format(getParam("format", null)) //
                 .charsetName(getParam("charset", "UTF-8")) //
+                .address(HostAndPort.newInstance(host, port)) //
+                .http2Enabled(Boolean.valueOf(getParam("http2Enabled", TRUE))) //
+                .mmapEnabled(Boolean.valueOf(getParam("mmapEnabled", TRUE))) //
+                .enableGzip(Boolean.valueOf(getParam("gzip", FALSE))) //
                 .enablePrometheus(Boolean.valueOf(getParam("enablePrometheus", "false"))) //
                 .prometheusPrefix(getParam("prometheusPrefix", "jetty")) //
                 .stringBufferSize(Integer.valueOf(getParam("stringBufferSize", "65536"))) //
@@ -44,25 +41,4 @@ public class JettyConnector extends AbstractConnector {
         this.producer = Optional.of(jettyConsumer.getResponder());
     }
 
-    private Set<JettyServletContextHandlerOption> readJettyOptions() {
-        var options = new HashSet<JettyServletContextHandlerOption>();
-
-        if (Boolean.parseBoolean(getParam("session", FALSE))) {
-            options.add(JettyServletContextHandlerOption.SESSIONS);
-        } else {
-            options.add(JettyServletContextHandlerOption.NO_SESSIONS);
-        }
-
-        if (Boolean.parseBoolean(getParam("security", FALSE))) {
-            options.add(JettyServletContextHandlerOption.SECURITY);
-        } else {
-            options.add(JettyServletContextHandlerOption.NO_SECURITY);
-        }
-
-        if (Boolean.parseBoolean(getParam("gzip", FALSE))) {
-            options.add(JettyServletContextHandlerOption.GZIP);
-        }
-
-        return options;
-    }
 }

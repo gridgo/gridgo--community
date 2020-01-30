@@ -3,13 +3,11 @@ package io.gridgo.connector.jetty.server;
 import static io.gridgo.utils.ThreadUtils.registerShutdownTask;
 
 import java.util.Map;
-import java.util.Set;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
 import io.gridgo.utils.support.HostAndPort;
 import lombok.Getter;
-import lombok.NonNull;
 
 public class JettyHttpServerManager {
 
@@ -28,14 +26,11 @@ public class JettyHttpServerManager {
         servers.values().forEach(JettyHttpServer::stop);
     }
 
-    public JettyHttpServer getOrCreateJettyServer(@NonNull String originAddress, boolean http2Enabled,
-            Set<JettyServletContextHandlerOption> options, boolean enablePrometheus, String prometheusPrefix) {
-        return getOrCreateJettyServer(HostAndPort.fromString(originAddress), http2Enabled, options, enablePrometheus,
-                prometheusPrefix);
+    public JettyHttpServer getOrCreateJettyServer(String originAddress, boolean http2Enabled) {
+        return getOrCreateJettyServer(HostAndPort.fromString(originAddress), http2Enabled);
     }
 
-    public JettyHttpServer getOrCreateJettyServer(@NonNull HostAndPort originAddress, boolean http2Enabled,
-            Set<JettyServletContextHandlerOption> options, boolean enablePrometheus, String prometheusPrefix) {
+    public synchronized JettyHttpServer getOrCreateJettyServer(HostAndPort originAddress, boolean http2Enabled) {
 
         var address = originAddress.makeCopy();
         if (!address.isResolvable())
@@ -57,13 +52,12 @@ public class JettyHttpServerManager {
         if (jettyHttpServer != null)
             return jettyHttpServer;
 
-        return servers.computeIfAbsent(address, addr -> JettyHttpServer.builder() //
-                .address(addr) //
-                .options(options) //
-                .http2Enabled(http2Enabled) //
-                .enablePrometheus(enablePrometheus) //
-                .prometheusPrefix(prometheusPrefix) //
-                .onStopCallback(servers::remove) //
-                .build());
+        return servers.computeIfAbsent( //
+                address, //
+                _address -> JettyHttpServer.builder() //
+                        .address(_address) //
+                        .http2Enabled(http2Enabled) //
+                        .onStopCallback(servers::remove) //
+                        .build());
     }
 }
