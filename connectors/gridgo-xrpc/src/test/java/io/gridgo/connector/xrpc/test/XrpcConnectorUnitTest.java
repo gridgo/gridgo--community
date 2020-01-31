@@ -28,7 +28,7 @@ public class XrpcConnectorUnitTest {
         registry.register("senderEndpoint", "http2://" + address + "?method=POST&format=json")
                 .register("replyTo", "zmq:push:tcp://" + replyAddress)
                 .register("replyEndpoint", "zmq:pull:tcp://" + replyAddress)
-                .register("receiverEndpoint", "jetty:http://" + address);
+                .register("receiverEndpoint", "jetty:http://" + address + "/");
 
         var factory = new DefaultConnectorFactory();
         factory.setRegistry(registry);

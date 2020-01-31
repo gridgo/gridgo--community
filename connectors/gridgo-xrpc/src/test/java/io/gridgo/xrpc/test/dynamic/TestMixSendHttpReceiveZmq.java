@@ -31,7 +31,7 @@ public class TestMixSendHttpReceiveZmq extends AbstractRPCTest {
 
         receiver = getRpcBuilder().dynamicReceiver()//
                 .decodeCorrIdFromHex() //
-                .endpoint("jetty:http://" + address) //
+                .endpoint("jetty:http://" + address + "/") //
                 .build();
 
         sender.start();
