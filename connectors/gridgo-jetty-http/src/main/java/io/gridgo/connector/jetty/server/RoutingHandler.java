@@ -25,7 +25,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.ToString;
 
-@AllArgsConstructor
 class RoutingHandler extends HandlerCollection {
 
     @AllArgsConstructor
@@ -55,6 +54,11 @@ class RoutingHandler extends HandlerCollection {
 
     private final Map<HttpMethod, Set<PatternHandlerPair>> methodToHandlers = new NonBlockingHashMap<>();
     private final @NonNull PathMatcher pathMatcher;
+
+    RoutingHandler(PathMatcher pathMatcher) {
+        super(true);
+        this.pathMatcher = pathMatcher;
+    }
 
     public Disposable addHandler(String path, Handler handler, HttpMethod... methods) {
         methods = methods == null || methods.length == 0 ? ALL_METHODS : methods;
