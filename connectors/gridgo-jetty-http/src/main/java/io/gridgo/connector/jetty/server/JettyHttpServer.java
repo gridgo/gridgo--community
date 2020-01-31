@@ -1,11 +1,8 @@
 package io.gridgo.connector.jetty.server;
 
 import static io.gridgo.connector.jetty.server.StatisticsCollector.newStatisticsCollector;
-import static org.eclipse.jetty.servlet.ServletContextHandler.GZIP;
 
 import java.util.function.Consumer;
-
-import javax.servlet.MultipartConfigElement;
 
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.server.Handler;
@@ -13,12 +10,10 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
+import io.gridgo.connector.jetty.support.PathMatcher;
 import io.gridgo.framework.impl.NonameComponentLifecycle;
 import io.gridgo.utils.support.HostAndPort;
 import lombok.Builder;
@@ -29,54 +24,50 @@ public class JettyHttpServer extends NonameComponentLifecycle {
     private Server server;
     private final Consumer<HostAndPort> onStopCallback;
 
+    @NonNull
     private final HostAndPort address;
     private final boolean http2Enabled;
 
-    private final HandlerCollection handlers = new HandlerCollection(true);
+    private final RoutingHandler router;
 
     @Builder
     private JettyHttpServer( //
-            @NonNull HostAndPort address, //
+            HostAndPort address, //
             boolean http2Enabled, //
-            Consumer<HostAndPort> onStopCallback) {
+            Consumer<HostAndPort> onStopCallback, //
+            PathMatcher pathMatcher) {
 
         this.address = address;
         this.http2Enabled = http2Enabled;
         this.onStopCallback = onStopCallback;
+        this.router = new RoutingHandler(pathMatcher);
     }
 
     public JettyHttpServer addPathHandler(String path, JettyRequestHandler handler) {
-        return addPathHandler(path, handler, false, false, null);
+        return addPathHandler(path, handler, false, null);
     }
 
     public JettyHttpServer addPathHandler( //
             @NonNull String path, //
-            @NonNull JettyRequestHandler handler, //
-            boolean enableGzip, //
+            @NonNull JettyRequestHandler deletageHandler, //
             boolean enablePrometheus, //
             String prometheusPrefix) {
 
-        var servletHolder = new ServletHolder(DelegatingServlet.of(handler));
-        servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(path));
-
-        var ctx = new ServletContextHandler(enableGzip ? GZIP : 0);
-        ctx.addServlet(servletHolder, path);
-
-        Handler _handler = ctx;
+        Handler handler = new DelegateHandler(deletageHandler);
 
         if (enablePrometheus) {
             var statsHandler = new StatisticsHandler();
-            statsHandler.setHandler(_handler);
+            statsHandler.setHandler(handler);
             // register collector
             newStatisticsCollector(statsHandler, prometheusPrefix).register();
-            _handler = statsHandler;
+            handler = statsHandler;
         }
 
-        handlers.addHandler(_handler);
+        router.addHandler(path, handler);
 
         if (isStarted()) {
             try {
-                _handler.start();
+                handler.start();
             } catch (Exception e) {
                 throw new RuntimeException("Cannot start new handler", e);
             }
@@ -104,7 +95,10 @@ public class JettyHttpServer extends NonameComponentLifecycle {
         connector.setPort(address.getPort());
 
         server.addConnector(connector);
-        server.setHandler(handlers);
+
+        var multipartConfigInjector = new MultipartConfigInjectionHandler();
+        multipartConfigInjector.setHandler(router);
+        server.setHandler(multipartConfigInjector);
 
         ((QueuedThreadPool) server.getThreadPool()).setName(this.getName());
 

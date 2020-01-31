@@ -13,6 +13,7 @@ import io.gridgo.bean.BObject;
 import io.gridgo.connector.httpcommon.HttpCommonConstants;
 import io.gridgo.connector.httpcommon.HttpHeader;
 import io.gridgo.connector.jetty.exceptions.HttpRequestParsingException;
+import io.gridgo.connector.jetty.support.JettyConstants;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
 import io.gridgo.utils.helper.Loggable;
@@ -40,8 +41,15 @@ public abstract class AbstractHttpRequestParser implements HttpRequestParser, Lo
         result.putAny(HttpHeader.CONTENT_LENGTH.asString(), request.getContentLength());
 
         // custom extract query string to prevent the request auto parse multipart data
-        result.putAny(HttpHeader.QUERY_PARAMS.asString(),
-                BObject.of(extractQueryString(queryString, Charset.forName(encoding))));
+        var queryParams = BObject.of(extractQueryString(queryString, Charset.forName(encoding)));
+        var templateVariables = request.getAttribute(JettyConstants.URI_TEMPLATE_VARIABLES);
+        if (templateVariables != null) {
+            @SuppressWarnings("unchecked")
+            var map = (Map<String, String>) templateVariables;
+            map.forEach((key, value) -> queryParams.putAny(key, URLDecoder.decode(value, Charset.defaultCharset())));
+        }
+
+        result.putAny(HttpHeader.QUERY_PARAMS.asString(), queryParams);
 
         result.putAny(HttpHeader.SCHEME.asString(), request.getScheme());
         result.putAny(HttpHeader.HTTP_METHOD.asString(), request.getMethod());

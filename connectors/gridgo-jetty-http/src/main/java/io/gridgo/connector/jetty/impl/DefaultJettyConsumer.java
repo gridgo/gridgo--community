@@ -16,6 +16,7 @@ import io.gridgo.connector.jetty.parser.DefaultHttpRequestParser;
 import io.gridgo.connector.jetty.parser.HttpRequestParser;
 import io.gridgo.connector.jetty.server.JettyHttpServer;
 import io.gridgo.connector.jetty.server.JettyHttpServerManager;
+import io.gridgo.connector.jetty.support.PathMatcher;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.framework.support.Message;
 import io.gridgo.utils.support.HostAndPort;
@@ -29,7 +30,6 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
     private Function<Throwable, Message> failureHandler;
 
     private final String path;
-    private final boolean enableGzip;
     private final String uniqueIdentifier;
     private final boolean enablePrometheus;
     private final String prometheusPrefix;
@@ -46,16 +46,23 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
             Integer stringBufferSize, //
             Boolean enableGzip, //
             Boolean enablePrometheus, //
-            String prometheusPrefix) {
+            String prometheusPrefix, //
+            String pathSeparator, //
+            Boolean caseSensitiveOnMatchingPath, //
+            Boolean trimTokensOnMatchingPath) {
 
         super(context);
 
-        httpServer = JettyHttpServerManager.getInstance().getOrCreateJettyServer(address, http2Enabled);
+        var pathMatcher = PathMatcher.builder() //
+                .pathSeparator(pathSeparator) //
+                .caseSensitive(caseSensitiveOnMatchingPath) //
+                .trimTokens(trimTokensOnMatchingPath) //
+                .build();
+        httpServer = JettyHttpServerManager.getInstance().getOrCreateJettyServer(address, http2Enabled, pathMatcher);
 
         if (httpServer == null)
             throw new RuntimeException("Cannot create http server for address: " + address);
 
-        this.enableGzip = enableGzip == null ? false : enableGzip.booleanValue();
         this.requestParser = DefaultHttpRequestParser.builder() //
                 .charset(charsetName == null ? null : Charset.forName(charsetName)) //
                 .stringBufferSize(stringBufferSize) //
@@ -114,7 +121,7 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
 
     @Override
     protected void onStart() {
-        httpServer.addPathHandler(path, this::onHttpRequest, enableGzip, enablePrometheus, prometheusPrefix);
+        httpServer.addPathHandler(path, this::onHttpRequest, enablePrometheus, prometheusPrefix);
         httpServer.start();
     }
 

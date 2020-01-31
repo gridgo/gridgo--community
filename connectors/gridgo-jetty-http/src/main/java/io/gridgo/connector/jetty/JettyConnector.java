@@ -7,7 +7,7 @@ import io.gridgo.connector.jetty.impl.DefaultJettyConsumer;
 import io.gridgo.connector.support.annotations.ConnectorEndpoint;
 import io.gridgo.utils.support.HostAndPort;
 
-@ConnectorEndpoint(scheme = "jetty", syntax = "http://{host}[:{port}][/{path}]")
+@ConnectorEndpoint(scheme = "jetty", syntax = "http://{host}[:{port}]/[{path}]")
 public class JettyConnector extends AbstractConnector {
 
     private static final String TRUE = "true";
@@ -21,7 +21,12 @@ public class JettyConnector extends AbstractConnector {
 
         var path = getPlaceholder("path");
         if (path == null || path.isBlank())
-            path = "/*";
+            path = "*";
+
+        path = path.replaceAll("(?i):([a-z0-9_]*)", "{$1}");
+
+        if (!path.startsWith("/"))
+            path = "/" + path;
 
         var jettyConsumer = DefaultJettyConsumer.builder() //
                 .path(path) //
