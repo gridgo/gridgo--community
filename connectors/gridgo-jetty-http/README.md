@@ -9,7 +9,7 @@ syntax: ` http://{host}[:{port}]/[{path}] ` <br/>
 where:
 - **host**: required - can be ip (both `ipv4` and `ipv6`), `hostname` or `interface name`.
 - **port**: optional - default `80`.
-- **path**: optional - default `/*` .
+- **path**: optional - default `/*`. Can use uri template like: `/my/path/:variable1/:variable2`
 
 ## params
 - **method**: optional - default `HttpMethod.values()` (all). Indicate which http method(s) (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTION`...) allowed on this connector. Multi value use comma separated.
