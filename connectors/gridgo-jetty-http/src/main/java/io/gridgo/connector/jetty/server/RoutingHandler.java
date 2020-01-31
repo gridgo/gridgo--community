@@ -1,7 +1,5 @@
 package io.gridgo.connector.jetty.server;
 
-import static io.gridgo.connector.jetty.support.JettyConstants.URI_TEMPLATE_VARIABLES;
-
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -14,6 +12,7 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 
+import io.gridgo.connector.httpcommon.HttpCommonConstants;
 import io.gridgo.connector.jetty.exceptions.PathExistingException;
 import io.gridgo.connector.jetty.support.PathMatcher;
 import io.gridgo.framework.support.watch.Disposable;
@@ -51,7 +50,7 @@ class RoutingHandler extends HandlerCollection {
             var path = request.getPathInfo();
             var variables = pathMatcher.extractUriTemplateVariablesOrNull(pattern, path);
             if (variables != null) {
-                request.setAttribute(URI_TEMPLATE_VARIABLES, variables);
+                request.setAttribute(HttpCommonConstants.URI_TEMPLATE_VARIABLES, variables);
                 entry.getValue().handle(target, baseRequest, request, response);
                 return;
             }

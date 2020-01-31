@@ -13,7 +13,6 @@ import io.gridgo.bean.BObject;
 import io.gridgo.connector.httpcommon.HttpCommonConstants;
 import io.gridgo.connector.httpcommon.HttpHeader;
 import io.gridgo.connector.jetty.exceptions.HttpRequestParsingException;
-import io.gridgo.connector.jetty.support.JettyConstants;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
 import io.gridgo.utils.helper.Loggable;
@@ -42,11 +41,17 @@ public abstract class AbstractHttpRequestParser implements HttpRequestParser, Lo
 
         // custom extract query string to prevent the request auto parse multipart data
         var queryParams = BObject.of(extractQueryString(queryString, Charset.forName(encoding)));
-        var templateVariables = request.getAttribute(JettyConstants.URI_TEMPLATE_VARIABLES);
+        var templateVariables = request.getAttribute(HttpCommonConstants.URI_TEMPLATE_VARIABLES);
         if (templateVariables != null) {
             @SuppressWarnings("unchecked")
             var map = (Map<String, String>) templateVariables;
-            map.forEach((key, value) -> queryParams.putAny(key, URLDecoder.decode(value, Charset.defaultCharset())));
+            var uriVar = BObject.wrap(map);
+            var defaultCharset = Charset.defaultCharset();
+            map.forEach((key, value) -> {
+                value = URLDecoder.decode(value, defaultCharset);
+                queryParams.putAnyIfAbsent(key, value);
+            });
+            result.putAny(HttpCommonConstants.URI_TEMPLATE_VARIABLES, uriVar);
         }
 
         result.putAny(HttpHeader.QUERY_PARAMS.asString(), queryParams);
