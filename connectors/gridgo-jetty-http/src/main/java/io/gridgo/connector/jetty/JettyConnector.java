@@ -45,11 +45,13 @@ public class JettyConnector extends AbstractConnector {
                 .methods(methods) //
                 .context(getContext()) //
                 .format(getParam("format", null)) //
+                .pathSeparator(getParam("pathSeparator")) //
+                .caseSensitiveOnMatchingPath(Boolean.valueOf(getParam("caseSensitive", FALSE))) //
+                .trimTokensOnMatchingPath(Boolean.valueOf(getParam("trimTokens", TRUE))) //
                 .charsetName(getParam("charset", "UTF-8")) //
                 .address(HostAndPort.newInstance(host, port)) //
                 .http2Enabled(Boolean.valueOf(getParam("http2Enabled", TRUE))) //
                 .mmapEnabled(Boolean.valueOf(getParam("mmapEnabled", TRUE))) //
-                .enableGzip(Boolean.valueOf(getParam("gzip", FALSE))) //
                 .enablePrometheus(Boolean.valueOf(getParam("enablePrometheus", "false"))) //
                 .prometheusPrefix(getParam("prometheusPrefix", "jetty")) //
                 .stringBufferSize(Integer.valueOf(getParam("stringBufferSize", "65536"))) //

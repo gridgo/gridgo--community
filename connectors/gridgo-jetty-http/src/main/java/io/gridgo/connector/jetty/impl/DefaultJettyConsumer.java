@@ -45,7 +45,6 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
             String path, //
             String charsetName, //
             Integer stringBufferSize, //
-            Boolean enableGzip, //
             Boolean enablePrometheus, //
             String prometheusPrefix, //
             String pathSeparator, //
