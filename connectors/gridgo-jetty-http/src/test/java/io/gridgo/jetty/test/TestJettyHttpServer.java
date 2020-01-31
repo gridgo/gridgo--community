@@ -101,7 +101,7 @@ public class TestJettyHttpServer {
 
     @Test
     public void testMultiHandler() throws IOException, InterruptedException, URISyntaxException {
-        var address = "localhost:8000";
+        var address = genAddress("localhost");
         JettyHttpServer httpServer = serverManager.getOrCreateJettyServer(address, true);
         httpServer.start();
 
