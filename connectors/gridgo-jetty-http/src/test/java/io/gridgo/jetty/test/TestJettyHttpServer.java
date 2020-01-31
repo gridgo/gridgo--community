@@ -192,13 +192,13 @@ public class TestJettyHttpServer {
         assertThat(getSampleValue(prometheusPrefix + "_requests_total"), is(1.0));
         assertThat(getSampleValue(prometheusPrefix + "_requests_active"), is(0.0));
         assertThat(getSampleValue(prometheusPrefix + "_requests_active_max"), is(1.0));
-        assertThat(getSampleValue(prometheusPrefix + "_request_time_max_seconds"), is(notNullValue()));
-        assertThat(getSampleValue(prometheusPrefix + "_request_time_seconds_total"), is(notNullValue()));
+        assertThat(getSampleValue(prometheusPrefix + "_request_time_max"), is(notNullValue()));
+        assertThat(getSampleValue(prometheusPrefix + "_request_time_total"), is(notNullValue()));
         assertThat(getSampleValue(prometheusPrefix + "_dispatched_total"), is(1.0));
         assertThat(getSampleValue(prometheusPrefix + "_dispatched_active"), is(0.0));
         assertThat(getSampleValue(prometheusPrefix + "_dispatched_active_max"), is(greaterThan(0.0)));
         assertThat(getSampleValue(prometheusPrefix + "_dispatched_time_max"), is(notNullValue()));
-        assertThat(getSampleValue(prometheusPrefix + "_dispatched_time_seconds_total"), is(notNullValue()));
+        assertThat(getSampleValue(prometheusPrefix + "_dispatched_time_total"), is(notNullValue()));
         assertThat(getSampleValue(prometheusPrefix + "_async_requests_total"), is(0.0));
         assertThat(getSampleValue(prometheusPrefix + "_async_requests_waiting"), is(0.0));
         assertThat(getSampleValue(prometheusPrefix + "_async_requests_waiting_max"), is(0.0));

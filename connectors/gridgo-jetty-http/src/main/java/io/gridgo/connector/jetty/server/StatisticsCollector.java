@@ -52,7 +52,7 @@ public class StatisticsCollector extends Collector {
         return new StatisticsCollector(statisticsHandler, prefix);
     }
 
-    private String p_(String name) {
+    private String prefix_(String name) {
         return prefix + "_" + name;
     }
 
@@ -102,17 +102,19 @@ public class StatisticsCollector extends Collector {
     }
 
     private MetricFamilySamples gauge(String name, String help, double value) {
-        return new MetricFamilySamples(p_(name), Type.GAUGE, help,
+        name = prefix_(name);
+        return new MetricFamilySamples(name, Type.GAUGE, help,
                 Collections.singletonList(new MetricFamilySamples.Sample(name, EMPTY_LIST, EMPTY_LIST, value)));
     }
 
     private MetricFamilySamples counter(String name, String help, double value) {
-        return new MetricFamilySamples(p_(name), Type.COUNTER, help,
+        name = prefix_(name);
+        return new MetricFamilySamples(name, Type.COUNTER, help,
                 Collections.singletonList(new MetricFamilySamples.Sample(name, EMPTY_LIST, EMPTY_LIST, value)));
     }
 
     private MetricFamilySamples buildStatusCounter() {
-        var name = p_("responses_total");
+        var name = prefix_("responses_total");
         return new MetricFamilySamples(name, Type.COUNTER, "Number of requests with response status",
                 Arrays.asList(buildStatusSample(name, "1xx", s.getResponses1xx()),
                         buildStatusSample(name, "2xx", s.getResponses2xx()),
