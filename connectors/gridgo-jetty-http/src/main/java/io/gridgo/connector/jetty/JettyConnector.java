@@ -1,6 +1,11 @@
 package io.gridgo.connector.jetty;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.eclipse.jetty.http.HttpMethod;
 
 import io.gridgo.connector.impl.AbstractConnector;
 import io.gridgo.connector.jetty.impl.DefaultJettyConsumer;
@@ -28,8 +33,16 @@ public class JettyConnector extends AbstractConnector {
         if (!path.startsWith("/"))
             path = "/" + path;
 
+        var methods = Stream.of(getParam("method", "").split(",")) //
+                .map(String::toUpperCase) //
+                .map(HttpMethod::fromString) //
+                .filter(Objects::nonNull) //
+                .collect(Collectors.toList()) //
+                .toArray(HttpMethod[]::new);
+
         var jettyConsumer = DefaultJettyConsumer.builder() //
                 .path(path) //
+                .methods(methods) //
                 .context(getContext()) //
                 .format(getParam("format", null)) //
                 .charsetName(getParam("charset", "UTF-8")) //

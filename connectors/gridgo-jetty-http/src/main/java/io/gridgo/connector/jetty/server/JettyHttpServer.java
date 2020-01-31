@@ -4,6 +4,7 @@ import static io.gridgo.connector.jetty.server.StatisticsCollector.newStatistics
 
 import java.util.function.Consumer;
 
+import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -43,15 +44,16 @@ public class JettyHttpServer extends NonameComponentLifecycle {
         this.router = new RoutingHandler(pathMatcher);
     }
 
-    public JettyHttpServer addPathHandler(String path, JettyRequestHandler handler) {
-        return addPathHandler(path, handler, false, null);
+    public JettyHttpServer addPathHandler(String path, JettyRequestHandler handler, HttpMethod... methods) {
+        return addPathHandler(path, handler, false, null, methods);
     }
 
     public JettyHttpServer addPathHandler( //
             @NonNull String path, //
             @NonNull JettyRequestHandler deletageHandler, //
             boolean enablePrometheus, //
-            String prometheusPrefix) {
+            String prometheusPrefix, //
+            HttpMethod... methods) {
 
         Handler handler = new DelegateHandler(deletageHandler);
 
@@ -63,7 +65,7 @@ public class JettyHttpServer extends NonameComponentLifecycle {
             handler = statsHandler;
         }
 
-        router.addHandler(path, handler);
+        router.addHandler(path, handler, methods);
 
         if (isStarted()) {
             try {

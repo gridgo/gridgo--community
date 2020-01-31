@@ -6,6 +6,7 @@ import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jetty.http.HttpMethod;
 import org.joo.promise4j.Deferred;
 import org.joo.promise4j.impl.CompletableDeferredObject;
 
@@ -49,7 +50,8 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
             String prometheusPrefix, //
             String pathSeparator, //
             Boolean caseSensitiveOnMatchingPath, //
-            Boolean trimTokensOnMatchingPath) {
+            Boolean trimTokensOnMatchingPath, //
+            HttpMethod... methods) {
 
         super(context);
 
