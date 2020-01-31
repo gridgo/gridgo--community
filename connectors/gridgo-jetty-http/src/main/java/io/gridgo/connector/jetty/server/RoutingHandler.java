@@ -63,19 +63,18 @@ class RoutingHandler extends HandlerCollection {
 
         for (var method : methods) {
             var handlers = methodToHandlers.compute(method, (k, v) -> v != null ? v : new TreeSet<>());
-            if (handlers.add(pair)) {
-                jobs.add(() -> {
-                    super.removeHandler(handler);
-                    handlers.remove(pair);
-                });
-            }
+            if (handlers.add(pair))
+                jobs.add(() -> handlers.remove(pair));
         }
 
         if (jobs.isEmpty())
             throw new PathExistingException("pathSpec '" + path + "' has been added for methods: " + methods);
 
         super.addHandler(handler);
-        return () -> jobs.forEach(Runnable::run);
+        return () -> {
+            super.removeHandler(handler);
+            jobs.forEach(Runnable::run);
+        };
     }
 
     @Override
