@@ -2,87 +2,79 @@ package io.gridgo.connector.jetty.server;
 
 import static io.gridgo.connector.jetty.server.StatisticsCollector.newStatisticsCollector;
 
-import java.util.Set;
 import java.util.function.Consumer;
 
-import javax.servlet.MultipartConfigElement;
-
+import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
+import io.gridgo.connector.jetty.support.PathMatcher;
 import io.gridgo.framework.impl.NonameComponentLifecycle;
 import io.gridgo.utils.support.HostAndPort;
 import lombok.Builder;
-import lombok.Getter;
 import lombok.NonNull;
 
 public class JettyHttpServer extends NonameComponentLifecycle {
 
     private Server server;
-
-    @Getter
-    private final HostAndPort address;
-
-    private final ServletContextHandler handler;
-
     private final Consumer<HostAndPort> onStopCallback;
 
-    private final Set<JettyServletContextHandlerOption> options;
-
+    @NonNull
+    private final HostAndPort address;
     private final boolean http2Enabled;
 
-    private boolean enablePrometheus = false;
-
-    private String prometheusPrefix = null;
+    private final RoutingHandler router;
 
     @Builder
     private JettyHttpServer( //
-            @NonNull HostAndPort address, //
+            HostAndPort address, //
             boolean http2Enabled, //
-            Set<JettyServletContextHandlerOption> options, //
             Consumer<HostAndPort> onStopCallback, //
-            Boolean enablePrometheus, //
-            String prometheusPrefix) {
+            PathMatcher pathMatcher) {
 
         this.address = address;
-        this.options = options;
         this.http2Enabled = http2Enabled;
         this.onStopCallback = onStopCallback;
-
-        if (enablePrometheus != null) {
-            this.enablePrometheus = enablePrometheus.booleanValue();
-            this.prometheusPrefix = prometheusPrefix == null ? "jetty" : prometheusPrefix;
-        }
-
-        this.handler = createServletContextHandler();
+        this.router = new RoutingHandler(pathMatcher);
     }
 
-    private ServletContextHandler createServletContextHandler() {
-        if (options == null || options.size() == 0)
-            return new ServletContextHandler();
-
-        int accumulateOptions = 0;
-        for (var option : options)
-            accumulateOptions = accumulateOptions | option.getCode();
-
-        return new ServletContextHandler(accumulateOptions);
+    public JettyHttpServer addPathHandler(String path, JettyRequestHandler handler, HttpMethod... methods) {
+        return addPathHandler(path, handler, false, null, methods);
     }
 
     public JettyHttpServer addPathHandler( //
             @NonNull String path, //
-            @NonNull JettyRequestHandler handler) {
+            @NonNull JettyRequestHandler deletageHandler, //
+            boolean enablePrometheus, //
+            String prometheusPrefix, //
+            HttpMethod... methods) {
 
-        var servletHolder = new ServletHolder(new DelegatingServlet(handler));
-        servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(path));
+        Handler handler = new DelegateHandler(deletageHandler);
 
-        this.handler.addServlet(servletHolder, path);
+        if (enablePrometheus) {
+            var statsHandler = new StatisticsHandler();
+            statsHandler.setHandler(handler);
+            // register collector
+            newStatisticsCollector(statsHandler, prometheusPrefix).register();
+            handler = statsHandler;
+        }
+
+        router.addHandler(path, handler, methods);
+
+        if (isStarted()) {
+            try {
+                handler.start();
+            } catch (Exception e) {
+                throw new RuntimeException("Cannot start new handler", e);
+            }
+        }
+
         return this;
     }
 
@@ -106,15 +98,9 @@ public class JettyHttpServer extends NonameComponentLifecycle {
 
         server.addConnector(connector);
 
-        if (enablePrometheus) {
-            var statsHandler = new StatisticsHandler();
-            statsHandler.setHandler(handler);
-            // register collector
-            newStatisticsCollector(statsHandler, prometheusPrefix).register();
-            server.setHandler(statsHandler);
-        } else {
-            server.setHandler(handler);
-        }
+        var multipartConfigInjector = new MultipartConfigInjectionHandler();
+        multipartConfigInjector.setHandler(router);
+        server.setHandler(multipartConfigInjector);
 
         ((QueuedThreadPool) server.getThreadPool()).setName(this.getName());
 
@@ -135,6 +121,7 @@ public class JettyHttpServer extends NonameComponentLifecycle {
             if (this.onStopCallback != null) {
                 this.onStopCallback.accept(this.address);
             }
+            this.server = null;
         }
     }
 
