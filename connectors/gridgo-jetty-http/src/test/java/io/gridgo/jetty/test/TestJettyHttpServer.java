@@ -1,5 +1,8 @@
 package io.gridgo.jetty.test;
 
+import static io.gridgo.connector.httpcommon.HttpCommonConstants.URI_TEMPLATE_VARIABLES;
+import static java.net.http.HttpRequest.newBuilder;
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -14,14 +17,15 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.util.Strings;
 import org.junit.Test;
 
 import io.gridgo.connector.jetty.server.JettyHttpServer;
@@ -77,8 +81,8 @@ public class TestJettyHttpServer {
 
             final String encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
             URI uri = new URI("http://localhost:8889/?key=" + encodedText);
-            HttpRequest request = HttpRequest.newBuilder().GET().uri(uri).build();
-            httpClient.send(request, BodyHandlers.ofString()).body();
+            HttpRequest request = newBuilder().GET().uri(uri).build();
+            httpClient.send(request, ofString()).body();
 
             assertNull(allInterfaceReceived.get());
             assertEquals(TEST_TEXT, localhostReceived.get());
@@ -114,18 +118,18 @@ public class TestJettyHttpServer {
         final String encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
 
         var uri = new URI("http://" + address + "/path1/subpath?key=" + encodedText);
-        var request = HttpRequest.newBuilder(uri).build();
-        var resp = httpClient.send(request, BodyHandlers.ofString()).body();
+        var request = newBuilder(uri).build();
+        var resp = httpClient.send(request, ofString()).body();
         assertEquals("path1", resp);
 
         uri = new URI("http://" + address + "/path2/subpath?key=" + encodedText);
-        request = HttpRequest.newBuilder(uri).build();
-        resp = httpClient.send(request, BodyHandlers.ofString()).body();
+        request = newBuilder(uri).build();
+        resp = httpClient.send(request, ofString()).body();
         assertEquals("path2", resp);
 
         uri = new URI("http://" + address + "/other-path?key=" + encodedText);
-        request = HttpRequest.newBuilder(uri).build();
-        resp = httpClient.send(request, BodyHandlers.ofString()).body();
+        request = newBuilder(uri).build();
+        resp = httpClient.send(request, ofString()).body();
         assertEquals("all", resp);
 
         assertNull(exceptionHolder.get());
@@ -145,9 +149,9 @@ public class TestJettyHttpServer {
 
         String encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
         URI uri = new URI("http://" + address + "/?key=" + encodedText);
-        HttpRequest request = HttpRequest.newBuilder().GET().uri(uri).build();
+        HttpRequest request = newBuilder().GET().uri(uri).build();
         HttpClient httpClient = HttpClient.newHttpClient();
-        var resp = httpClient.send(request, BodyHandlers.ofString()).body();
+        var resp = httpClient.send(request, ofString()).body();
 
         assertNull(exception.get());
         assertEquals(TEST_TEXT, resp);
@@ -155,9 +159,13 @@ public class TestJettyHttpServer {
         httpServer.stop();
     }
 
+    @SuppressWarnings("unchecked")
     private void echo(HttpServletRequest req, HttpServletResponse res) {
         try (var writer = res.getWriter()) {
-            writer.write(req.getParameter("key"));
+            var key = req.getParameter("key");
+            if (key == null)
+                key = ((Map<String, String>) req.getAttribute(URI_TEMPLATE_VARIABLES)).get("key");
+            writer.write(key == null ? Strings.EMPTY : key);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -178,17 +186,31 @@ public class TestJettyHttpServer {
         var prometheusPrefix = "myCustomPrefix";
 
         var httpServer = serverManager.getOrCreateJettyServer(address, true);
-        httpServer.addPathHandler(path, this::echo, true, prometheusPrefix);
-        httpServer.start();
+        httpServer.addPathHandler(path, this::echo, true, prometheusPrefix).start();
+
+        var httpClient = HttpClient.newHttpClient();
 
         var encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
-        var uri = new URI("http://" + address + path + "?key=" + encodedText);
-        var request = HttpRequest.newBuilder().GET().uri(uri).build();
-        var httpClient = HttpClient.newHttpClient();
-//        var resp =
-        httpClient.send(request, BodyHandlers.ofString());
-//        System.out.println("Response code " + resp.statusCode() + ", body: " + resp.body());
+        var resp = httpClient.send( //
+                newBuilder(new URI("http://" + address + path + "?key=" + encodedText)).build(), //
+                ofString());
 
+        // make sure the call got correct response
+        assertThat(resp.body(), is(TEST_TEXT));
+
+        // add another path handler which disable prometheus
+        var path1 = "/non-prometheus";
+        httpServer.addPathHandler(path1 + "/{key}", this::echo);
+
+        // request that second endpoint
+        resp = httpClient.send( //
+                newBuilder(new URI("http://" + address + path1 + "/" + encodedText)).build(), //
+                ofString());
+
+        // make sure the second endpoint work
+        assertThat(resp.body(), is(encodedText));
+
+        // make sure only endpoint 1 has statistics
         assertThat(getSampleValue(prometheusPrefix + "_requests_total"), is(1.0));
         assertThat(getSampleValue(prometheusPrefix + "_requests_active"), is(0.0));
         assertThat(getSampleValue(prometheusPrefix + "_requests_active_max"), is(1.0));
@@ -214,6 +236,12 @@ public class TestJettyHttpServer {
 
         assertThat(getSampleValue(prometheusPrefix + "_stats_seconds"), is(notNullValue()));
         assertThat(getSampleValue(prometheusPrefix + "_responses_bytes_total"), is(notNullValue()));
+
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "1xx" }), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "2xx" }), is(1.0));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "3xx" }), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "4xx" }), is(0.0));
+        assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "5xx" }), is(0.0));
 
         httpServer.stop();
     }
