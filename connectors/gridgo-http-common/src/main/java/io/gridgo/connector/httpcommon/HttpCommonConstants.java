@@ -115,6 +115,7 @@ public class HttpCommonConstants {
     public static final String CONTEXT_PATH = HttpHeader.CONTEXT_PATH.asString();
 
     public static final String HEADER_STATUS_CODE = "Http-Status-Code";
-    
+
     public static final String HEADER_PATH = "Http-Path";
+    public static final String URI_TEMPLATE_VARIABLES = "Uri-Template-Variables";
 }

@@ -5,7 +5,6 @@ import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -14,7 +13,6 @@ import io.gridgo.bean.BObject;
 import io.gridgo.connector.httpcommon.HttpCommonConstants;
 import io.gridgo.connector.httpcommon.HttpHeader;
 import io.gridgo.connector.jetty.exceptions.HttpRequestParsingException;
-import io.gridgo.connector.jetty.server.JettyServletContextHandlerOption;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
 import io.gridgo.utils.helper.Loggable;
@@ -42,7 +40,21 @@ public abstract class AbstractHttpRequestParser implements HttpRequestParser, Lo
         result.putAny(HttpHeader.CONTENT_LENGTH.asString(), request.getContentLength());
 
         // custom extract query string to prevent the request auto parse multipart data
-        result.putAny(HttpHeader.QUERY_PARAMS.asString(), BObject.of(extractQueryString(queryString, Charset.forName(encoding))));
+        var queryParams = BObject.of(extractQueryString(queryString, Charset.forName(encoding)));
+        var templateVariables = request.getAttribute(HttpCommonConstants.URI_TEMPLATE_VARIABLES);
+        if (templateVariables != null) {
+            @SuppressWarnings("unchecked")
+            var map = (Map<String, String>) templateVariables;
+            var uriVar = BObject.wrap(map);
+            var defaultCharset = Charset.defaultCharset();
+            map.forEach((key, value) -> {
+                value = URLDecoder.decode(value, defaultCharset);
+                queryParams.putAnyIfAbsent(key, value);
+            });
+            result.putAny(HttpCommonConstants.URI_TEMPLATE_VARIABLES, uriVar);
+        }
+
+        result.putAny(HttpHeader.QUERY_PARAMS.asString(), queryParams);
 
         result.putAny(HttpHeader.SCHEME.asString(), request.getScheme());
         result.putAny(HttpHeader.HTTP_METHOD.asString(), request.getMethod());
@@ -71,7 +83,8 @@ public abstract class AbstractHttpRequestParser implements HttpRequestParser, Lo
                 } else if (idx == 0) {
                     queryPairs.put("", URLDecoder.decode(pair.substring(idx + 1), charset));
                 } else {
-                    queryPairs.put(URLDecoder.decode(pair.substring(0, idx), charset), URLDecoder.decode(pair.substring(idx + 1), charset));
+                    queryPairs.put(URLDecoder.decode(pair.substring(0, idx), charset),
+                            URLDecoder.decode(pair.substring(idx + 1), charset));
                 }
             }
         }
@@ -79,26 +92,23 @@ public abstract class AbstractHttpRequestParser implements HttpRequestParser, Lo
     }
 
     @Override
-    public Message parse(@NonNull HttpServletRequest request, Set<JettyServletContextHandlerOption> options) {
+    public Message parse(@NonNull HttpServletRequest request) {
         BObject headers = extractHeaders(request);
         BElement body;
         try {
             body = extractBody(request);
             var message = Message.of(Payload.of(headers, body)) //
-                                 .addMisc(HttpCommonConstants.COOKIES, request.getCookies()) //
+                    .addMisc(HttpCommonConstants.COOKIES, request.getCookies()) //
 
-                                 .addMisc(HttpCommonConstants.LOCAL_NAME, request.getLocalName()) //
-                                 .addMisc(HttpCommonConstants.SERVER_NAME, request.getServerName()) //
-                                 .addMisc(HttpCommonConstants.SERVER_PORT, request.getServerPort()) //
+                    .addMisc(HttpCommonConstants.LOCAL_NAME, request.getLocalName()) //
+                    .addMisc(HttpCommonConstants.SERVER_NAME, request.getServerName()) //
+                    .addMisc(HttpCommonConstants.SERVER_PORT, request.getServerPort()) //
 
-                                 .addMisc(HttpCommonConstants.LOCALE, request.getLocale()) //
-                                 .addMisc(HttpCommonConstants.LOCALES, request.getLocales()) //
+                    .addMisc(HttpCommonConstants.LOCALE, request.getLocale()) //
+                    .addMisc(HttpCommonConstants.LOCALES, request.getLocales()) //
 
-                                 .addMisc(HttpCommonConstants.USER_PRINCIPAL, request.getUserPrincipal()) //
+                    .addMisc(HttpCommonConstants.USER_PRINCIPAL, request.getUserPrincipal()) //
             ;
-            if (options != null && options.contains(JettyServletContextHandlerOption.SESSIONS)) {
-                message.addMisc(HttpCommonConstants.SESSION, request.getSession());
-            }
             return message;
         } catch (Exception e) {
             throw new HttpRequestParsingException("Error while parsing http servlet request", e);

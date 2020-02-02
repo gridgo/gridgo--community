@@ -25,7 +25,7 @@ public class TestHttpRPCWithJdkClient extends AbstractRPCTest {
                 .build();
 
         receiver = getRpcBuilder().selfReceiver() //
-                .endpoint("jetty:http://" + address) //
+                .endpoint("jetty:http://" + address + "/") //
                 .build();
 
         sender.start();
