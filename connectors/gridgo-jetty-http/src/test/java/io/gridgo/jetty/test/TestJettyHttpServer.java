@@ -17,6 +17,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.util.Strings;
+import org.eclipse.jetty.http.HttpMethod;
 import org.junit.Test;
 
 import io.gridgo.connector.jetty.server.JettyHttpServer;
@@ -188,8 +190,6 @@ public class TestJettyHttpServer {
         var httpServer = serverManager.getOrCreateJettyServer(address, true);
         httpServer.addPathHandler(path, this::echo, true, prometheusPrefix).start();
 
-        var httpClient = HttpClient.newHttpClient();
-
         var encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
         var resp = httpClient.send( //
                 newBuilder(new URI("http://" + address + path + "?key=" + encodedText)).build(), //
@@ -242,6 +242,49 @@ public class TestJettyHttpServer {
         assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "3xx" }), is(0.0));
         assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "4xx" }), is(0.0));
         assertThat(getSampleValue(prometheusPrefix + "_responses_total", labelNames, new String[] { "5xx" }), is(0.0));
+
+        httpServer.stop();
+    }
+
+    @Test
+    public void testFilteredMethod() throws Exception {
+        var address = genAddress("127.0.0.1");
+        var httpServer = serverManager.getOrCreateJettyServer(address, true);
+        httpServer.start();
+
+        var path = "/only-get";
+        httpServer.addPathHandler(path, this::echo, HttpMethod.GET);
+
+        var encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
+        var uri = new URI("http://" + address + path + "?key=" + encodedText);
+
+        var resp = httpClient.send(newBuilder(uri).GET().build(), ofString());
+        assertEquals(200, resp.statusCode());
+
+        resp = httpClient.send(newBuilder(uri).POST(BodyPublishers.noBody()).build(), ofString());
+        assertEquals(404, resp.statusCode());
+
+        path = "/only-post";
+        httpServer.addPathHandler(path, this::echo, HttpMethod.POST);
+
+        uri = new URI("http://" + address + path + "?key=" + encodedText);
+
+        resp = httpClient.send(newBuilder(uri).POST(BodyPublishers.noBody()).build(), ofString());
+        assertEquals(200, resp.statusCode());
+
+        resp = httpClient.send(newBuilder(uri).GET().build(), ofString());
+        assertEquals(404, resp.statusCode());
+
+        path = "/post-and-get";
+        httpServer.addPathHandler(path, this::echo, HttpMethod.POST, HttpMethod.GET);
+
+        uri = new URI("http://" + address + path + "?key=" + encodedText);
+
+        resp = httpClient.send(newBuilder(uri).POST(BodyPublishers.noBody()).build(), ofString());
+        assertEquals(200, resp.statusCode());
+
+        resp = httpClient.send(newBuilder(uri).GET().build(), ofString());
+        assertEquals(200, resp.statusCode());
 
         httpServer.stop();
     }
