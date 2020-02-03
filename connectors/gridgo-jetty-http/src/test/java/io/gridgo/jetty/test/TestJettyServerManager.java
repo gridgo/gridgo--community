@@ -20,7 +20,7 @@ public class TestJettyServerManager {
     @Before
     public void setUp() {
         serverManager = JettyHttpServerManager.getInstance();
-        server = serverManager.getOrCreateJettyServer(address, true, null, true, null);
+        server = serverManager.getOrCreateJettyServer(address, true);
         server.start();
     }
 

@@ -6,12 +6,11 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import io.gridgo.connector.jetty.server.JettyServletContextHandlerOption;
 import io.gridgo.framework.support.Message;
 
 public interface HttpRequestParser {
 
     static final Set<String> NO_BODY_METHODS = new HashSet<>(Arrays.asList("get", "delete", "options"));
 
-    Message parse(HttpServletRequest request, Set<JettyServletContextHandlerOption> options);
+    Message parse(HttpServletRequest request);
 }
