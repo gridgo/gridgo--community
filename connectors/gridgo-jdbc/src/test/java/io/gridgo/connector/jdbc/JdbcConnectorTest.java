@@ -12,7 +12,9 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
 
+import io.gridgo.bean.BArray;
 import io.gridgo.bean.BElement;
+import io.gridgo.bean.BObject;
 import io.gridgo.connector.Connector;
 import io.gridgo.connector.Producer;
 import io.gridgo.connector.impl.factories.DefaultConnectorFactory;
@@ -46,6 +48,26 @@ public class JdbcConnectorTest {
     @AfterClass
     public static void cleanup() {
         pool.close();
+    }
+
+    @Test
+    public void testBatch() throws PromiseException, InterruptedException {
+        var batches = BObject.of(JdbcConstants.IS_BATCH, true)
+                .setAny(JdbcConstants.BATCH_DATA, BArray.ofSequence(
+                        BObject.of("id", 1),
+                        BObject.of("id", 2),
+                        BObject.of("id", 3)
+                ));
+        var msg = producer.callAny("drop table if exists test_users")
+                .then(r -> producer.callAny("create table test_users(id int)"))
+                .then(r -> producer.callAny(
+                        batches,
+                        "insert into test_users values(:id)"))
+                .then(r -> producer.callAny("select id from test_users order by id ASC")).get();
+        Assert.assertEquals(3, msg.body().asArray().size());
+        Assert.assertEquals(1, (int) msg.body().asArray().getObject(0).getInteger("id", 0));
+        Assert.assertEquals(2, (int) msg.body().asArray().getObject(1).getInteger("id", 0));
+        Assert.assertEquals(3, (int) msg.body().asArray().getObject(2).getInteger("id", 0));
     }
 
     @Test

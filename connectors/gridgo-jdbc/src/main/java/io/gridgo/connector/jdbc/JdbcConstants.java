@@ -7,6 +7,10 @@ public class JdbcConstants {
 
     public static final String OPERATION = "JDBC_Operation";
 
+    public static final String IS_BATCH = "JDBC_IsBatch";
+
+    public static final String BATCH_DATA = "JDBC_BatchData";
+
     public static final String OPERATION_SELECT = "select";
 
     public static final String OPERATION_UPDATE = "update";
