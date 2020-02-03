@@ -63,8 +63,11 @@ public class JdbcConnectorTest {
                 .then(r -> producer.callAny(
                         batches,
                         "insert into test_users values(:id)"))
-                .then(r -> producer.callAny("select count(*) as total from test_users")).get();
-        Assert.assertEquals(3, (int) msg.body().asArray().getObject(0).getInteger("total", 0));
+                .then(r -> producer.callAny("select id from test_users order by id ASC")).get();
+        Assert.assertEquals(3, msg.body().asArray().size());
+        Assert.assertEquals(1, (int) msg.body().asArray().getObject(0).getInteger("id", 0));
+        Assert.assertEquals(2, (int) msg.body().asArray().getObject(1).getInteger("id", 0));
+        Assert.assertEquals(3, (int) msg.body().asArray().getObject(2).getInteger("id", 0));
     }
 
     @Test
