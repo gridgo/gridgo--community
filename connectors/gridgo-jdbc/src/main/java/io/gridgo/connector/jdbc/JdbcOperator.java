@@ -2,6 +2,7 @@ package io.gridgo.connector.jdbc;
 
 import org.jdbi.v3.core.Handle;
 
+import io.gridgo.bean.BObject;
 import io.gridgo.connector.jdbc.support.Helper;
 import io.gridgo.framework.support.Message;
 
@@ -18,8 +19,29 @@ class JdbcOperator {
     }
 
     static Message updateRow(Message msg, Handle handle) {
-        var headers = msg.getPayload().getHeaders();
-        var queryStatement = msg.getPayload().getBody().asValue().getString();
+        var headers = msg.headers();
+        var isBatch = headers.getBoolean(JdbcConstants.IS_BATCH, false);
+        if (isBatch) {
+            return updateBatch(msg, handle, headers);
+        }
+        return updateSingle(msg, handle, headers);
+    }
+
+    private static Message updateBatch(Message msg, Handle handle, BObject headers) {
+        var batchQuery = handle.prepareBatch(msg.body().asValue().getString());
+        var batches = headers.getArray(JdbcConstants.BATCH_DATA);
+
+        for (var st : batches) {
+            Helper.bindParams(batchQuery, st.asObject());
+            batchQuery.add();
+        }
+
+        int[] countArray = batchQuery.execute();
+        return Message.ofAny(countArray);
+    }
+
+    private static Message updateSingle(Message msg, Handle handle, BObject headers) {
+        var queryStatement = msg.body().asValue().getString();
         var query = handle.createUpdate(queryStatement);
         Helper.bindParams(query, headers);
         int rowNum = query.execute();
@@ -27,7 +49,7 @@ class JdbcOperator {
     }
 
     static Message execute(Message msg, Handle handle) {
-        var queryStatement = msg.getPayload().getBody().asValue().getString();
+        var queryStatement = msg.body().asValue().getString();
         int result = handle.execute(queryStatement);
         return Message.ofAny(result);
     }
