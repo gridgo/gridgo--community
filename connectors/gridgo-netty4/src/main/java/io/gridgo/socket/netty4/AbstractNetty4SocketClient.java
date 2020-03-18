@@ -1,4 +1,4 @@
-package io.gridgo.socket.netty4.impl;
+package io.gridgo.socket.netty4;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -10,8 +10,6 @@ import org.joo.promise4j.DeferredStatus;
 import org.joo.promise4j.impl.AsyncDeferredObject;
 
 import io.gridgo.bean.BElement;
-import io.gridgo.socket.netty4.Netty4SocketClient;
-import io.gridgo.socket.netty4.Netty4SocketOptionsUtils;
 import io.gridgo.utils.support.HostAndPort;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;

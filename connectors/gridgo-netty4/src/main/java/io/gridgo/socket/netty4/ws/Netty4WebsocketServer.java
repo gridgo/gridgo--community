@@ -12,7 +12,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import io.gridgo.bean.BElement;
-import io.gridgo.socket.netty4.impl.AbstractNetty4SocketServer;
+import io.gridgo.socket.netty4.AbstractNetty4SocketServer;
 import io.gridgo.socket.netty4.utils.SSLContextRegistry;
 import io.gridgo.utils.support.HostAndPort;
 import io.netty.buffer.ByteBuf;

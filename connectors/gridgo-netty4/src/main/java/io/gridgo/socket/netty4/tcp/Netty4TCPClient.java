@@ -1,10 +1,10 @@
-package io.gridgo.socket.netty4.raw;
+package io.gridgo.socket.netty4.tcp;
 
 import io.gridgo.bean.BElement;
-import io.gridgo.socket.netty4.impl.AbstractNetty4SocketClient;
+import io.gridgo.socket.netty4.AbstractNetty4SocketClient;
 import io.netty.channel.socket.SocketChannel;
 
-public abstract class AbstractNetty4RawSocketClient extends AbstractNetty4SocketClient {
+public class Netty4TCPClient extends AbstractNetty4SocketClient {
 
     @Override
     protected BElement handleIncomingMessage(Object msg) throws Exception {

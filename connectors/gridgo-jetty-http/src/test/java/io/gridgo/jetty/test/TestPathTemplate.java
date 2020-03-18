@@ -52,6 +52,8 @@ public class TestPathTemplate {
         var path = "key";
         var baseUri = HTTP_LOCALHOST_8888 + "/" + path;
         var connectorEndpoint = SCHEME + ":" + HTTP_LOCALHOST_8888 + "/[" + path + "/:key]";
+        // jetty:http://localhost:8888/key/:key; -> http://localhost:8888/key/abchg ->
+        // query_param: { key: "abchg" }
         var connector = createConnector(connectorEndpoint);
         connector.start();
 

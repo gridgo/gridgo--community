@@ -34,6 +34,7 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
     private final String uniqueIdentifier;
     private final boolean enablePrometheus;
     private final String prometheusPrefix;
+    private final HttpMethod[] methods;
 
     @Builder
     private DefaultJettyConsumer(//
@@ -84,6 +85,8 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
                 .mmapEnabled(mmapEnabled) //
                 .uniqueIdentifier(uniqueIdentifier) //
                 .build());
+
+        this.methods = methods;
     }
 
     protected Deferred<Message, Exception> createDeferred() {
@@ -122,7 +125,7 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
 
     @Override
     protected void onStart() {
-        httpServer.addPathHandler(path, this::onHttpRequest, enablePrometheus, prometheusPrefix);
+        httpServer.addPathHandler(path, this::onHttpRequest, enablePrometheus, prometheusPrefix, methods);
         httpServer.start();
     }
 
