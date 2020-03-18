@@ -26,7 +26,5 @@ public interface Netty4Socket extends Closeable, ComponentLifecycle, Loggable {
 
     boolean isRunning();
 
-    boolean isStarted();
-
     void setFailureHandler(Consumer<Throwable> failureHandler);
 }

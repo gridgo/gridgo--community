@@ -1,4 +1,4 @@
-package io.gridgo.socket.netty4.impl;
+package io.gridgo.socket.netty4;
 
 import static io.gridgo.utils.ThreadUtils.busySpin;
 
@@ -9,8 +9,6 @@ import java.util.function.Consumer;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
-import io.gridgo.socket.netty4.Netty4Socket;
-import io.gridgo.socket.netty4.Netty4Transport;
 import io.gridgo.utils.helper.Loggable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
@@ -66,7 +64,7 @@ public abstract class AbstractNetty4Socket implements Netty4Socket, Loggable {
     }
 
     protected final boolean isOkToClose() {
-        return this.startFlag.get() && this.running;
+        return true;
     }
 
     @Override
