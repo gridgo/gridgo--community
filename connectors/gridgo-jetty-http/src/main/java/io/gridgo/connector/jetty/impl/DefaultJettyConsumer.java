@@ -38,7 +38,7 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
     private final String prometheusPrefix;
     private final HttpMethod[] methods;
 
-    private final Histogram latencies;
+    private final Histogram latenciesMetric;
 
     @Builder
     private DefaultJettyConsumer(//
@@ -83,9 +83,9 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
         this.enablePrometheus = enablePrometheus == null ? false : enablePrometheus.booleanValue();
         this.prometheusPrefix = prometheusPrefix == null ? uniqueIdentifier : prometheusPrefix;
 
-        this.latencies = this.enablePrometheus //
+        this.latenciesMetric = this.enablePrometheus //
                 ? Histogram.build() //
-                        .name(this.prometheusPrefix + "_latency_seconds") //
+                        .name(this.prometheusPrefix + "_requests_latency_seconds") //
                         .help("Request latency in seconds") //
                         .register() //
                 : null;
@@ -117,7 +117,7 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
         Message requestMessage = null;
         DeferredAndRoutingId dnr = null;
 
-        var timer = enablePrometheus ? latencies.startTimer() : null;
+        var timer = latenciesMetric != null ? latenciesMetric.startTimer() : null;
         try {
             // parse http servlet request to message object
             requestMessage = requestParser.parse(request);
