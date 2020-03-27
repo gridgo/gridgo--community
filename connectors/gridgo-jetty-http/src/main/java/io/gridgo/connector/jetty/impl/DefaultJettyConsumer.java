@@ -22,7 +22,6 @@ import io.gridgo.connector.support.DeferredAndRoutingId;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.framework.support.Message;
 import io.gridgo.utils.support.HostAndPort;
-import io.prometheus.client.Histogram;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -37,8 +36,6 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
     private final boolean enablePrometheus;
     private final String prometheusPrefix;
     private final HttpMethod[] methods;
-
-    private final Histogram latenciesMetric;
 
     @Builder
     private DefaultJettyConsumer(//
@@ -83,18 +80,13 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
         this.enablePrometheus = enablePrometheus == null ? false : enablePrometheus.booleanValue();
         this.prometheusPrefix = prometheusPrefix == null ? uniqueIdentifier : prometheusPrefix;
 
-        this.latenciesMetric = this.enablePrometheus //
-                ? Histogram.build() //
-                        .name(this.prometheusPrefix + "_requests_latency_seconds") //
-                        .help("Request latency in seconds") //
-                        .register() //
-                : null;
-
         this.setResponder(DefaultJettyResponder.builder() //
                 .format(format) //
                 .context(getContext()) //
                 .mmapEnabled(mmapEnabled) //
                 .uniqueIdentifier(uniqueIdentifier) //
+                .enablePrometheus(enablePrometheus) //
+                .prometheusPrefix(prometheusPrefix) //
                 .build());
 
         this.methods = methods;
@@ -117,7 +109,6 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
         Message requestMessage = null;
         DeferredAndRoutingId dnr = null;
 
-        var timer = latenciesMetric != null ? latenciesMetric.startTimer() : null;
         try {
             // parse http servlet request to message object
             requestMessage = requestParser.parse(request);
@@ -125,9 +116,6 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
         } catch (Exception e) {
             getLogger().error("error while handling http request", e);
             onUncaughtException(e, response);
-        } finally {
-            if (timer != null && dnr != null)
-                dnr.getDeferred().promise().always((stt, res, ex) -> timer.close());
         }
 
         if (dnr != null) {
