@@ -1,4 +1,4 @@
-package io.gridgo.socket.netty4.impl;
+package io.gridgo.socket.netty4;
 
 import java.io.IOException;
 import java.util.Map;
@@ -14,8 +14,6 @@ import org.joo.promise4j.impl.AsyncDeferredObject;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
-import io.gridgo.socket.netty4.Netty4SocketOptionsUtils;
-import io.gridgo.socket.netty4.Netty4SocketServer;
 import io.gridgo.utils.support.HostAndPort;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;

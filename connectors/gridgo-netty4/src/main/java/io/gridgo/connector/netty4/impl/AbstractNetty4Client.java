@@ -17,7 +17,7 @@ import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
 import io.gridgo.socket.netty4.Netty4SocketClient;
 import io.gridgo.socket.netty4.Netty4Transport;
-import io.gridgo.socket.netty4.raw.tcp.Netty4TCPClient;
+import io.gridgo.socket.netty4.tcp.Netty4TCPClient;
 import io.gridgo.socket.netty4.ws.Netty4Websocket;
 import io.gridgo.socket.netty4.ws.Netty4WebsocketClient;
 import io.gridgo.utils.support.HostAndPort;

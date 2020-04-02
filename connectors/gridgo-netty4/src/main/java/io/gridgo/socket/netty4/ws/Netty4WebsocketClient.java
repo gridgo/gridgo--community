@@ -7,8 +7,8 @@ import java.net.URISyntaxException;
 import javax.net.ssl.SSLException;
 
 import io.gridgo.bean.BElement;
+import io.gridgo.socket.netty4.AbstractNetty4SocketClient;
 import io.gridgo.socket.netty4.exceptions.SSLContextException;
-import io.gridgo.socket.netty4.impl.AbstractNetty4SocketClient;
 import io.gridgo.utils.support.HostAndPort;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;

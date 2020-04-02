@@ -52,6 +52,7 @@ import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
 import io.gridgo.utils.exception.RuntimeIOException;
 import io.gridgo.utils.wrapper.ByteBufferInputStream;
+import io.prometheus.client.Histogram;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -66,17 +67,28 @@ public class DefaultJettyResponder extends AbstractTraceableResponder implements
     private final boolean mmapEnabled;
     private final String format;
 
+    private final Histogram latenciesMetric;
+
     @Builder
     private DefaultJettyResponder( //
             ConnectorContext context, //
             boolean mmapEnabled, //
             String format, //
-            String uniqueIdentifier) {
+            String uniqueIdentifier, //
+            Boolean enablePrometheus, //
+            String prometheusPrefix) {
 
         super(context);
         this.format = format;
         this.uniqueIdentifier = uniqueIdentifier;
         this.mmapEnabled = mmapEnabled;
+
+        this.latenciesMetric = enablePrometheus == null || !enablePrometheus.booleanValue() //
+                ? null //
+                : Histogram.build() //
+                        .help("Request latency in seconds") //
+                        .name((prometheusPrefix == null ? "" : (prometheusPrefix + "_")) + "requests_latency_seconds") //
+                        .register();
     }
 
     @Override
@@ -145,6 +157,7 @@ public class DefaultJettyResponder extends AbstractTraceableResponder implements
 
     @Override
     public DeferredAndRoutingId registerRequest(@NonNull HttpServletRequest request) {
+        var timer = latenciesMetric == null ? null : latenciesMetric.startTimer();
         var deferredResponse = new CompletableDeferredObject<Message, Exception>();
         var asyncContext = request.startAsync();
         var routingId = ID_SEED.getAndIncrement();
@@ -157,6 +170,8 @@ public class DefaultJettyResponder extends AbstractTraceableResponder implements
             } catch (Exception e) {
                 handleException(e);
             } finally {
+                if (timer != null)
+                    timer.close();
                 deferredResponses.remove(routingId);
                 asyncContext.complete();
             }

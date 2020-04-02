@@ -1,7 +1,5 @@
-package io.gridgo.socket.netty4.raw;
+package io.gridgo.socket.netty4.tcp;
 
-import io.gridgo.socket.netty4.raw.codec.BelementDecoder;
-import io.gridgo.socket.netty4.raw.codec.BelementEncoder;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;

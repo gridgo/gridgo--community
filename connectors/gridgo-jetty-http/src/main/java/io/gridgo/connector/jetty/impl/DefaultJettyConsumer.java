@@ -18,6 +18,7 @@ import io.gridgo.connector.jetty.parser.HttpRequestParser;
 import io.gridgo.connector.jetty.server.JettyHttpServer;
 import io.gridgo.connector.jetty.server.JettyHttpServerManager;
 import io.gridgo.connector.jetty.support.PathMatcher;
+import io.gridgo.connector.support.DeferredAndRoutingId;
 import io.gridgo.connector.support.config.ConnectorContext;
 import io.gridgo.framework.support.Message;
 import io.gridgo.utils.support.HostAndPort;
@@ -34,6 +35,7 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
     private final String uniqueIdentifier;
     private final boolean enablePrometheus;
     private final String prometheusPrefix;
+    private final HttpMethod[] methods;
 
     @Builder
     private DefaultJettyConsumer(//
@@ -83,7 +85,11 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
                 .context(getContext()) //
                 .mmapEnabled(mmapEnabled) //
                 .uniqueIdentifier(uniqueIdentifier) //
+                .enablePrometheus(enablePrometheus) //
+                .prometheusPrefix(prometheusPrefix) //
                 .build());
+
+        this.methods = methods;
     }
 
     protected Deferred<Message, Exception> createDeferred() {
@@ -101,14 +107,23 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
 
     private void onHttpRequest(HttpServletRequest request, HttpServletResponse response) {
         Message requestMessage = null;
+        DeferredAndRoutingId dnr = null;
+
         try {
             // parse http servlet request to message object
             requestMessage = requestParser.parse(request);
-            var dnr = getJettyResponder().registerRequest(request);
-            publish(requestMessage.setRoutingIdFromAny(dnr.getRoutingId()), dnr.getDeferred());
+            dnr = getJettyResponder().registerRequest(request);
         } catch (Exception e) {
             getLogger().error("error while handling http request", e);
             onUncaughtException(e, response);
+        }
+
+        if (dnr != null) {
+            try {
+                publish(requestMessage.setRoutingIdFromAny(dnr.getRoutingId()), dnr.getDeferred());
+            } catch (Exception e) {
+                dnr.getDeferred().reject(e);
+            }
         }
     }
 
@@ -122,7 +137,7 @@ public class DefaultJettyConsumer extends AbstractHasResponderConsumer implement
 
     @Override
     protected void onStart() {
-        httpServer.addPathHandler(path, this::onHttpRequest, enablePrometheus, prometheusPrefix);
+        httpServer.addPathHandler(path, this::onHttpRequest, enablePrometheus, prometheusPrefix, methods);
         httpServer.start();
     }
 

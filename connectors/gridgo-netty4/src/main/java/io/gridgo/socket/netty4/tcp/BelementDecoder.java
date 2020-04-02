@@ -1,4 +1,4 @@
-package io.gridgo.socket.netty4.raw.codec;
+package io.gridgo.socket.netty4.tcp;
 
 import java.util.List;
 

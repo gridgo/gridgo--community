@@ -19,7 +19,7 @@ import io.gridgo.connector.support.exceptions.InvalidParamException;
 import io.gridgo.framework.support.Message;
 import io.gridgo.socket.netty4.Netty4SocketServer;
 import io.gridgo.socket.netty4.Netty4Transport;
-import io.gridgo.socket.netty4.raw.tcp.Netty4TCPServer;
+import io.gridgo.socket.netty4.tcp.Netty4TCPServer;
 import io.gridgo.socket.netty4.utils.KeyStoreType;
 import io.gridgo.socket.netty4.utils.SSLContextRegistry;
 import io.gridgo.socket.netty4.ws.Netty4Websocket;

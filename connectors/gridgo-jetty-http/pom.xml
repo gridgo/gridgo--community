@@ -12,7 +12,7 @@
 	<artifactId>gridgo-jetty-http</artifactId>
 
 	<properties>
-		<jetty.version>9.4.26.v20200117</jetty.version>
+		<jetty.version>9.4.27.v20200227</jetty.version>
 		<prometheus.version>0.8.0</prometheus.version>
 		<httpmime.version>4.5.3</httpmime.version>
 	</properties>
@@ -37,7 +37,7 @@
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient</artifactId>
 			<version>${prometheus.version}</version>
-			<scope>provided</scope>
+			<!-- <scope>provided</scope> -->
 		</dependency>
 		<dependency>
 			<groupId>org.hamcrest</groupId>
