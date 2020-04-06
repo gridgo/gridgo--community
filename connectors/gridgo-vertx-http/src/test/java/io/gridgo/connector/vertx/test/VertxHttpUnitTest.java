@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.gridgo.bean.BObject;
@@ -48,7 +49,6 @@ public class VertxHttpUnitTest {
     @Test
     public void testHeaderCaseInsensitive() throws ClientProtocolException, IOException, InterruptedException {
         var connector = new DefaultConnectorFactory().createConnector("vertx:http://127.0.0.1:8080/");
-        connector.start();
         var cdl = new CountDownLatch(1);
         var consumer = connector.getConsumer().orElseThrow();
         var exRef = new AtomicReference<>();
@@ -61,8 +61,10 @@ public class VertxHttpUnitTest {
             } catch (Exception ex) {
                 exRef.set(ex);
             }
+            deferred.resolve(Message.ofEmpty());
             cdl.countDown();
         });
+        connector.start();
 
         String url = "http://127.0.0.1:8080";
         var client = HttpClientBuilder.create().build();
@@ -71,7 +73,7 @@ public class VertxHttpUnitTest {
         request.addHeader("Test-Header", "XYZ");
         client.execute(request);
 
-        cdl.await();
+        cdl.await(1000, TimeUnit.MILLISECONDS);
 
         Assert.assertNull(exRef.get());
 
