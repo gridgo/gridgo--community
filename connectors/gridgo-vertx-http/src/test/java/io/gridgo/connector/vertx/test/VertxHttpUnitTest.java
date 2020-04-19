@@ -15,6 +15,9 @@ import org.junit.Test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.gridgo.bean.BObject;
 import io.gridgo.bean.BValue;
@@ -41,6 +44,41 @@ public class VertxHttpUnitTest {
 
     private Deferred<Message, Exception> resolveSimple(Message request, Deferred<Message, Exception> deferred, int i) {
         return deferred.resolve(Message.of(Payload.of(BValue.of(i))));
+    }
+
+    @Test
+    public void testHeaderCaseInsensitive() throws ClientProtocolException, IOException, InterruptedException {
+        var connector = new DefaultConnectorFactory().createConnector("vertx:http://127.0.0.1:8080/");
+        var cdl = new CountDownLatch(1);
+        var consumer = connector.getConsumer().orElseThrow();
+        var exRef = new AtomicReference<>();
+        consumer.subscribe((msg, deferred) -> {
+            var headers = msg.headers();
+            try {
+                Assert.assertEquals("XYZ", headers.getString("test-header"));
+                Assert.assertEquals("XYZ", headers.getString("Test-Header"));
+                Assert.assertEquals("XYZ", headers.getString("teSt-heaDer"));
+            } catch (Exception ex) {
+                exRef.set(ex);
+            }
+            deferred.resolve(Message.ofEmpty());
+            cdl.countDown();
+        });
+        connector.start();
+
+        String url = "http://127.0.0.1:8080";
+        var client = HttpClientBuilder.create().build();
+
+        var request = new HttpGet(url);
+        request.addHeader("Test-Header", "XYZ");
+        client.execute(request);
+
+        cdl.await(1000, TimeUnit.MILLISECONDS);
+
+        Assert.assertNull(exRef.get());
+
+        client.close();
+        connector.stop();
     }
 
     @Test
