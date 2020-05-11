@@ -49,6 +49,7 @@ vertx:http://host:port/[path][?options]
 | *keyStorePassword* | The key store password |  | String
 | *clientAuth* | Client authentication method | NONE | Enum (NONE, REQUEST, REQUIRED)
 | *parseCookie* | Whether or not to parse cookies | fasle | Boolean
+| *maxHeaderSize* | Maximum length of all headers for HTTP/1.x | Defaulted by Vert.x | Integer
 
 |===
 // connector options: END
