@@ -38,7 +38,6 @@ import org.joo.promise4j.impl.CompletableDeferredObject;
 
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
-import io.gridgo.bean.BReference;
 import io.gridgo.bean.BType;
 import io.gridgo.bean.BValue;
 import io.gridgo.connector.httpcommon.AbstractTraceableResponder;
@@ -139,9 +138,9 @@ public class DefaultJettyResponder extends AbstractTraceableResponder implements
         var contentType = HttpContentType.forValue(headerSetContentType);
 
         if (contentType == null) {
-            if (body instanceof BValue) {
+            if (body.isValue()) {
                 contentType = HttpContentType.DEFAULT_TEXT;
-            } else if (body instanceof BReference) {
+            } else if (body.isReference()) {
                 var ref = body.asReference().getReference();
                 if (ref instanceof File || ref instanceof Path) {
                     contentType = HttpContentType.forFile(ref instanceof File ? (File) ref : ((Path) ref).toFile());
@@ -452,10 +451,11 @@ public class DefaultJettyResponder extends AbstractTraceableResponder implements
         int statusCode = headers.getInteger(HEADER_STATUS_CODE, headers.getInteger(HEADER_STATUS, OK_200.getCode()));
         response.setStatus(statusCode);
 
-        if (contentType.isTextFormat()) {
-            String charset = headers.getString(CHARSET, "UTF-8");
+        String charset = headers.getString(CHARSET);
+        if (charset != null)
             response.setCharacterEncoding(charset);
-        }
+        else if (!contentType.isBinaryFormat())
+            response.setCharacterEncoding("UTF-8");
 
         if (!headers.containsKey(CONTENT_TYPE)) {
             headers.setAny(CONTENT_TYPE, contentType.getMime());
