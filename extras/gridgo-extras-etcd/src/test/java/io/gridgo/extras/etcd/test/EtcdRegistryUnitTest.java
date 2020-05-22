@@ -1,12 +1,14 @@
 package io.gridgo.extras.etcd.test;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import io.gridgo.bean.BObject;
 import io.gridgo.bean.BValue;
 import io.gridgo.extras.etcd.EtcdRegistry;
 
+@Ignore
 public class EtcdRegistryUnitTest {
 
     @Test

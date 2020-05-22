@@ -36,8 +36,8 @@ before_install:
   - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
 
 before_script:
-  - go get -v go.etcd.io/etcd
-  - $GOPATH/bin/etcd &
+#  - go get -v go.etcd.io/etcd
+#  - $GOPATH/bin/etcd &
   - 'if [[ ! -f $CONSUL_DIR/consul ]]; then (mkdir -p $CONSUL_DIR && cd $CONSUL_DIR && wget https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip && unzip consul_${CONSUL_VERSION}_linux_amd64.zip); fi'
   - $CONSUL_DIR/consul --version
   - $CONSUL_DIR/consul agent -server -bootstrap-expect 1 -data-dir /tmp/consul -dc=$CONSUL_DC &
