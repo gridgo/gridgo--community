@@ -8,6 +8,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.connector.httpcommon.HttpCommonConstants;
@@ -23,7 +25,7 @@ public abstract class AbstractHttpRequestParser implements HttpRequestParser, Lo
     protected abstract BElement extractBody(HttpServletRequest request) throws Exception;
 
     protected BObject extractHeaders(HttpServletRequest request) {
-        BObject result = BObject.ofEmpty();
+        BObject result = BObject.withHolder(new CaseInsensitiveMap<>());
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();

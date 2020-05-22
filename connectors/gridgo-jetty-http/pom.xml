@@ -15,9 +15,15 @@
 		<jetty.version>9.4.27.v20200227</jetty.version>
 		<prometheus.version>0.8.0</prometheus.version>
 		<httpmime.version>4.5.3</httpmime.version>
+		<commons.collections4.version>4.4</commons.collections4.version>
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-collections4</artifactId>
+			<version>${commons.collections4.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>io.gridgo</groupId>
 			<artifactId>gridgo-http-common</artifactId>
