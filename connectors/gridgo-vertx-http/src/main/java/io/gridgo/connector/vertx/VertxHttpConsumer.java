@@ -32,6 +32,7 @@ import io.gridgo.connector.support.exceptions.NoSubscriberException;
 import io.gridgo.connector.vertx.support.exceptions.DuplicateConnectionException;
 import io.gridgo.connector.vertx.support.exceptions.HttpException;
 import io.gridgo.framework.support.Message;
+import io.gridgo.utils.support.CaseInsensitiveMap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.Vertx;
@@ -108,7 +109,7 @@ public class VertxHttpConsumer extends AbstractHttpConsumer implements Consumer 
     }
 
     private Message buildMessage(RoutingContext ctx) {
-        var headers = BObject.ofEmpty();
+        var headers = BObject.withHolder(new CaseInsensitiveMap<>(new HashMap<>()));
         for (var entry : ctx.request().headers()) {
             headers.put(entry.getKey(), BValue.of(entry.getValue()));
         }

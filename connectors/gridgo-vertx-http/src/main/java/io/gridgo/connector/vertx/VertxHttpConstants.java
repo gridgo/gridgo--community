@@ -53,4 +53,7 @@ public class VertxHttpConstants extends HttpCommonConsumerConstants {
     public static final String WRAP_RESPONSE = "wrap";
 
     public static final String ALLOW_DUPLICATE_CONN = "allowDuplicateConnection";
+    
+    public static final String MAX_HEADER_SIZE = "maxHeaderSize";
+    
 }

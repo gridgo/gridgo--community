@@ -12,9 +12,16 @@ import org.joo.promise4j.Deferred;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.google.common.base.Joiner;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.gridgo.bean.BObject;
 import io.gridgo.bean.BValue;
@@ -41,6 +48,41 @@ public class VertxHttpUnitTest {
 
     private Deferred<Message, Exception> resolveSimple(Message request, Deferred<Message, Exception> deferred, int i) {
         return deferred.resolve(Message.of(Payload.of(BValue.of(i))));
+    }
+
+    @Test
+    public void testHeaderCaseInsensitive() throws ClientProtocolException, IOException, InterruptedException {
+        var connector = new DefaultConnectorFactory().createConnector("vertx:http://127.0.0.1:8080/");
+        var cdl = new CountDownLatch(1);
+        var consumer = connector.getConsumer().orElseThrow();
+        var exRef = new AtomicReference<>();
+        consumer.subscribe((msg, deferred) -> {
+            var headers = msg.headers();
+            try {
+                Assert.assertEquals("XYZ", headers.getString("test-header"));
+                Assert.assertEquals("XYZ", headers.getString("Test-Header"));
+                Assert.assertEquals("XYZ", headers.getString("teSt-heaDer"));
+            } catch (Exception ex) {
+                exRef.set(ex);
+            }
+            deferred.resolve(Message.ofEmpty());
+            cdl.countDown();
+        });
+        connector.start();
+
+        String url = "http://127.0.0.1:8080";
+        var client = HttpClientBuilder.create().build();
+
+        var request = new HttpGet(url);
+        request.addHeader("Test-Header", "XYZ");
+        client.execute(request);
+
+        cdl.await(1000, TimeUnit.MILLISECONDS);
+
+        Assert.assertNull(exRef.get());
+
+        client.close();
+        connector.stop();
     }
 
     @Test
@@ -337,5 +379,26 @@ public class VertxHttpUnitTest {
             connector1.stop();
             connector2.stop();
         }
+    }
+    
+    @Test
+    public void testMaxHeaderSize() throws ClientProtocolException, IOException {
+        var connector = new DefaultConnectorFactory()
+                .createConnector("vertx:http://127.0.0.1:8080/?maxHeaderSize=16384");
+        connector.start();
+        var consumer = connector.getConsumer().orElseThrow();
+        consumer.subscribe((msg, deferred) -> deferred.resolve(msg));
+        String url = "http://127.0.0.1:8080";
+        var client = HttpClientBuilder.create().build();
+        var request = new HttpGet(url);
+        var bigHeader = Joiner.on("").join(Stream.generate(() -> "1").limit(15360).collect(Collectors.toList()));
+        System.out.println(bigHeader);
+        request.addHeader("big-header",bigHeader);
+        var response = client.execute(request);
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+        Assert.assertEquals(bigHeader, response.getFirstHeader("big-header").getValue());
+        
+        client.close();
+        connector.stop();
     }
 }
