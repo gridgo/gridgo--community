@@ -2,6 +2,7 @@ package io.gridgo.jetty.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 
@@ -36,6 +38,7 @@ import io.gridgo.connector.support.exceptions.FailureHandlerAware;
 import io.gridgo.framework.execution.impl.ExecutorExecutionStrategy;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
+import junit.framework.AssertionFailedError;
 
 public class TestJettyConnector {
 
@@ -166,6 +169,42 @@ public class TestJettyConnector {
 
             String body = response.body();
             assertEquals(responseErrorMsgHeader + errorMsg, body);
+        } finally {
+            connector.stop();
+        }
+    }
+
+    @Test
+    public void testHeaderCaseInsensitive() throws URISyntaxException, IOException, InterruptedException {
+        String path = "test-header-case-insensitive";
+        String endpoint = baseServerEndpoint + "/" + path;
+        Connector connector = createConnector(endpoint);
+        connector.start();
+
+        try {
+            Consumer consumer = connector.getConsumer().get();
+
+            var exceptionHolder = new AtomicReference<Throwable>();
+            consumer.subscribe((msg, deferred) -> {
+                var headers = msg.headers();
+                for (var entry : headers.entrySet()) {
+                    var key = entry.getKey();
+                    var value = entry.getValue();
+                    if (headers.get(key.toLowerCase()) != value || headers.get(key.toUpperCase()) != value) {
+                        exceptionHolder.set(new AssertionFailedError("header case insensitive failed on key: " + key));
+                        break;
+                    }
+                }
+                deferred.resolve(Message.ofAny("ok"));
+            });
+
+            final String encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
+            URI uri = new URI(HTTP_LOCALHOST_8888 + "/" + path + "?key=" + encodedText);
+            HttpRequest request = HttpRequest.newBuilder().GET().uri(uri).build();
+            httpClient.send(request, BodyHandlers.ofString());
+
+            assertNull(exceptionHolder.get());
+
         } finally {
             connector.stop();
         }
