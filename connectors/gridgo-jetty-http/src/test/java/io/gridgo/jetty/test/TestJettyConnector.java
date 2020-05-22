@@ -19,12 +19,15 @@ import java.util.concurrent.Executors;
 
 import org.junit.Test;
 
+import com.google.common.base.Charsets;
+
 import io.gridgo.bean.BElement;
 import io.gridgo.bean.BObject;
 import io.gridgo.connector.Connector;
 import io.gridgo.connector.ConnectorResolver;
 import io.gridgo.connector.Consumer;
 import io.gridgo.connector.Producer;
+import io.gridgo.connector.httpcommon.HttpCommonConstants;
 import io.gridgo.connector.httpcommon.HttpHeader;
 import io.gridgo.connector.impl.resolvers.ClasspathConnectorResolver;
 import io.gridgo.connector.jetty.JettyConnector;
@@ -97,6 +100,35 @@ public class TestJettyConnector {
             assertNotNull(respObj);
             assertTrue(respObj.isObject());
             assertEquals(TEST_TEXT, respObj.asObject().getString("key"));
+        } finally {
+            connector.stop();
+        }
+    }
+
+    @Test
+    public void testCharset() throws URISyntaxException, IOException, InterruptedException {
+        String path = "test-charset";
+        String endpoint = baseServerEndpoint + "/" + path;
+        Connector connector = createConnector(endpoint);
+        connector.start();
+
+        try {
+            Consumer consumer = connector.getConsumer().get();
+            Producer producer = connector.getProducer().get();
+
+            consumer.subscribe((msg) -> {
+                var queryParams = msg.headers().get(HttpHeader.QUERY_PARAMS.asString());
+                producer.send(Message.of(msg.getRoutingId().get(),
+                        Payload.of(queryParams).addHeader(HttpCommonConstants.CHARSET, Charsets.US_ASCII.name())));
+            });
+
+            final String encodedText = URLEncoder.encode(TEST_TEXT, Charset.defaultCharset().name());
+            URI uri = new URI(HTTP_LOCALHOST_8888 + "/" + path + "?key=" + encodedText);
+            HttpRequest request = HttpRequest.newBuilder().GET().uri(uri).build();
+            HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+
+            var contentype = response.headers().firstValue("content-type").get();
+            System.out.println(contentype);
         } finally {
             connector.stop();
         }
