@@ -3,6 +3,7 @@ package io.gridgo.connector.jetty.parser;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import io.gridgo.connector.jetty.exceptions.HttpRequestParsingException;
 import io.gridgo.framework.support.Message;
 import io.gridgo.framework.support.Payload;
 import io.gridgo.utils.helper.Loggable;
+import io.gridgo.utils.support.CaseInsensitiveMap;
 import lombok.NonNull;
 
 public abstract class AbstractHttpRequestParser implements HttpRequestParser, Loggable {
@@ -23,7 +25,7 @@ public abstract class AbstractHttpRequestParser implements HttpRequestParser, Lo
     protected abstract BElement extractBody(HttpServletRequest request) throws Exception;
 
     protected BObject extractHeaders(HttpServletRequest request) {
-        BObject result = BObject.ofEmpty();
+        BObject result = BObject.withHolder(new CaseInsensitiveMap<>(new HashMap<>()));
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
