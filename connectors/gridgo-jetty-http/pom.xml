@@ -11,7 +11,7 @@
 	<artifactId>gridgo-jetty-http</artifactId>
 
 	<properties>
-		<jetty.version>9.4.25.v20191220</jetty.version>
+		<jetty.version>9.4.41.v20210516</jetty.version>
 		<prometheus.version>0.8.0</prometheus.version>
 	</properties>
 
